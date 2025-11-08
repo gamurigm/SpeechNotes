@@ -123,6 +123,29 @@ node_modules/
 # !/.gitignore
 # */
 
+# Project-specific ignores added by assistant to keep repo minimal
+# Virtualenvs and Python environment
+.venv/
+venv/
+
+# Environment files with secrets
+.env
+
+# Generated notes and recordings (optional - ignored by default)
+notas/
+
+# Temporary audio files
+*.wav
+tmp*.wav
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Editor configs
+.vscode/
+
+
 # Temp / grabaciones
 *.wav
 tmp*.wav
