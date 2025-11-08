@@ -1,1 +1,0 @@
-Error: Unavailable model requested given these parameters: language_code=es; sample_rate=0; type=offline; 
