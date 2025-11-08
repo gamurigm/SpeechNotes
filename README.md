@@ -67,6 +67,24 @@ python transcribe_to_markdown.py audio/reunion_ingles.wav en
 
 El resultado se guardará como un nuevo archivo `.md` dentro de la carpeta `notas/`.
 
+### 🔴 Transcripción en Tiempo Real (Streaming) desde el Micrófono
+
+Este proyecto también incluye un script para transcribir audio directamente desde tu micrófono en tiempo real.
+
+```powershell
+python transcribe_mic_to_markdown.py [duracion] [idioma] [archivo_salida]
+```
+
+-   `[duracion]`: (Opcional) Segundos que durará la grabación. Por defecto es `10`.
+-   `[idioma]`: (Opcional) Código del idioma. Por defecto es `es`.
+-   `[archivo_salida]`: (Opcional) Ruta del archivo Markdown de salida. Por defecto se genera un nombre automático en `notas/`.
+
+**Ejemplo:**
+
+```powershell
+# Grabar y transcribir durante 30 segundos en español
+python transcribe_mic_to_markdown.py 30 es
+```
 ---
 
 ## 🛠️ ¿Cómo Funciona?

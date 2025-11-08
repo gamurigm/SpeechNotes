@@ -190,6 +190,74 @@ def transcribe_chunk(asr_service, audio_data, language="es"):
         print(f"\n❌ Error en transcripción: {e}")
         return ""
 
+def save_transcription_to_markdown(transcripts, output_file=None):
+    """
+    Guarda todas las transcripciones en un archivo markdown
+    
+    Args:
+        transcripts: Lista de tuplas (timestamp, texto)
+        output_file: Ruta del archivo de salida (opcional)
+    """
+    if not transcripts:
+        print("⚠️  No hay transcripciones para guardar")
+        return
+    
+    # Generar nombre de archivo si no se proporciona
+    if output_file is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = f"notas/transcripcion_realtime_{timestamp}.md"
+    
+    # Crear directorio si no existe
+    output_path = Path(output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Calcular duración total
+    start_time = transcripts[0][0]
+    end_time = transcripts[-1][0]
+    duration = (end_time - start_time).total_seconds()
+    duration_mins = int(duration / 60)
+    duration_secs = int(duration % 60)
+    
+    # Construir contenido markdown
+    md_content = f"""# Transcripción en Tiempo Real
+
+## 📋 Metadata
+- **Fecha:** {start_time.strftime("%Y-%m-%d %H:%M:%S")}
+- **Duración:** {duration_mins}m {duration_secs}s
+- **Segmentos:** {len(transcripts)}
+- **Método:** Voice Activity Detection (VAD)
+
+---
+
+## 📝 Transcripción Completa
+
+"""
+    
+    # Agregar texto completo (sin timestamps)
+    full_text = " ".join([text for _, text in transcripts])
+    md_content += f"{full_text}\n\n"
+    
+    md_content += "---\n\n"
+    md_content += "## 🕐 Transcripción por Segmentos\n\n"
+    
+    # Agregar segmentos con timestamps
+    for timestamp, text in transcripts:
+        time_str = timestamp.strftime("%H:%M:%S")
+        md_content += f"**[{time_str}]** {text}\n\n"
+    
+    md_content += "---\n\n"
+    md_content += f"*Transcrito automáticamente con Whisper Large v3*  \n"
+    md_content += f"*Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n"
+    
+    # Guardar archivo
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    
+    print(f"✅ Transcripción guardada en: {output_path}")
+    print(f"📄 Total caracteres: {len(full_text)}")
+    print(f"📊 Segmentos: {len(transcripts)}")
+    print(f"⏱️  Duración: {duration_mins}m {duration_secs}s")
+
 def main():
     load_env()
     
@@ -228,9 +296,10 @@ def main():
     
     asr_service = ASRService(auth)
     
-    # Variables para estadísticas
+    # Variables para estadísticas y transcripciones
     segment_count = 0
     start_time = datetime.now()
+    all_transcripts = []  # Lista de tuplas (timestamp, texto)
     
     try:
         while True:
@@ -262,6 +331,8 @@ def main():
             # Mostrar resultado
             if transcript:
                 print(f"\n💬 {transcript}\n")
+                # Guardar transcripción con timestamp
+                all_transcripts.append((datetime.now(), transcript))
             else:
                 print(f"\n🔇 (Silencio o audio no reconocible)\n")
     
@@ -269,6 +340,8 @@ def main():
         print("\n")
         print("=" * 60)
         print("🛑 Transcripción detenida")
+        print("=" * 60)
+        print()
         
         # Mostrar estadísticas
         duration = (datetime.now() - start_time).total_seconds()
@@ -277,7 +350,16 @@ def main():
         
         print(f"📊 Estadísticas:")
         print(f"   - Segmentos procesados: {segment_count}")
+        print(f"   - Segmentos con texto: {len(all_transcripts)}")
         print(f"   - Duración total: {duration_mins}m {duration_secs}s")
+        print()
+        
+        # Guardar a markdown
+        if all_transcripts:
+            print("💾 Guardando transcripción...")
+            save_transcription_to_markdown(all_transcripts)
+        else:
+            print("⚠️  No hay transcripciones para guardar")
         print()
     
     except Exception as e:
