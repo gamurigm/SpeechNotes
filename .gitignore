@@ -122,3 +122,22 @@ node_modules/
 # !/check_wav.py
 # !/.gitignore
 # */
+
+# Temp / grabaciones
+*.wav
+tmp*.wav
+*.tmp
+
+# Transcripciones generadas (opcional - poner si NO quieres guardarlas en git)
+notas/
+# ó si quieres mantener la carpeta pero ignorar solo los .wav:
+# notas/*.wav
+# notas/*.mp3
+
+# Logs y temporales extras
+*.log
+*.cache
+
+# Editor / OS (ya lo tienes, pero por si falta)
+.vscode/
+.DS_Store
