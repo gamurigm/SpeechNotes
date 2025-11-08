@@ -11,8 +11,39 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+def load_env_file(env_path: str = ".env"):
+    """Load environment variables from .env file"""
+    if not os.path.exists(env_path):
+        return False
+    
+    with open(env_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if not line or line.startswith('#'):
+                continue
+            
+            # Parse KEY=VALUE
+            if '=' in line:
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                # Remove quotes if present
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                elif value.startswith("'") and value.endswith("'"):
+                    value = value[1:-1]
+                
+                os.environ[key] = value
+    
+    return True
+
 def transcribe_audio(audio_file: str, language: str = "es") -> dict:
     """Transcribe audio file using Whisper API"""
+    
+    # Load .env file automatically
+    if not load_env_file():
+        print("⚠️  Advertencia: Archivo .env no encontrado")
     
     # Load environment variables
     api_key = os.getenv("API_KEY")
@@ -20,9 +51,11 @@ def transcribe_audio(audio_file: str, language: str = "es") -> dict:
     function_id = os.getenv("RIVA_FUNCTION_ID_WHISPER")
     
     if not all([api_key, server, function_id]):
-        print("❌ Error: Variables de entorno no configuradas")
-        print("Ejecuta primero:")
-        print('  Get-Content .\\.env | ForEach-Object { ... }')
+        print("❌ Error: Variables de entorno no configuradas en .env")
+        print("Verifica que el archivo .env contenga:")
+        print("  API_KEY=tu_api_key")
+        print("  RIVA_SERVER=tu_servidor")
+        print("  RIVA_FUNCTION_ID_WHISPER=tu_function_id")
         sys.exit(1)
     
     # Build command - use sys.executable to use the same Python as current script
@@ -42,20 +75,27 @@ def transcribe_audio(audio_file: str, language: str = "es") -> dict:
     
     # Execute transcription
     try:
+        # Forzar UTF-8 en el subproceso para Windows
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
+        
         result = subprocess.run(
             cmd,
             capture_output=True,
-            text=True,
-            encoding='utf-8',
-            errors='replace'  # Replace invalid UTF-8 chars instead of crashing
+            text=False,  # Get bytes instead of text
+            env=env
         )
         
         if result.returncode != 0:
-            print(f"❌ Error en transcripción: {result.stderr}")
+            stderr_text = result.stderr.decode('utf-8', errors='replace')
+            print(f"❌ Error en transcripción: {stderr_text}")
             sys.exit(1)
         
+        # Decode output with proper UTF-8 handling
+        stdout_text = result.stdout.decode('utf-8', errors='ignore')
+        
         # Parse JSON output (the script outputs JSON + final transcript)
-        lines = result.stdout.strip().split('\n')
+        lines = stdout_text.strip().split('\n')
         
         # Find JSON part
         json_start = -1
@@ -113,7 +153,7 @@ def save_to_markdown(data: dict, output_file: str = None):
     duration_mins = int(audio_duration / 60)
     duration_secs = int(audio_duration % 60)
     
-    # Build markdown content
+    # Build markdown content (sin segmentos por tiempo)
     md_content = f"""# Transcripción: {audio_path.name}
 
 ## 📋 Metadata
@@ -121,7 +161,6 @@ def save_to_markdown(data: dict, output_file: str = None):
 - **Archivo de audio:** `{audio_path.name}`
 - **Idioma:** {data["language"]}
 - **Duración:** {duration_mins}m {duration_secs}s
-- **Segmentos:** {len(data["results"])}
 
 ---
 
@@ -131,29 +170,12 @@ def save_to_markdown(data: dict, output_file: str = None):
 
 ---
 
-## 🔍 Segmentos por Tiempo
-
-"""
-    
-    # Add segments (every 30 seconds)
-    for i, result in enumerate(data["results"]):
-        if "alternatives" in result and result["alternatives"]:
-            transcript_segment = result["alternatives"][0].get("transcript", "")
-            audio_time = result.get("audioProcessed", 0)
-            mins = int(audio_time / 60)
-            secs = int(audio_time % 60)
-            
-            md_content += f"### [{mins:02d}:{secs:02d}]\n\n"
-            md_content += f"{transcript_segment}\n\n"
-    
-    md_content += f"""---
-
 *Transcrito automáticamente con Whisper Large v3*  
 *Generado: {timestamp}*
 """
     
-    # Save to file
-    with open(output_path, 'w', encoding='utf-8') as f:
+    # Save to file with BOM for proper Windows encoding
+    with open(output_path, 'w', encoding='utf-8-sig') as f:
         f.write(md_content)
     
     print(f"\n✅ Transcripción guardada en: {output_path}")
