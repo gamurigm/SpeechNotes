@@ -70,18 +70,100 @@ python -m src.gui.vad_gui
 ```
 Guarda en `.vad_config.json` (se ignora en Git).
 
-## 🧩 Notas técnicas esenciales
-- VAD: `voice_threshold` / `silence_threshold` (se pueden calibrar o editar con la GUI).
-- Grabación por chunks: `--chunk-duration N` graba fragmentos fijos de N segundos.
-- Salida: archivos `.md` en la carpeta `notas/` (codificación utf-8-sig).
+# SpeechNotes — Transcribe audio a Markdown ✨🎧
+
+Un pequeño toolkit para convertir audio (archivos o micrófono) en notas Markdown legibles y con metadatos.
+
+Principio: fácil de usar, configurable y pensado para trabajar en entornos con ruido.
+
+---
+
+## 🚀 Inicio rápido (3 pasos)
+
+1) Crear entorno e instalar dependencias:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r python-clients/requirements.txt
+```
+
+2) Configurar credenciales (NVIDIA Riva):
+
+```powershell
+copy config\.env.example .env
+notepad .env
+# Rellena API_KEY, RIVA_SERVER y RIVA_FUNCTION_ID_WHISPER
+```
+
+3) Transcribir (archivo o micrófono):
+
+```powershell
+# Archivo de audio
+python src/cli/file.py audio/mi_audio.wav es
+
+# Tiempo real (VAD)
+python src/cli/realtime.py
+
+# Tiempo real: grabar chunks fijos (ej. 30 s)
+python src/cli/realtime.py --chunk-duration 30
+
+# Calibración interactiva (opcional)
+python src/cli/realtime.py --calibrate
+```
+
+---
+
+## 🎛️ Ajustes rápidos
+
+- Edita umbrales VAD con la GUI mínima (Tkinter):
+
+```powershell
+python -m src.gui.vad_gui
+```
+
+La GUI guarda en `.vad_config.json` en la raíz (está en `.gitignore`).
+
+---
+
+## � Qué genera
+
+- Archivos Markdown en `notas/` con encabezado + metadatos (fecha, duración, idioma).
+- Codificación: `utf-8-sig` para compatibilidad con Windows.
+
+---
+
+## 🛠️ Notas técnicas (breve)
+
+- VAD: el sistema usa `voice_threshold` y `silence_threshold` para cortar segmentos.
+- Si las transcripciones salen fragmentadas, usa `--chunk-duration` para obtener fragmentos más largos.
+- `python-clients/` contiene el cliente Riva y los protobufs. Si no están los archivos `.proto` en `python-clients/common/`, ejecuta:
+
+```powershell
+cd python-clients
+git submodule update --init --remote --recursive
+pip install -r requirements.txt
+pip install .
+```
+
+---
 
 ## 🔒 Seguridad
-- No subas tu `.env` ni las notas. `.gitignore` ya incluye `notas/` y `.vad_config.json`.
 
-## 🛠️ Estructura (rápida)
-- `src/core/` — configuración y cliente Riva
-- `src/audio/` — captura, VAD y calibración
-- `src/transcription/` — formateo y servicios
-- `src/cli/` — scripts de uso: `file.py`, `realtime.py`, etc.
-- `src/gui/` — GUI mínima para thresholds
+- No subas `.env` ni las notas personales al repositorio. `notas/` y `.vad_config.json` están en `.gitignore`.
+
+---
+
+## 📁 Estructura mínima
+
+- `src/cli/` — comandos de usuario (`file.py`, `realtime.py`, ...)
+- `src/audio/` — grabación, VAD, calibrador
+- `src/transcription/` — formateadores y servicio
+- `src/gui/` — GUI para umbrales
+
+---
+
+¿Quieres que añada un ejemplo de `.md` generado o badges (Python/CI)?
+
+_Última actualización: Nov 2025_
 
