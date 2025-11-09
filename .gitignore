@@ -164,3 +164,15 @@ notas/
 # Editor / OS (ya lo tienes, pero por si falta)
 .vscode/
 .DS_Store
+
+# Ignore all Markdown files except the root README.md
+*.md
+!/README.md
+
+# ASR mock demo and test scripts (temporary/development files)
+scripts/asr/README_mock_demo.md
+scripts/asr/README_simple_demo.md
+scripts/asr/mock_streaming_demo.py
+scripts/asr/simple_streaming_demo.py
+scripts/asr/test_mic_with_mock.py
+scripts/asr/transcribe_mic_to_markdown.py
