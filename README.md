@@ -85,12 +85,3 @@ Guarda en `.vad_config.json` (se ignora en Git).
 - `src/cli/` — scripts de uso: `file.py`, `realtime.py`, etc.
 - `src/gui/` — GUI mínima para thresholds
 
-## � Siguientes pasos sugeridos
-- Ajusta thresholds con la GUI si tienes ruido de fondo.
-- Usa `--chunk-duration 30` si quieres transcripciones largas (ej. reuniones).
-
-¿Quieres que añada una sección de ejemplos o un badge con instrucciones rápidas al principio? ✨
-
----
-_Versión ligera del README — creada para ser clara y útil. Última actualización: Nov 2025_
-
