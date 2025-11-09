@@ -6,7 +6,7 @@ Sistema modular de transcripción de audio a texto usando NVIDIA Riva (Whisper L
 
 
 
-## 🏗️ Arquitectura## Características Principales
+## 🏗️ Arquitectura - Características Principales
 
 
 
