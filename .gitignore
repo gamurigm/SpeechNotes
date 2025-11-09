@@ -134,6 +134,9 @@ venv/
 # Generated notes and recordings (optional - ignored by default)
 notas/
 
+# Saved VAD GUI/config (do not commit local thresholds)
+.vad_config.json
+
 # Temporary audio files
 *.wav
 tmp*.wav
