@@ -1,115 +1,176 @@
 #!/usr/bin/env python3
 """
-Real-time transcription CLI
-Transcribes microphone input in real-time using streaming
+"Real-time" transcription CLI using offline chunks (VAD).
+This script simulates real-time transcription by recording audio segments
+when voice is detected and transcribing them one by one.
 """
 import sys
 from pathlib import Path
+from datetime import datetime
+import argparse
 
-# Add project root and python-clients to path
+# Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(project_root / "python-clients"))
 
 from src.core import ConfigManager
-from riva.client import Auth, ASRService, AudioEncoding, StreamingRecognitionConfig, RecognitionConfig
-import riva.client.audio_io as audio_io
+from src.core.riva_client import RivaClientFactory
+from src.audio import AudioConfig, VADRecorder, VADConfig, MicrophoneCalibrator, ContinuousRecorder
+from src.transcription import FormatterFactory, OutputWriter, TranscriptionService
+import json
 
-
-def main():
-    print("🎤 Transcripción en Tiempo Real con Whisper")
-    print("=" * 60)
+def calibrate_microphone(audio_config: AudioConfig) -> VADConfig:
+    """Realiza la calibración del micrófono y devuelve la configuración VAD."""
+    print("\n" + "="*25 + " CALIBRACIÓN " + "="*25)
+    print("Vamos a calibrar el micrófono para optimizar la detección de voz.")
     
     try:
-        # Load configuration
+        with MicrophoneCalibrator(audio_config) as calibrator:
+            input("   1. Presiona Enter y guarda silencio durante 5 segundos...")
+            print("      🤫 Midiendo ruido de fondo...")
+            noise_levels = calibrator._measure_levels(duration=5, phase_name="SILENCIO")
+            print("      ✅ Ruido medido.\n")
+
+            input("   2. Presiona Enter y habla con normalidad durante 5 segundos...")
+            print("      🗣️  Midiendo nivel de voz...")
+            voice_levels = calibrator._measure_levels(duration=5, phase_name="HABLA")
+            print("      ✅ Voz medida.\n")
+
+            vad_config = calibrator.calculate_thresholds(noise_levels, voice_levels)
+            
+            print("   🎉 ¡Calibración completada!")
+            print(f"      - Umbral de voz recomendado: {vad_config.voice_threshold}")
+            print(f"      - Umbral de silencio recomendado: {vad_config.silence_threshold}")
+            print("=" * 60 + "\n")
+            return vad_config
+
+    except Exception as e:
+        print(f"❌ Error durante la calibración: {e}")
+        print("   Usando configuración VAD por defecto.")
+        return VADConfig()
+
+def main():
+    print("🎤 Transcripción por Segmentos (Simulando Tiempo Real)")
+    print("=" * 60)
+
+    try:
+        # --- 1. Configuration ---
         config_manager = ConfigManager()
         riva_config = config_manager.get_riva_config()
-        
+
         print(f"📡 Servidor: {riva_config.server}")
-        print(f"🔑 API Key: {riva_config.api_key[:20]}...")
-        print(f"⚡ Function ID: {riva_config.function_id}")
-        print()
-        print("🎙️  Habla ahora... (Ctrl+C para detener)")
+        print("⏱️  Modo: Activación por voz (VAD) - Offline Chunks")
+        print("🎙️  Habla normalmente, el sistema grabará y transcribirá en pausas.")
+        print("   (Presiona Ctrl+C para detener y guardar la sesión)")
         print("=" * 60)
-        print()
+
+        # --- 2. Service Initialization ---
+        transcriber = RivaClientFactory.create_transcriber(riva_config)
         
-        # Create authentication and ASR service
-        auth = Auth(
-            uri=riva_config.server,
-            use_ssl=True,
-            metadata_args=[
-                ["function-id", riva_config.function_id],
-                ["authorization", f"Bearer {riva_config.api_key}"]
-            ]
-        )
-        
-        asr_service = ASRService(auth)
-        
-        # Audio configuration - use Riva objects correctly
-        config = StreamingRecognitionConfig(
-            config=RecognitionConfig(
-                encoding=AudioEncoding.LINEAR_PCM,
-                sample_rate_hertz=16000,
-                language_code="es",
-                max_alternatives=1,
-                enable_automatic_punctuation=True,
-                verbatim_transcripts=True,
-                audio_channel_count=1,
-            ),
-            interim_results=True,
-        )
-        
-        print("🎤 Abriendo micrófono...")
-        
-        # Callback to process responses
-        def print_response(response):
-            if not response.results:
-                return
+        # VAD and Audio configurations
+        audio_config = AudioConfig()
+
+        # Parse CLI args to decide whether to run calibration or fixed-duration chunks
+        parser = argparse.ArgumentParser(add_help=False)
+        parser.add_argument('--calibrate', action='store_true', help='Run microphone calibration interactively before starting')
+        parser.add_argument('--chunk-duration', type=int, default=0, help='If >0, record fixed-duration chunks (seconds) instead of VAD')
+        args, _ = parser.parse_known_args()
+
+        if args.calibrate:
+            # Calibrate microphone for VAD
+            vad_config = calibrate_microphone(audio_config)
+            # Update other VAD parameters if needed
+            vad_config.silence_duration = 2.0
+            vad_config.min_voice_duration = 0.4
+        else:
+            print("⚙️ Calibración omitida. Usando configuración VAD por defecto o guardada.")
+            vad_config = VADConfig()
+            # Try to load saved VAD config if present
+            vad_file = project_root / '.vad_config.json'
+            if vad_file.exists():
+                try:
+                    data = json.loads(vad_file.read_text())
+                    vt = int(data.get('voice_threshold', vad_config.voice_threshold))
+                    st = int(data.get('silence_threshold', vad_config.silence_threshold))
+                    vad_config.voice_threshold = vt
+                    vad_config.silence_threshold = st
+                    print(f"   Umbrales cargados desde {vad_file}: voice={vt}, silence={st}")
+                except Exception as e:
+                    print(f"   ⚠️ No se pudo leer {vad_file}: {e}")
+
+            # Keep the tuned runtime silence and min voice durations
+            vad_config.silence_duration = 2.0
+            vad_config.min_voice_duration = 0.4
+            print(f"   Umbral de voz: {vad_config.voice_threshold}, Umbral de silencio: {vad_config.silence_threshold}")
+
+        all_transcripts = []
+        segment_count = 0
+
+        # --- 3. Main Loop ---
+        while True:
+            segment_count += 1
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            print(f"\n[{timestamp}] Segmento #{segment_count}: Esperando voz...")
+
+            # If user requested fixed-duration chunks, use ContinuousRecorder
+            if args.chunk_duration and args.chunk_duration > 0:
+                print(f"   ⏱️  Grabando chunk fijo de {args.chunk_duration}s...")
+                with ContinuousRecorder(audio_config) as recorder:
+                    # stop_callback receives number of frames appended
+                    def stop_cb(frames_count):
+                        elapsed = frames_count * audio_config.chunk_size / audio_config.sample_rate
+                        return elapsed >= args.chunk_duration
+
+                    audio_data = recorder.record(stop_callback=stop_cb)
+            else:
+                # Record a chunk using VAD
+                with VADRecorder(audio_config, vad_config) as recorder:
+                    audio_data = recorder.record(
+                        on_voice_detected=lambda: print("   🗣️  Voz detectada, grabando..."),
+                    )
+
+            if audio_data is None:
+                print("   🔇 No se grabó audio válido, reintentando...")
+                continue
+
+            # Transcribe the recorded chunk
+            print("   📝 Transcribiendo chunk...", end='', flush=True)
+            transcript = transcriber.offline_transcribe(audio_data, language="es")
+            print(" ✅")
+
+            if transcript:
+                print(f"   💬 {transcript}")
+                all_transcripts.append((datetime.now(), transcript))
+            else:
+                print("   🔇 (Silencio o audio no reconocible)")
+
+    except KeyboardInterrupt:
+        print("\n\n" + "=" * 60)
+        print("🛑 Transcripción Detenida por el Usuario")
+        print("=" * 60)
+        if all_transcripts:
+            print("\n💾 Guardando transcripción completa...")
             
-            for result in response.results:
-                if not result.alternatives:
-                    continue
-                    
-                transcript = result.alternatives[0].transcript
-                
-                if result.is_final:
-                    print(f"✅ {transcript}")
-                else:
-                    print(f"⏳ {transcript}", end='\r')
-        
-        # Start streaming with Riva's MicrophoneStream
-        with audio_io.MicrophoneStream(
-            rate=16000,
-            chunk=1600,
-            device=None
-        ) as audio_stream:
-            print("✅ Micrófono activo")
-            print()
-            
-            responses = asr_service.streaming_response_generator(
-                audio_chunks=audio_stream,
-                streaming_config=config
+            # Use Formatter and Writer to save the final file
+            segmented_formatter = FormatterFactory.create('segmented_markdown')
+            writer = OutputWriter()
+            service = TranscriptionService(transcriber, segmented_formatter, writer)
+
+            output_path = service.transcribe_segments(
+                all_transcripts, 
+                method="VAD (Real-time simulation)"
             )
             
-            for response in responses:
-                print_response(response)
-    
-    except KeyboardInterrupt:
-        print("\n")
-        print("🛑 Transcripción detenida")
-    except FileNotFoundError as e:
-        print(f"❌ Error: {e}")
-        print("Crea un archivo .env con tus credenciales")
-        sys.exit(1)
-    except ValueError as e:
-        print(f"❌ Error de configuración: {e}")
+            print(f"✅ Transcripción guardada en: {output_path}")
+        else:
+            print("⚠️ No hay transcripciones para guardar.")
+
+    except (FileNotFoundError, ValueError) as e:
+        print(f"\n❌ Error de Configuración: {e}")
+        print("   Asegúrate de que tu archivo .env existe y es correcto.")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ Error: {e}")
-        print("\nVerifica:")
-        print("  1. Tu API_KEY en .env es válida")
-        print("  2. Tu micrófono está conectado")
-        print("  3. Tienes conexión a internet")
+        print(f"\n❌ Error Inesperado: {e}")
         sys.exit(1)
 
 
