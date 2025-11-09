@@ -1,4 +1,4 @@
-# SpeechNotes - Sistema de Transcripción Automática# Sistema de Transcripción Automática de Audio a Markdown
+# Sistema de Transcripción Automática de Audio a Markdown
 
 
 
