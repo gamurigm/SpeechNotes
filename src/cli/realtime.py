@@ -6,23 +6,14 @@ Transcribes microphone input in real-time using streaming
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root and python-clients to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "python-clients"))
 
-from src import (
-    ConfigManager,
-    RivaClientFactory,
-    AudioConfig,
-    MicrophoneStream
-)
-
-
-def print_response(transcript: str, is_final: bool):
-    """Print transcription response"""
-    if is_final:
-        print(f"✅ {transcript}")
-    else:
-        print(f"⏳ {transcript}", end='\r')
+from src.core import ConfigManager
+from riva.client import Auth, ASRService, AudioEncoding, StreamingRecognitionConfig, RecognitionConfig
+import riva.client.audio_io as audio_io
 
 
 def main():
@@ -42,21 +33,66 @@ def main():
         print("=" * 60)
         print()
         
-        # Create transcriber
-        transcriber = RivaClientFactory.create_transcriber(riva_config)
+        # Create authentication and ASR service
+        auth = Auth(
+            uri=riva_config.server,
+            use_ssl=True,
+            metadata_args=[
+                ["function-id", riva_config.function_id],
+                ["authorization", f"Bearer {riva_config.api_key}"]
+            ]
+        )
         
-        # Create audio stream
-        audio_config = AudioConfig(sample_rate=16000, chunk_size=1600)
+        asr_service = ASRService(auth)
         
-        with MicrophoneStream(audio_config) as mic_stream:
-            print("✅ Micrófono activo\n")
+        # Audio configuration - use Riva objects correctly
+        config = StreamingRecognitionConfig(
+            config=RecognitionConfig(
+                encoding=AudioEncoding.LINEAR_PCM,
+                sample_rate_hertz=16000,
+                language_code="es",
+                max_alternatives=1,
+                enable_automatic_punctuation=True,
+                verbatim_transcripts=True,
+                audio_channel_count=1,
+            ),
+            interim_results=True,
+        )
+        
+        print("🎤 Abriendo micrófono...")
+        
+        # Callback to process responses
+        def print_response(response):
+            if not response.results:
+                return
             
-            # Stream transcription
-            for transcript, is_final in transcriber.streaming_transcribe(
-                mic_stream.record(),
-                language="es"
-            ):
-                print_response(transcript, is_final)
+            for result in response.results:
+                if not result.alternatives:
+                    continue
+                    
+                transcript = result.alternatives[0].transcript
+                
+                if result.is_final:
+                    print(f"✅ {transcript}")
+                else:
+                    print(f"⏳ {transcript}", end='\r')
+        
+        # Start streaming with Riva's MicrophoneStream
+        with audio_io.MicrophoneStream(
+            rate=16000,
+            chunk=1600,
+            device=None
+        ) as audio_stream:
+            print("✅ Micrófono activo")
+            print()
+            
+            responses = asr_service.streaming_response_generator(
+                audio_chunks=audio_stream,
+                streaming_config=config
+            )
+            
+            for response in responses:
+                print_response(response)
     
     except KeyboardInterrupt:
         print("\n")
