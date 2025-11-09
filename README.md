@@ -146,24 +146,4 @@ pip install -r requirements.txt
 pip install .
 ```
 
----
-
-## 🔒 Seguridad
-
-- No subas `.env` ni las notas personales al repositorio. `notas/` y `.vad_config.json` están en `.gitignore`.
-
----
-
-## 📁 Estructura mínima
-
-- `src/cli/` — comandos de usuario (`file.py`, `realtime.py`, ...)
-- `src/audio/` — grabación, VAD, calibrador
-- `src/transcription/` — formateadores y servicio
-- `src/gui/` — GUI para umbrales
-
----
-
-¿Quieres que añada un ejemplo de `.md` generado o badges (Python/CI)?
-
-_Última actualización: Nov 2025_
 
