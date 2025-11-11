@@ -1,0 +1,22 @@
+@startuml
+[*] --> Idle
+Idle --> WaitingForVoice: start_recording()
+
+state WaitingForVoice {
+  [*] --> Monitoring
+  Monitoring: on_chunk: volume = get_volume()
+  Monitoring --> VoiceDetected: volume > voice_threshold
+}
+
+VoiceDetected --> Recording: [true]
+Recording: on_chunk: append_frame()
+Recording --> CheckingForSilence: volume < silence_threshold
+Recording --> Recording: volume >= silence_threshold
+
+CheckingForSilence: on_chunk: silence_count++
+CheckingForSilence --> Recording: volume > silence_threshold
+CheckingForSilence --> Finalizing: silence_count >= silence_duration
+
+Finalizing --> Done: encode_to_wav(frames)
+Done --> [*]
+@enduml

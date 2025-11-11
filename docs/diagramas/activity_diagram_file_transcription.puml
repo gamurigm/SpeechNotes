@@ -1,0 +1,12 @@
+@startuml
+start
+:Usuario ejecuta el script;
+:Leer archivo de audio;
+:Crear cliente Riva;
+:Enviar datos de audio al servidor Riva;
+:Esperar respuesta de transcripción;
+:Recibir texto transcrito;
+:Formatear texto a Markdown;
+:Escribir en archivo de salida;
+stop
+@enduml

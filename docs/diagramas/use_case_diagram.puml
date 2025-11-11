@@ -1,0 +1,16 @@
+@startuml
+left to right direction
+actor User
+
+rectangle "Sistema de Transcripción" {
+  User -- (Transcribir desde archivo)
+  User -- (Transcribir en tiempo real)
+  User -- (Grabar y transcribir)
+  User -- (Calibrar micrófono)
+  User -- (Configurar VAD via GUI)
+
+  (Transcribir desde archivo) .> (Usar cliente Riva ASR): includes
+  (Transcribir en tiempo real) .> (Usar cliente Riva ASR): includes
+  (Grabar y transcribir) .> (Usar cliente Riva ASR): includes
+}
+@enduml

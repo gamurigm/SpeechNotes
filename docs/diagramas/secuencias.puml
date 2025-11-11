@@ -1,0 +1,24 @@
+@startuml
+start
+:Verificar dependencias (grpcio-tools, protobuf,...);
+if (¿modo editable?) then (no)
+  :Instalar paquete o añadir PYTHONPATH;
+else (sí)
+  :pip install -e .;
+endif
+:Parsear argumentos (--input-file, --server, --model);
+:Leer archivo de audio;
+:Inicializar cliente Riva (crea canal gRPC);
+fork
+  :Stream de audio (enviar chunks);
+fork again
+  :Escuchar respuestas del servidor;
+end fork
+if (Error de conexión?) then (sí)
+  :Mostrar error y finalizar;
+  stop
+endif
+:Recibir transcripción final;
+:Guardar/mostrar salida;
+stop
+@enduml

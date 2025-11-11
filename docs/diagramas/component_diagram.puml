@@ -1,0 +1,14 @@
+@startuml
+[CLI] -down-> [Transcription Service]
+[Transcription Service] -down-> [Audio Capture]
+[Transcription Service] -down-> [Riva Transcriber]
+[Transcription Service] -down-> [Output Formatter]
+
+[Riva Transcriber] -right-> [Riva Python Client SDK]
+
+[Riva Python Client SDK] ..> [gRPC]
+
+database "Riva ASR Server\n(Docker Container)" {
+  [gRPC]
+}
+@enduml
