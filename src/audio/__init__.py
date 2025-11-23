@@ -5,6 +5,7 @@ from .capture import (
     MicrophoneStream,
     ContinuousRecorder,
     VADRecorder,
+    BackgroundRecorder,
     VADConfig,
     MicrophoneCalibrator
 )
@@ -15,6 +16,7 @@ __all__ = [
     'MicrophoneStream',
     'ContinuousRecorder',
     'VADRecorder',
+    'BackgroundRecorder',
     'VADConfig',
     'MicrophoneCalibrator'
 ]

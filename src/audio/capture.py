@@ -6,6 +6,8 @@ import pyaudio
 import wave
 import numpy as np
 import tempfile
+import threading
+import os
 from abc import ABC, abstractmethod
 from typing import Optional, Generator
 from dataclasses import dataclass
@@ -18,6 +20,8 @@ class AudioConfig:
     channels: int = 1
     chunk_size: int = 1024
     format: int = pyaudio.paInt16
+    # Optional input device index (useful to capture loopback / stereo mix)
+    input_device_index: int = None
 
 
 class AudioRecorder(ABC):
@@ -81,13 +85,17 @@ class MicrophoneStream(AudioRecorder):
         Yields:
             Audio chunk bytes
         """
-        self.stream = self.audio.open(
+        open_kwargs = dict(
             format=self.config.format,
             channels=self.config.channels,
             rate=self.config.sample_rate,
             input=True,
-            frames_per_buffer=self.config.chunk_size
+            frames_per_buffer=self.config.chunk_size,
         )
+        if getattr(self.config, 'input_device_index', None) is not None:
+            open_kwargs['input_device_index'] = self.config.input_device_index
+
+        self.stream = self.audio.open(**open_kwargs)
         
         try:
             while True:
@@ -114,13 +122,17 @@ class ContinuousRecorder(AudioRecorder):
         Returns:
             Complete audio as WAV bytes
         """
-        stream = self.audio.open(
+        open_kwargs = dict(
             format=self.config.format,
             channels=self.config.channels,
             rate=self.config.sample_rate,
             input=True,
-            frames_per_buffer=self.config.chunk_size
+            frames_per_buffer=self.config.chunk_size,
         )
+        if getattr(self.config, 'input_device_index', None) is not None:
+            open_kwargs['input_device_index'] = self.config.input_device_index
+
+        stream = self.audio.open(**open_kwargs)
         
         frames = []
         
@@ -137,6 +149,96 @@ class ContinuousRecorder(AudioRecorder):
             stream.close()
         
         return self._frames_to_wav(frames)
+
+
+class BackgroundRecorder(AudioRecorder):
+    """
+    Background recorder that captures audio until stop() is called.
+    Useful to record everything that is playing (if input_device_index points
+    to a loopback/stereo-mix device) or the default input otherwise.
+    """
+
+    def __init__(self, config: AudioConfig = None):
+        super().__init__(config)
+        self._frames = []
+        self._thread = None
+        self._stop_event = threading.Event()
+        self._stream = None
+
+    def _worker(self):
+        open_kwargs = dict(
+            format=self.config.format,
+            channels=self.config.channels,
+            rate=self.config.sample_rate,
+            input=True,
+            frames_per_buffer=self.config.chunk_size,
+        )
+        if getattr(self.config, 'input_device_index', None) is not None:
+            open_kwargs['input_device_index'] = self.config.input_device_index
+
+        self._stream = self.audio.open(**open_kwargs)
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    data = self._stream.read(self.config.chunk_size)
+                except Exception:
+                    # Ignore intermittent read errors (e.g., overflow)
+                    continue
+                self._frames.append(data)
+        finally:
+            if self._stream:
+                try:
+                    self._stream.stop_stream()
+                    self._stream.close()
+                except Exception:
+                    pass
+
+    def start(self):
+        """Start background recording."""
+        if self._thread and self._thread.is_alive():
+            return
+        self._stop_event.clear()
+        self._frames = []
+        self._thread = threading.Thread(target=self._worker, daemon=True)
+        self._thread.start()
+
+    def stop_and_save(self, out_path: str) -> None:
+        """Stop recording and save WAV to out_path."""
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=5.0)
+
+        # Write WAV file
+        try:
+            with wave.open(out_path, 'wb') as wf:
+                wf.setnchannels(self.config.channels)
+                wf.setsampwidth(self.audio.get_sample_size(self.config.format))
+                wf.setframerate(self.config.sample_rate)
+                wf.writeframes(b''.join(self._frames))
+        except Exception as e:
+            raise
+
+    def record(self) -> bytes:
+        """
+        Blocking record method to satisfy AudioRecorder abstract API.
+
+        This will block until stop_event is set (i.e., until stop_and_save
+        or an external setter calls stop). After stopping, it returns the WAV
+        bytes of the recorded session.
+        """
+        # If not already recording, start
+        if not (self._thread and self._thread.is_alive()):
+            self.start()
+
+        # Wait until stopped
+        self._stop_event.wait()
+
+        # Ensure thread joined
+        if self._thread:
+            self._thread.join(timeout=5.0)
+
+        # Return WAV bytes using helper
+        return self._frames_to_wav(self._frames)
 
 
 @dataclass
@@ -171,13 +273,17 @@ class VADRecorder(AudioRecorder):
         Returns:
             Recorded audio as WAV bytes, or None if no voice detected
         """
-        stream = self.audio.open(
+        open_kwargs = dict(
             format=self.config.format,
             channels=self.config.channels,
             rate=self.config.sample_rate,
             input=True,
-            frames_per_buffer=self.config.chunk_size
+            frames_per_buffer=self.config.chunk_size,
         )
+        if getattr(self.config, 'input_device_index', None) is not None:
+            open_kwargs['input_device_index'] = self.config.input_device_index
+
+        stream = self.audio.open(**open_kwargs)
         
         try:
             # Wait for voice
@@ -267,13 +373,17 @@ class MicrophoneCalibrator:
         self.stream = None
 
     def __enter__(self):
-        self.stream = self.audio.open(
+        open_kwargs = dict(
             format=self.config.format,
             channels=self.config.channels,
             rate=self.config.sample_rate,
             input=True,
-            frames_per_buffer=self.config.chunk_size
+            frames_per_buffer=self.config.chunk_size,
         )
+        if getattr(self.config, 'input_device_index', None) is not None:
+            open_kwargs['input_device_index'] = self.config.input_device_index
+
+        self.stream = self.audio.open(**open_kwargs)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

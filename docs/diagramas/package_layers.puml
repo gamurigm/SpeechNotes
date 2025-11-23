@@ -1,0 +1,39 @@
+@startuml package_layers
+title Capas / Paquetes - SpeechNotes
+
+package "Presentation" {
+  [CLI: src/cli/*]
+  [GUI: src/gui/*]
+}
+
+package "Audio" {
+  [Audio Capture: src/audio/capture.py]
+}
+
+package "Core" {
+  [Riva Client: src/core/riva_client.py]
+}
+
+package "Transcription" {
+  [Service: src/transcription/service.py]
+  [Formatters: src/transcription/formatters.py]
+}
+
+package "Data & Tools" {
+  [Notas: notas/]
+  [Legacy scripts: legacy/]
+  [Python clients: python-clients/]
+}
+
+"Presentation" --> "Audio" : pide audio
+"Audio" --> "Core" : streams
+"Core" --> "Transcription" : entrega texto
+"Transcription" --> "Data & Tools" : guarda / exporta
+
+note top
+  Dependencias principales:
+  - CLI/GUI usan Core y Transcription
+  - python-clients contienen implementaciones y utilidades
+end note
+
+@enduml

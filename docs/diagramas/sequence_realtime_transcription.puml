@@ -1,0 +1,29 @@
+@startuml sequence_realtime_transcription
+title Secuencia: Transcripción Realtime - SpeechNotes
+
+actor Usuario as User
+participant "CLI (realtime.py)" as CLI
+participant "Audio Capture\n(src/audio/capture.py)" as Capture
+participant "Riva Client\n(src/core/riva_client.py)" as RivaClient
+participant "Transcription Service\n(src/transcription/service.py)" as TransService
+participant "Formatters\n(src/transcription/formatters.py)" as Formatters
+participant "Notas / Archivo" as Notes
+
+User -> CLI : Inicia sesión / comando realtime
+CLI -> Capture : Start streaming audio
+Capture -> RivaClient : Envía chunks (stream)
+RivaClient -> TransService : Emite resultados parciales
+TransService -> Formatters : Formatea texto (markdown, puntuación)
+Formatters -> Notes : Escribe/actualiza archivo de notas
+Notes --> CLI : Confirma guardado
+CLI -> User : Muestra transcripción en consola / GUI
+
+note right of RivaClient
+  Maneja reconexiones y auth
+end note
+
+note left of Formatters
+  Se aplican reglas locales de puntuación y plantillas de salida
+end note
+
+@enduml

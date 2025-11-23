@@ -15,7 +15,8 @@ sys.path.insert(0, str(project_root))
 
 from src.core import ConfigManager
 from src.core.riva_client import RivaClientFactory
-from src.audio import AudioConfig, VADRecorder, VADConfig, MicrophoneCalibrator, ContinuousRecorder
+from src.audio import AudioConfig, VADRecorder, VADConfig, MicrophoneCalibrator, ContinuousRecorder, BackgroundRecorder
+import tempfile
 from src.transcription import FormatterFactory, OutputWriter, TranscriptionService
 import json
 
@@ -106,6 +107,15 @@ def main():
         all_transcripts = []
         segment_count = 0
 
+        # Start background recording of the whole session (system/mix if device configured)
+        try:
+            bg_recorder = BackgroundRecorder(audio_config)
+            bg_recorder.start()
+            print("   🔴 Grabando sesión completa en background...")
+        except Exception as e:
+            print(f"   ⚠️ No se pudo iniciar grabación en background: {e}")
+            bg_recorder = None
+
         # --- 3. Main Loop ---
         while True:
             segment_count += 1
@@ -164,6 +174,27 @@ def main():
             print(f"✅ Transcripción guardada en: {output_path}")
         else:
             print("⚠️ No hay transcripciones para guardar.")
+
+        # Stop background recorder (if started) and save whole-session WAV
+        try:
+            if bg_recorder:
+                tmp_path = project_root / f"realtime_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+                bg_recorder.stop_and_save(str(tmp_path))
+                print(f"✅ Grabación de sesión guardada en: {tmp_path}")
+
+                # Use the same TranscriptionService flow as file.py to transcribe the full recording
+                try:
+                    file_formatter = FormatterFactory.create('markdown')
+                    file_writer = OutputWriter()
+                    file_service = TranscriptionService(transcriber, file_formatter, file_writer)
+                    print("🎯 Transcribiendo la grabación completa...")
+                    file_output = file_service.transcribe_audio_file(tmp_path, language='es')
+                    print(f"✅ Transcripción de la grabación guardada en: {file_output}")
+                except Exception as e:
+                    print(f"⚠️ Error al transcribir la grabación completa: {e}")
+
+        except Exception as e:
+            print(f"⚠️ Error al detener/guardar la grabación background: {e}")
 
     except (FileNotFoundError, ValueError) as e:
         print(f"\n❌ Error de Configuración: {e}")
