@@ -158,7 +158,7 @@ tmp*.wav
 notas/
 # ó si quieres mantener la carpeta pero ignorar solo los .wav:
 # notas/*.wav
-# notas/*.mp3
+*.mp3
 
 # Logs y temporales extras
 *.log
@@ -171,6 +171,7 @@ notas/
 # Ignore all Markdown files except the root README.md
 *.md
 !/README.md
+!/docs/design_patterns.md
 
 # ASR mock demo and test scripts (temporary/development files)
 scripts/asr/README_mock_demo.md
