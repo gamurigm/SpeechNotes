@@ -9,8 +9,18 @@ from .capture import (
     VADConfig,
     MicrophoneCalibrator
 )
+from .factory import (
+    RecorderType,
+    RecorderFactory,
+    MicrophoneStreamRecorderFactory,
+    VADRecorderFactory,
+    ContinuousRecorderFactory,
+    BackgroundRecorderFactory,
+    AudioRecorderFactoryProvider
+)
 
 __all__ = [
+    # Capture classes
     'AudioConfig',
     'AudioRecorder',
     'MicrophoneStream',
@@ -18,5 +28,13 @@ __all__ = [
     'VADRecorder',
     'BackgroundRecorder',
     'VADConfig',
-    'MicrophoneCalibrator'
+    'MicrophoneCalibrator',
+    # Factory classes
+    'RecorderType',
+    'RecorderFactory',
+    'MicrophoneStreamRecorderFactory',
+    'VADRecorderFactory',
+    'ContinuousRecorderFactory',
+    'BackgroundRecorderFactory',
+    'AudioRecorderFactoryProvider',
 ]

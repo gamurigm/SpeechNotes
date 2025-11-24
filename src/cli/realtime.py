@@ -15,7 +15,13 @@ sys.path.insert(0, str(project_root))
 
 from src.core import ConfigManager
 from src.core.riva_client import RivaClientFactory
-from src.audio import AudioConfig, VADRecorder, VADConfig, MicrophoneCalibrator, ContinuousRecorder, BackgroundRecorder
+from src.audio import (
+    AudioConfig,
+    VADConfig,
+    MicrophoneCalibrator,
+    RecorderType,
+    AudioRecorderFactoryProvider
+)
 import tempfile
 from src.transcription import FormatterFactory, OutputWriter, TranscriptionService
 import json
@@ -109,7 +115,11 @@ def main():
 
         # Start background recording of the whole session (system/mix if device configured)
         try:
-            bg_recorder = BackgroundRecorder(audio_config)
+            # ✨ Factory Method Pattern: Create BackgroundRecorder using factory
+            bg_recorder = AudioRecorderFactoryProvider.create_recorder(
+                RecorderType.BACKGROUND,
+                config=audio_config
+            )
             bg_recorder.start()
             print("   🔴 Grabando sesión completa en background...")
         except Exception as e:
@@ -125,18 +135,32 @@ def main():
             # If user requested fixed-duration chunks, use ContinuousRecorder
             if args.chunk_duration and args.chunk_duration > 0:
                 print(f"   ⏱️  Grabando chunk fijo de {args.chunk_duration}s...")
-                with ContinuousRecorder(audio_config) as recorder:
+                # ✨ Factory Method Pattern: Create ContinuousRecorder using factory
+                recorder = AudioRecorderFactoryProvider.create_recorder(
+                    RecorderType.CONTINUOUS,
+                    config=audio_config
+                )
+                with recorder as rec:
                     # stop_callback receives number of frames appended
                     def stop_cb(frames_count):
                         elapsed = frames_count * audio_config.chunk_size / audio_config.sample_rate
                         return elapsed >= args.chunk_duration
 
-                    audio_data = recorder.record(stop_callback=stop_cb)
+                    audio_data = rec.record(stop_callback=stop_cb)
             else:
-                # Record a chunk using VAD
-                with VADRecorder(audio_config, vad_config) as recorder:
-                    audio_data = recorder.record(
-                        on_voice_detected=lambda: print("   🗣️  Voz detectada, grabando..."),
+                # ✨ Factory Method Pattern: Create VADRecorder using factory
+                recorder = AudioRecorderFactoryProvider.create_recorder(
+                    RecorderType.VAD,
+                    config=audio_config,
+                    vad_config=vad_config
+                )
+                with recorder as rec:
+                    # Callback que se ejecuta cuando detecta voz
+                    def on_voice_detected_callback():
+                        print("   🗣️  Voz detectada, grabando...", flush=True)
+                    
+                    audio_data = rec.record(
+                        on_voice_detected=on_voice_detected_callback,
                     )
 
             if audio_data is None:
@@ -161,17 +185,20 @@ def main():
         if all_transcripts:
             print("\n💾 Guardando transcripción completa...")
             
-            # Use Formatter and Writer to save the final file
-            segmented_formatter = FormatterFactory.create('segmented_markdown')
-            writer = OutputWriter()
-            service = TranscriptionService(transcriber, segmented_formatter, writer)
+            try:
+                # Use Formatter and Writer to save the final file
+                segmented_formatter = FormatterFactory.create('segmented_markdown')
+                writer = OutputWriter()
+                service = TranscriptionService(transcriber, segmented_formatter, writer)
 
-            output_path = service.transcribe_segments(
-                all_transcripts, 
-                method="VAD (Real-time simulation)"
-            )
-            
-            print(f"✅ Transcripción guardada en: {output_path}")
+                output_path = service.transcribe_segments(
+                    all_transcripts, 
+                    method="VAD (Real-time simulation)"
+                )
+                
+                print(f"✅ Transcripción guardada en: {output_path}")
+            except Exception as e:
+                print(f"⚠️ Error al guardar transcripción: {e}")
         else:
             print("⚠️ No hay transcripciones para guardar.")
 
