@@ -45,7 +45,7 @@ classDiagram
     Cliente2 --> ConfigManager : usa (única instancia)
     Cliente3 --> ConfigManager : usa (única instancia)
     
-    note for ConfigManager "Patrón Singleton:\n- Solo existe UNA instancia\n- Acceso global vía get_instance()\n- Variables de clase compartidas"
+    note for ConfigManager "Acceso vía get_instance()"
 ```
 
 ---
