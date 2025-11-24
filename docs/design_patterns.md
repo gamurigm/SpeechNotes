@@ -128,3 +128,4 @@ El **Abstract Factory** puede utilizar internamente **Factory Methods** para cre
 | **Singleton** | `ConfigManager` | Configuración global única. |
 | **Factory Method** | `RecorderFactory` | Creación polimórfica de grabadores de audio. |
 | **Abstract Factory** | `TranscriptionEnvironmentFactory` | Creación de familias de objetos (Transcriber + Recorder + Formatter). |
+    

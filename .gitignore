@@ -168,10 +168,7 @@ notas/
 .vscode/
 .DS_Store
 
-# Ignore all Markdown files except the root README.md
-*.md
-!/README.md
-!/docs/design_patterns.md
+
 
 # ASR mock demo and test scripts (temporary/development files)
 scripts/asr/README_mock_demo.md

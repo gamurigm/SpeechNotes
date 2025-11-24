@@ -1,6 +1,7 @@
 """
-Configuration Manager - Single Responsibility Principle
-Handles all environment configuration loading and validation
+Configuration Manager - Singleton Pattern Implementation
+Garantiza que la clase tenga una única instancia y proporciona un punto de acceso global.
+Según diseño especificado en docs/design_patterns.md
 """
 import os
 from pathlib import Path
@@ -24,19 +25,58 @@ class RivaConfig:
 
 class ConfigManager:
     """
-    Manages application configuration from .env files
-    SRP: Only responsible for loading and validating configuration
+    Singleton Pattern - Configuration Manager
+    
+    Propósito: Garantizar que una clase tenga una única instancia y proporcionar
+    un punto de acceso global a ella.
+    
+    La configuración de la aplicación debe ser consistente y centralizada.
+    Solo existe una instancia de ConfigManager en toda la aplicación.
     """
+    
+    _instance: Optional['ConfigManager'] = None
+    _initialized: bool = False
+    
+    def __new__(cls, env_path: Optional[Path] = None):
+        """
+        Sobrescribe __new__ para controlar la creación de instancias.
+        Solo crea una nueva instancia si no existe una.
+        """
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
     
     def __init__(self, env_path: Optional[Path] = None):
         """
-        Initialize config manager
+        Constructor que solo se ejecuta una vez.
+        Las llamadas subsecuentes no reinicializan la instancia.
         
         Args:
             env_path: Path to .env file, defaults to project root
         """
+        # Solo inicializar una vez
+        if self._initialized:
+            return
+            
         self.env_path = env_path or self._find_env_file()
         self._load_env()
+        self._initialized = True
+    
+    @classmethod
+    def get_instance(cls, env_path: Optional[Path] = None) -> 'ConfigManager':
+        """
+        Método estático para obtener la única instancia de ConfigManager.
+        Este es el punto de acceso global al Singleton.
+        
+        Args:
+            env_path: Path to .env file (solo se usa en la primera llamada)
+            
+        Returns:
+            La única instancia de ConfigManager
+        """
+        if cls._instance is None:
+            cls._instance = cls(env_path)
+        return cls._instance
     
     @staticmethod
     def _find_env_file() -> Path:
@@ -80,3 +120,12 @@ class ConfigManager:
     def get(self, key: str, default: str = "") -> str:
         """Get environment variable value"""
         return os.getenv(key, default)
+    
+    @classmethod
+    def reset_instance(cls):
+        """
+        Resetear la instancia del Singleton (útil para testing).
+        NO usar en código de producción.
+        """
+        cls._instance = None
+        cls._initialized = False
