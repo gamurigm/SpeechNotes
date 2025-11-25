@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import argparse
+from typing import Optional
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -15,6 +16,10 @@ sys.path.insert(0, str(project_root))
 
 from src.core import ConfigManager
 from src.core.riva_client import RivaClientFactory
+from src.core.environment_factory import (
+    TranscriptionEnvironmentFactoryProvider,
+    EnvironmentType
+)
 from src.audio import (
     AudioConfig,
     VADConfig,
@@ -61,167 +66,76 @@ def main():
     print("=" * 60)
 
     try:
-        # --- 1. Configuration ---
-        config_manager = ConfigManager()
-        riva_config = config_manager.get_riva_config()
-
+        # --- 1. Environment Setup using Abstract Factory ---
+        # Create the Riva Live environment factory
+        environment_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
+        print(f"🌍 Ambiente: {environment_factory.get_name()}")
+        
+        # Create transcriber using the factory
+        transcriber = environment_factory.create_transcriber()
+        
+        # Get configuration
+        riva_config = transcriber.config
+        
         print(f"📡 Servidor: {riva_config.server}")
         print("⏱️  Modo: Activación por voz (VAD) - Offline Chunks")
         print("🎙️  Habla normalmente, el sistema grabará y transcribirá en pausas.")
         print("   (Presiona Ctrl+C para detener y guardar la sesión)")
         print("=" * 60)
 
-        # --- 2. Service Initialization ---
-        transcriber = RivaClientFactory.create_transcriber(riva_config)
-        
-        # VAD and Audio configurations
+        # --- 2. Audio Configuration ---
         audio_config = AudioConfig()
-
-        # Parse CLI args to decide whether to run calibration or fixed-duration chunks
+        
+        # Parse CLI args
         parser = argparse.ArgumentParser(add_help=False)
         parser.add_argument('--calibrate', action='store_true', help='Run microphone calibration interactively before starting')
         parser.add_argument('--chunk-duration', type=int, default=0, help='If >0, record fixed-duration chunks (seconds) instead of VAD')
         args, _ = parser.parse_known_args()
 
-        if args.calibrate:
-            # Calibrate microphone for VAD
-            vad_config = calibrate_microphone(audio_config)
-            # Update other VAD parameters if needed
-            vad_config.silence_duration = 2.0
-            vad_config.min_voice_duration = 0.4
-        else:
-            print("⚙️ Calibración omitida. Usando configuración VAD por defecto o guardada.")
-            vad_config = VADConfig()
-            # Try to load saved VAD config if present
-            vad_file = project_root / '.vad_config.json'
-            if vad_file.exists():
-                try:
-                    data = json.loads(vad_file.read_text())
-                    vt = int(data.get('voice_threshold', vad_config.voice_threshold))
-                    st = int(data.get('silence_threshold', vad_config.silence_threshold))
-                    vad_config.voice_threshold = vt
-                    vad_config.silence_threshold = st
-                    print(f"   Umbrales cargados desde {vad_file}: voice={vt}, silence={st}")
-                except Exception as e:
-                    print(f"   ⚠️ No se pudo leer {vad_file}: {e}")
+        # Setup VAD configuration
+        vad_config = _setup_vad_config(args.calibrate, audio_config)
 
-            # Keep the tuned runtime silence and min voice durations
-            vad_config.silence_duration = 2.0
-            vad_config.min_voice_duration = 0.4
-            print(f"   Umbral de voz: {vad_config.voice_threshold}, Umbral de silencio: {vad_config.silence_threshold}")
-
+        # --- 3. Main Transcription Loop ---
         all_transcripts = []
         segment_count = 0
+        
+        # Start background recorder using environment factory
+        bg_recorder = _start_background_recorder(environment_factory, audio_config)
 
-        # Start background recording of the whole session (system/mix if device configured)
-        try:
-            # ✨ Factory Method Pattern: Create BackgroundRecorder using factory
-            bg_recorder = AudioRecorderFactoryProvider.create_recorder(
-                RecorderType.BACKGROUND,
-                config=audio_config
-            )
-            bg_recorder.start()
-            print("   🔴 Grabando sesión completa en background...")
-        except Exception as e:
-            print(f"   ⚠️ No se pudo iniciar grabación en background: {e}")
-            bg_recorder = None
-
-        # --- 3. Main Loop ---
         while True:
             segment_count += 1
             timestamp = datetime.now().strftime("%H:%M:%S")
             print(f"\n[{timestamp}] Segmento #{segment_count}: Esperando voz...")
 
-            # If user requested fixed-duration chunks, use ContinuousRecorder
-            if args.chunk_duration and args.chunk_duration > 0:
-                print(f"   ⏱️  Grabando chunk fijo de {args.chunk_duration}s...")
-                # ✨ Factory Method Pattern: Create ContinuousRecorder using factory
-                recorder = AudioRecorderFactoryProvider.create_recorder(
-                    RecorderType.CONTINUOUS,
-                    config=audio_config
-                )
-                with recorder as rec:
-                    # stop_callback receives number of frames appended
-                    def stop_cb(frames_count):
-                        elapsed = frames_count * audio_config.chunk_size / audio_config.sample_rate
-                        return elapsed >= args.chunk_duration
-
-                    audio_data = rec.record(stop_callback=stop_cb)
-            else:
-                # ✨ Factory Method Pattern: Create VADRecorder using factory
-                recorder = AudioRecorderFactoryProvider.create_recorder(
-                    RecorderType.VAD,
-                    config=audio_config,
-                    vad_config=vad_config
-                )
-                with recorder as rec:
-                    # Callback que se ejecuta cuando detecta voz
-                    def on_voice_detected_callback():
-                        print("   🗣️  Voz detectada, grabando...", flush=True)
-                    
-                    audio_data = rec.record(
-                        on_voice_detected=on_voice_detected_callback,
-                    )
+            # Create recorder using environment factory
+            audio_data = _record_audio_chunk(
+                environment_factory,
+                audio_config,
+                vad_config,
+                args.chunk_duration
+            )
 
             if audio_data is None:
                 print("   🔇 No se grabó audio válido, reintentando...")
                 continue
 
-            # Transcribe the recorded chunk
+            # Transcribe using factory-created transcriber
             print("   📝 Transcribiendo chunk...", end='', flush=True)
             transcript = transcriber.offline_transcribe(audio_data, language="es")
-            print(" ✅")
+            print(" ✅", flush=True)
 
             if transcript:
-                print(f"   💬 {transcript}")
+                print(f"   💬 Texto reconocido: {transcript}")
                 all_transcripts.append((datetime.now(), transcript))
             else:
-                print("   🔇 (Silencio o audio no reconocible)")
+                print("   ⚠️  (Silencio o audio no reconocible por el servidor)")
+                print("   💡 Consejo: Intenta hablar más claro o aumenta el volumen del micrófono")
 
     except KeyboardInterrupt:
         print("\n\n" + "=" * 60)
         print("🛑 Transcripción Detenida por el Usuario")
         print("=" * 60)
-        if all_transcripts:
-            print("\n💾 Guardando transcripción completa...")
-            
-            try:
-                # Use Formatter and Writer to save the final file
-                segmented_formatter = FormatterFactory.create('segmented_markdown')
-                writer = OutputWriter()
-                service = TranscriptionService(transcriber, segmented_formatter, writer)
-
-                output_path = service.transcribe_segments(
-                    all_transcripts, 
-                    method="VAD (Real-time simulation)"
-                )
-                
-                print(f"✅ Transcripción guardada en: {output_path}")
-            except Exception as e:
-                print(f"⚠️ Error al guardar transcripción: {e}")
-        else:
-            print("⚠️ No hay transcripciones para guardar.")
-
-        # Stop background recorder (if started) and save whole-session WAV
-        try:
-            if bg_recorder:
-                tmp_path = project_root / f"realtime_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
-                bg_recorder.stop_and_save(str(tmp_path))
-                print(f"✅ Grabación de sesión guardada en: {tmp_path}")
-
-                # Use the same TranscriptionService flow as file.py to transcribe the full recording
-                try:
-                    file_formatter = FormatterFactory.create('markdown')
-                    file_writer = OutputWriter()
-                    file_service = TranscriptionService(transcriber, file_formatter, file_writer)
-                    print("🎯 Transcribiendo la grabación completa...")
-                    file_output = file_service.transcribe_audio_file(tmp_path, language='es')
-                    print(f"✅ Transcripción de la grabación guardada en: {file_output}")
-                except Exception as e:
-                    print(f"⚠️ Error al transcribir la grabación completa: {e}")
-
-        except Exception as e:
-            print(f"⚠️ Error al detener/guardar la grabación background: {e}")
+        _save_transcription_results(all_transcripts, bg_recorder)
 
     except (FileNotFoundError, ValueError) as e:
         print(f"\n❌ Error de Configuración: {e}")
@@ -230,6 +144,182 @@ def main():
     except Exception as e:
         print(f"\n❌ Error Inesperado: {e}")
         sys.exit(1)
+
+
+def _setup_vad_config(should_calibrate: bool, audio_config: AudioConfig) -> VADConfig:
+    """
+    Setup VAD configuration based on user preferences
+    
+    Args:
+        should_calibrate: Whether to run calibration
+        audio_config: Audio configuration object
+        
+    Returns:
+        VADConfig instance configured and ready to use
+    """
+    if should_calibrate:
+        vad_config = calibrate_microphone(audio_config)
+        vad_config.silence_duration = 2.0
+        vad_config.min_voice_duration = 0.4
+    else:
+        print("⚙️ Calibración omitida. Usando configuración VAD por defecto o guardada.")
+        vad_config = VADConfig()
+        
+        # Try to load saved VAD config if present
+        vad_file = project_root / '.vad_config.json'
+        if vad_file.exists():
+            try:
+                data = json.loads(vad_file.read_text())
+                vt = int(data.get('voice_threshold', vad_config.voice_threshold))
+                st = int(data.get('silence_threshold', vad_config.silence_threshold))
+                vad_config.voice_threshold = vt
+                vad_config.silence_threshold = st
+                print(f"   Umbrales cargados desde {vad_file}: voice={vt}, silence={st}")
+            except Exception as e:
+                print(f"   ⚠️ No se pudo leer {vad_file}: {e}")
+
+        vad_config.silence_duration = 2.0
+        vad_config.min_voice_duration = 0.4
+        print(f"   Umbral de voz: {vad_config.voice_threshold}, Umbral de silencio: {vad_config.silence_threshold}")
+    
+    return vad_config
+
+
+def _start_background_recorder(environment_factory, audio_config: AudioConfig):
+    """
+    Start background recorder for session recording using Abstract Factory
+    
+    Args:
+        environment_factory: TranscriptionEnvironmentFactory instance
+        audio_config: Audio configuration
+        
+    Returns:
+        BackgroundRecorder instance or None if failed
+    """
+    try:
+        bg_recorder = environment_factory.create_recorder(
+            RecorderType.BACKGROUND,
+            audio_config=audio_config
+        )
+        bg_recorder.start()
+        print("   🔴 Grabando sesión completa en background...")
+        return bg_recorder
+    except Exception as e:
+        print(f"   ⚠️ No se pudo iniciar grabación en background: {e}")
+        return None
+
+
+def _record_audio_chunk(
+    environment_factory,
+    audio_config: AudioConfig,
+    vad_config: VADConfig,
+    chunk_duration: int
+) -> Optional[bytes]:
+    """
+    Record an audio chunk using the environment factory
+    
+    Args:
+        environment_factory: TranscriptionEnvironmentFactory instance
+        audio_config: Audio configuration
+        vad_config: VAD configuration
+        chunk_duration: Duration for fixed chunks (0 = use VAD)
+        
+    Returns:
+        Audio data as bytes or None if failed
+    """
+    if chunk_duration and chunk_duration > 0:
+        print(f"   ⏱️  Grabando chunk fijo de {chunk_duration}s...")
+        recorder = environment_factory.create_recorder(
+            RecorderType.CONTINUOUS,
+            audio_config=audio_config
+        )
+        with recorder as rec:
+            def stop_cb(frames_count):
+                elapsed = frames_count * audio_config.chunk_size / audio_config.sample_rate
+                return elapsed >= chunk_duration
+
+            audio_data = rec.record(stop_callback=stop_cb)
+            if audio_data and len(audio_data) > 0:
+                print(f"   ✅ Chunk grabado: {len(audio_data)} bytes")
+                return audio_data
+            else:
+                print("   ❌ No se capturó audio en el chunk")
+                return None
+    else:
+        recorder = environment_factory.create_recorder(
+            RecorderType.VAD,
+            audio_config=audio_config,
+            vad_config=vad_config
+        )
+        with recorder as rec:
+            print("   👂 Escuchando... (detectará automáticamente cuando hables)")
+            
+            def on_voice_detected_callback():
+                print("   🗣️  ¡Voz detectada! Grabando...", flush=True)
+            
+            audio_data = rec.record(
+                on_voice_detected=on_voice_detected_callback,
+            )
+            
+            if audio_data and len(audio_data) > 0:
+                print(f"   ✅ Audio grabado: {len(audio_data)} bytes")
+                return audio_data
+            else:
+                print("   ❌ No se capturó audio (intenta hablar más fuerte o cerca del micrófono)")
+                return None
+
+
+def _save_transcription_results(all_transcripts, bg_recorder):
+    """
+    Save transcription results and background recording
+    
+    Args:
+        all_transcripts: List of (timestamp, transcript) tuples
+        bg_recorder: Background recorder instance or None
+    """
+    if all_transcripts:
+        print("\n💾 Guardando transcripción completa...")
+        
+        try:
+            segmented_formatter = FormatterFactory.create('segmented_markdown')
+            writer = OutputWriter()
+            service = TranscriptionService(None, segmented_formatter, writer)  # transcriber param not used here
+
+            output_path = service.transcribe_segments(
+                all_transcripts, 
+                method="VAD (Real-time simulation)"
+            )
+            
+            print(f"✅ Transcripción guardada en: {output_path}")
+        except Exception as e:
+            print(f"⚠️ Error al guardar transcripción: {e}")
+    else:
+        print("⚠️ No hay transcripciones para guardar.")
+
+    # Stop background recorder
+    if bg_recorder:
+        try:
+            tmp_path = project_root / f"realtime_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+            bg_recorder.stop_and_save(str(tmp_path))
+            print(f"✅ Grabación de sesión guardada en: {tmp_path}")
+
+            # Use TranscriptionService to transcribe the full recording
+            try:
+                from src.core.environment_factory import TranscriptionEnvironmentFactoryProvider
+                environment_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
+                transcriber = environment_factory.create_transcriber()
+                
+                file_formatter = FormatterFactory.create('markdown')
+                file_writer = OutputWriter()
+                file_service = TranscriptionService(transcriber, file_formatter, file_writer)
+                print("🎯 Transcribiendo la grabación completa...")
+                file_output = file_service.transcribe_audio_file(tmp_path, language='es')
+                print(f"✅ Transcripción de la grabación guardada en: {file_output}")
+            except Exception as e:
+                print(f"⚠️ Error al transcribir la grabación completa: {e}")
+
+        except Exception as e:
+            print(f"⚠️ Error al detener/guardar la grabación background: {e}")
 
 
 if __name__ == "__main__":

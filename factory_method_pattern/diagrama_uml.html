@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factory Method Pattern - Diagrama UML</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1600px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .diagram-wrapper {
+            display: flex;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            min-width: max-content;
+        }
+        
+        .legend {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .legend h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .legend-table {
+            width: 100%;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .legend-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .legend-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .legend-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .legend-desc {
+            color: #666;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #0d47a1;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            color: #333;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        
+        .download-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Factory Method Pattern</h1>
+        <p class="subtitle">Diagrama UML - SpeechNotes Project</p>
+        
+        <div class="diagram-wrapper">
+            <div class="mermaid">
+                %%{init: {'flowchart': {'curve': 'linear'}, 'theme': 'default'}}%%
+                classDiagram
+                    class RecorderFactory {
+                        &lt;&lt;interface&gt;&gt;
+                        +create_recorder()* AudioRecorder
+                    }
+                    
+                    class MicrophoneStreamRecorderFactory {
+                        +create_recorder() MicrophoneStream
+                    }
+                    
+                    class VADRecorderFactory {
+                        +create_recorder() VADRecorder
+                    }
+                    
+                    class ContinuousRecorderFactory {
+                        +create_recorder() ContinuousRecorder
+                    }
+                    
+                    class BackgroundRecorderFactory {
+                        +create_recorder() BackgroundRecorder
+                    }
+                    
+                    class AudioRecorder {
+                        &lt;&lt;interface&gt;&gt;
+                        +record()*
+                    }
+                    
+                    class MicrophoneStream {
+                        +record() Generator[bytes]
+                    }
+                    
+                    class VADRecorder {
+                        +record() bytes
+                    }
+                    
+                    class ContinuousRecorder {
+                        +record() bytes
+                    }
+                    
+                    class BackgroundRecorder {
+                        +record() Generator[bytes]
+                    }
+                    
+                    class AudioRecorderFactoryProvider {
+                        -_factories: Dict
+                        +create_recorder(RecorderType)$ AudioRecorder
+                        +get_factory(RecorderType)$ RecorderFactory
+                    }
+                    
+                    class Client {
+                        -imports AudioRecorderFactoryProvider
+                    }
+                    
+                    RecorderFactory &lt;|-- MicrophoneStreamRecorderFactory
+                    RecorderFactory &lt;|-- VADRecorderFactory
+                    RecorderFactory &lt;|-- ContinuousRecorderFactory
+                    RecorderFactory &lt;|-- BackgroundRecorderFactory
+                    
+                    AudioRecorder &lt;|-- MicrophoneStream
+                    AudioRecorder &lt;|-- VADRecorder
+                    AudioRecorder &lt;|-- ContinuousRecorder
+                    AudioRecorder &lt;|-- BackgroundRecorder
+                    
+                    MicrophoneStreamRecorderFactory --|> MicrophoneStream: creates
+                    VADRecorderFactory --|> VADRecorder: creates
+                    ContinuousRecorderFactory --|> ContinuousRecorder: creates
+                    BackgroundRecorderFactory --|> BackgroundRecorder: creates
+                    
+                    AudioRecorderFactoryProvider --> RecorderFactory: uses
+                    AudioRecorderFactoryProvider --> AudioRecorder: returns
+                    
+                    Client --> AudioRecorderFactoryProvider: imports
+                    Client --> AudioRecorder: uses
+            </div>
+        </div>
+        
+        <div class="legend">
+            <h3>📋 Mapeo a tu plantilla</h3>
+            <div class="legend-table">
+                <div class="legend-row">
+                    <div class="legend-label">AbstractFactory</div>
+                    <div class="legend-desc">RecorderFactory (arriba-izquierda)</div>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-label">ConcreteFactory1/2</div>
+                    <div class="legend-desc">MicrophoneStreamRecorderFactory, VADRecorderFactory, ContinuousRecorderFactory, BackgroundRecorderFactory (4 factories)</div>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-label">AbstractProduct</div>
+                    <div class="legend-desc">AudioRecorder (arriba-derecha)</div>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-label">ProductA1/A2</div>
+                    <div class="legend-desc">MicrophoneStream, VADRecorder, ContinuousRecorder, BackgroundRecorder (abajo-derecha)</div>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-label">Provider</div>
+                    <div class="legend-desc">AudioRecorderFactoryProvider (centro - punto de acceso centralizado)</div>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-label">Client</div>
+                    <div class="legend-desc">Tu código en src/cli/realtime.py (derecha)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>ℹ️ Cómo funciona:</strong><br>
+            El cliente (realtime.py) importa AudioRecorderFactoryProvider y le solicita un recorder específico (ej: RecorderType.VAD). El provider consulta su registro de factories, obtiene la factory correcta (VADRecorderFactory), la llama para crear el producto (VADRecorder), y lo retorna al cliente.
+        </div>
+        
+        <div class="code-block">
+            <strong>Ejemplo de uso en realtime.py:</strong><br><br>
+recorder = AudioRecorderFactoryProvider.create_recorder(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;RecorderType.VAD,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;config=audio_config,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vad_config=vad_config<br>
+)<br>
+audio_chunks = recorder.record()
+        </div>
+        
+        <div class="download-section">
+            <button class="btn" onclick="descargarComoPNG()">📥 Descargar como PNG</button>
+            <button class="btn" onclick="copiarAlPortapapeles()">📋 Copiar Mermaid</button>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Factory Method Pattern - SpeechNotes Project | NVIDIA Riva Audio Transcription</p>
+        <p>Generado automáticamente | Noviembre 2025</p>
+    </footer>
+    
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        
+        function descargarComoPNG() {
+            // Usamos html2canvas y canvas2image para descargar
+            alert('Para descargar como PNG, usa:\n1. Click derecho en el diagrama\n2. "Guardar imagen como"');
+        }
+        
+        function copiarAlPortapapeles() {
+            const mermaidCode = `classDiagram
+    class RecorderFactory {
+        <<interface>>
+        +create_recorder()* AudioRecorder
+    }
+    
+    class MicrophoneStreamRecorderFactory {
+        +create_recorder() MicrophoneStream
+    }
+    
+    class VADRecorderFactory {
+        +create_recorder() VADRecorder
+    }
+    
+    class ContinuousRecorderFactory {
+        +create_recorder() ContinuousRecorder
+    }
+    
+    class BackgroundRecorderFactory {
+        +create_recorder() BackgroundRecorder
+    }
+    
+    class AudioRecorder {
+        <<interface>>
+        +record()*
+    }
+    
+    class MicrophoneStream {
+        +record() Generator[bytes]
+    }
+    
+    class VADRecorder {
+        +record() bytes
+    }
+    
+    class ContinuousRecorder {
+        +record() bytes
+    }
+    
+    class BackgroundRecorder {
+        +record() Generator[bytes]
+    }
+    
+    class AudioRecorderFactoryProvider {
+        -_factories: Dict
+        +create_recorder(RecorderType)$ AudioRecorder
+        +get_factory(RecorderType)$ RecorderFactory
+    }
+    
+    class Client {
+        -imports AudioRecorderFactoryProvider
+    }
+    
+    RecorderFactory <|-- MicrophoneStreamRecorderFactory
+    RecorderFactory <|-- VADRecorderFactory
+    RecorderFactory <|-- ContinuousRecorderFactory
+    RecorderFactory <|-- BackgroundRecorderFactory
+    
+    AudioRecorder <|-- MicrophoneStream
+    AudioRecorder <|-- VADRecorder
+    AudioRecorder <|-- ContinuousRecorder
+    AudioRecorder <|-- BackgroundRecorder
+    
+    MicrophoneStreamRecorderFactory --|> MicrophoneStream: creates
+    VADRecorderFactory --|> VADRecorder: creates
+    ContinuousRecorderFactory --|> ContinuousRecorder: creates
+    BackgroundRecorderFactory --|> BackgroundRecorder: creates
+    
+    AudioRecorderFactoryProvider --> RecorderFactory: uses
+    AudioRecorderFactoryProvider --> AudioRecorder: returns
+    
+    Client --> AudioRecorderFactoryProvider: imports
+    Client --> AudioRecorder: uses`;
+            
+            navigator.clipboard.writeText(mermaidCode).then(() => {
+                alert('✅ Código Mermaid copiado al portapapeles!');
+            });
+        }
+    </script>
+</body>
+</html>
