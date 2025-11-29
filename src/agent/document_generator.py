@@ -7,6 +7,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
 from bson import ObjectId
+import os
+from openai import OpenAI
 from src.database import MongoManager
 
 
@@ -19,6 +21,19 @@ class DocumentGenerator:
         self.db = MongoManager()
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize Minimax Client
+        self.minimax_key = os.getenv("MINIMAX_API_KEY")
+        self.minimax_base = os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
+        self.minimax_model = os.getenv("MINIMAX_MODEL_NAME", "minimaxai/minimax-m2")
+        
+        if self.minimax_key:
+            self.client = OpenAI(
+                base_url=self.minimax_base,
+                api_key=self.minimax_key
+            )
+        else:
+            self.client = None
         
     def generate_all(self) -> int:
         """
@@ -55,7 +70,11 @@ class DocumentGenerator:
         topics = self._group_by_topic(segments)
         
         # Build Markdown
-        md = self._build_markdown(transcription, topics)
+        if self.client:
+            print(f"[INFO] Generating document with Minimax M2 for {transcription['filename']}...")
+            md = self._generate_with_minimax(transcription, topics)
+        else:
+            md = self._build_markdown(transcription, topics)
         
         # Save file
         filename = transcription["filename"].replace("transcripcion_", "processed_")
@@ -130,3 +149,54 @@ generado: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
             md += "---\n\n"
             
         return md
+
+    def _generate_with_minimax(self, metadata: Dict, topics: List[Dict]) -> str:
+        """Generate the document using Minimax LLM."""
+        # Prepare context
+        context = f"Transcripción: {metadata['filename']}\nFecha: {metadata['date']}\n\nContenido:\n"
+        for topic in topics:
+            context += f"## {topic['title']} ({topic['start_time']})\n"
+            # Join content segments
+            content_text = "\n".join(topic['content'])
+            context += content_text + "\n\n"
+            
+        prompt = """Actúa como un redactor técnico experto. 
+Genera un documento en Markdown bien estructurado y profesional basado en la siguiente transcripción.
+El documento debe incluir:
+1. Un resumen ejecutivo.
+2. Puntos clave detallados organizados por temas.
+3. Conclusiones o pasos a seguir si los hay.
+
+Usa formato Markdown profesional (negritas, listas, encabezados).
+Mantén el idioma original (Español).
+"""
+
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.minimax_model,
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": context}
+                ],
+                temperature=0.7,
+                top_p=0.95,
+                max_tokens=8192
+            )
+            
+            content = completion.choices[0].message.content
+            
+            # Add metadata header
+            header = f"""---
+original: {metadata['filename']}
+fecha: {metadata['date']}
+generado_con: Minimax M2
+fecha_generacion: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
+---
+
+"""
+            return header + content
+            
+        except Exception as e:
+            print(f"[ERROR] Minimax generation failed: {e}")
+            return self._build_markdown(metadata, topics) # Fallback
+

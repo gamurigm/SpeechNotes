@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from src.agent.transcription_ingestor import TranscriptionIngestor
 from src.agent.transcription_analyzer import TranscriptionAnalyzer
 from src.agent.document_generator import DocumentGenerator
+from src.agent.transcription_embedder import TranscriptionEmbedder
 
 
 def main():
@@ -22,11 +23,12 @@ def main():
     parser.add_argument('--ingest', action='store_true', help='Ingest new files to MongoDB')
     parser.add_argument('--analyze', action='store_true', help='Analyze pending transcriptions with LLM')
     parser.add_argument('--generate', action='store_true', help='Generate markdown documents from MongoDB')
-    parser.add_argument('--pipeline', action='store_true', help='Run full pipeline (Ingest -> Analyze -> Generate)')
+    parser.add_argument('--embed', action='store_true', help='Generate embeddings and store in ChromaDB')
+    parser.add_argument('--pipeline', action='store_true', help='Run full pipeline (Ingest -> Analyze -> Generate -> Embed)')
     
     args = parser.parse_args()
     
-    if not (args.ingest or args.analyze or args.generate or args.pipeline):
+    if not (args.ingest or args.analyze or args.generate or args.embed or args.pipeline):
         parser.print_help()
         return
 
@@ -56,6 +58,15 @@ def main():
         generator = DocumentGenerator()
         count = generator.generate_all()
         print(f"[RESULT] Generated {count} documents")
+
+    # 4. Embedding
+    if args.embed or args.pipeline:
+        print("\n" + "="*50)
+        print("STAGE 4: EMBEDDING")
+        print("="*50)
+        embedder = TranscriptionEmbedder()
+        count = embedder.embed_pending()
+        print(f"[RESULT] Embedded {count} segments")
         
     print("\n[DONE] Pipeline execution finished.")
 
