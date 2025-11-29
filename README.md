@@ -1,5 +1,5 @@
 # SpeechNotes
-## Procpuesta V1.2.37
+## Propuesta V1.2.37
 Repositorio de trabajo para SpeechNotes — aplicación para captura, transcripción, edición y búsqueda semántica de notas de audio.
 
 Este proyecto incluye: frontend web (Next.js), herramientas y demos Python para RAG/ búsqueda semántica, integración con clientes ASR (Riva), y un agente que combina indexación + generación con NVIDIA NIM.
