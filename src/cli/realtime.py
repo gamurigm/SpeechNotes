@@ -166,7 +166,7 @@ def _setup_vad_config(should_calibrate: bool, audio_config: AudioConfig) -> VADC
         vad_config = VADConfig()
         
         # Try to load saved VAD config if present
-        vad_file = project_root / '.vad_config.json'
+        vad_file = project_root / 'temporal_docs' / 'configuracion' / '.vad_config.json'
         if vad_file.exists():
             try:
                 data = json.loads(vad_file.read_text())
@@ -299,7 +299,11 @@ def _save_transcription_results(all_transcripts, bg_recorder):
     # Stop background recorder
     if bg_recorder:
         try:
-            tmp_path = project_root / f"realtime_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+            # Ensure directory exists
+            recordings_dir = project_root / 'temporal_docs' / 'grabaciones'
+            recordings_dir.mkdir(parents=True, exist_ok=True)
+
+            tmp_path = recordings_dir / f"realtime_recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
             bg_recorder.stop_and_save(str(tmp_path))
             print(f"✅ Grabación de sesión guardada en: {tmp_path}")
 

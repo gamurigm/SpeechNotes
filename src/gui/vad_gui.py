@@ -10,7 +10,7 @@ from tkinter import messagebox
 
 # Project root is two levels up from this file
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-VAD_FILE = PROJECT_ROOT / '.vad_config.json'
+VAD_FILE = PROJECT_ROOT / 'temporal_docs' / 'configuracion' / '.vad_config.json'
 
 DEFAULTS = {
     'voice_threshold': 300,

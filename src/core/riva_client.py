@@ -142,6 +142,18 @@ class RivaTranscriber:
                 for result in response.results 
                 for alt in result.alternatives
             ])
+            
+            # Hallucination Filter
+            # Filter out common hallucinations that occur during silence
+            hallucinations = [
+                "Gracias.", "Gracias", 
+                "Thank you.", "Thank you",
+                "Subtítulos por...", "Subtítulos realizados por..."
+            ]
+            
+            if transcript.strip() in hallucinations:
+                return ""
+
             return transcript.strip()
         
         return ""
