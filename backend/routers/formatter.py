@@ -11,7 +11,12 @@ import asyncio
 import os
 
 from services.formatter_agent import FormatterAgent
-from ..utils.auth import require_api_key
+try:
+    # Prefer absolute import when running as a script/module
+    from utils.auth import require_api_key
+except Exception:
+    # Fallback to relative import for package contexts
+    from ..utils.auth import require_api_key
 
 router = APIRouter()
 
