@@ -208,6 +208,15 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
     WebSocket endpoint for streaming format progress
     Clients connect here to receive real-time updates
     """
+    # Log incoming websocket scope for debugging (origin, headers)
+    try:
+        scope = websocket.scope
+        headers = {k.decode(): v.decode() for k, v in scope.get('headers', [])}
+        origin = headers.get('origin') or headers.get('Origin')
+        print(f"[WS] Incoming connection for job {job_id} - origin={origin} - headers={headers}")
+    except Exception as e:
+        print(f"[WS] Error reading websocket scope headers: {e}")
+
     await websocket.accept()
     
     try:

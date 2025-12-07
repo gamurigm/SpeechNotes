@@ -197,9 +197,24 @@ class FormatterAgent:
         for attempt in range(max_retries + 1):
             try:
                 full_path = self.project_root / file_path
-                
+
                 if not full_path.exists():
-                    raise FileNotFoundError(f"File not found: {file_path}")
+                    # Try common fallback: maybe the original was backed up as .md.original
+                    try:
+                        backup_path = full_path.with_suffix(full_path.suffix + '.original')
+                        if backup_path.exists():
+                            print(f"[FORMATTER] Original file missing, using backup: {backup_path}")
+                            full_path = backup_path
+                        else:
+                            # Also try removing any leading 'notas/' if double-prefixed
+                            alt = self.project_root / Path(file_path).name
+                            if alt.exists():
+                                print(f"[FORMATTER] Using alternate path without folder: {alt}")
+                                full_path = alt
+                            else:
+                                raise FileNotFoundError(f"File not found: {file_path}")
+                    except Exception:
+                        raise FileNotFoundError(f"File not found: {file_path}")
                 
                 content = full_path.read_text(encoding='utf-8')
                 

@@ -36,6 +36,7 @@ export default function FormatterPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [summary, setSummary] = useState<{ successful: number; failed: number } | null>(null);
+  const [completedFiles, setCompletedFiles] = useState<number>(0);
 
   // Load available files on mount
   useEffect(() => {
@@ -104,6 +105,7 @@ export default function FormatterPage() {
     setIsRunning(true);
     setProgress([]);
     setSummary(null);
+    setCompletedFiles(0);
 
     try {
       // Start formatting job
@@ -158,7 +160,12 @@ export default function FormatterPage() {
           setIsRunning(false);
           websocket.close();
         } else {
-          setProgress(prev => [...prev, data as FormatterProgress]);
+          setProgress(prev => {
+            const next = [...prev, data as FormatterProgress];
+            const done = next.filter(p => p.status === 'completed' || p.status === 'error').length;
+            setCompletedFiles(done);
+            return next;
+          });
         }
       };
 
@@ -169,7 +176,7 @@ export default function FormatterPage() {
 
       websocket.onclose = () => {
         console.log('WebSocket closed');
-        setIsRunning(false);
+        // isRunning is set to false when we receive job_completed or an error.
       };
 
       setWs(websocket);
@@ -179,6 +186,12 @@ export default function FormatterPage() {
       setIsRunning(false);
     }
   };
+
+  const totalFiles = progress.length > 0
+    ? progress[progress.length - 1].total
+    : selectedFiles.size || files.length || 0;
+
+  const isJobDone = !!summary || (!isRunning && totalFiles > 0 && completedFiles >= totalFiles);
 
   const formatFileSize = (bytes: number) => {
     return (bytes / 1024).toFixed(1) + ' KB';
@@ -297,6 +310,33 @@ export default function FormatterPage() {
         <div className="border rounded-lg p-6 bg-white shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Progreso en Tiempo Real</h2>
 
+          {/* Global job status */}
+          {(isRunning || summary || isJobDone) && (
+            <div className="mb-4">
+              {totalFiles > 0 && (
+                <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
+                  <span>
+                    Progreso total: {completedFiles}/{totalFiles} archivo{totalFiles !== 1 ? 's' : ''}
+                  </span>
+                  {isRunning && !summary && !isJobDone && (
+                    <span className="text-[11px] text-gray-500">Procesando... esto puede tardar unos segundos</span>
+                  )}
+                  {!isRunning && isJobDone && (
+                    <span className="text-[11px] text-green-600">Proceso finalizado</span>
+                  )}
+                </div>
+              )}
+              {totalFiles > 0 && (
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-2 transition-all"
+                    style={{ width: `${totalFiles ? (Math.min(completedFiles, totalFiles) / totalFiles) * 100 : 0}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {jobId && (
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-xs text-gray-600">Job ID</div>
@@ -310,6 +350,18 @@ export default function FormatterPage() {
               <div className="text-sm text-green-700">
                 ✅ Exitosos: {summary.successful} | ❌ Fallidos: {summary.failed}
               </div>
+              <button
+                className="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-800 bg-green-100 rounded hover:bg-green-200"
+                onClick={() => {
+                  setProgress([]);
+                  setSummary(null);
+                  setJobId(null);
+                  setCompletedFiles(0);
+                  setSelectedFiles(new Set());
+                }}
+              >
+                🔁 Nuevo trabajo
+              </button>
             </div>
           )}
 
