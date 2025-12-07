@@ -3,6 +3,7 @@ Riva Client Module - Dependency Inversion Principle
 Abstracts Riva SDK behind interfaces for easier testing and swapping
 """
 import sys
+import re
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Generator, Protocol
@@ -117,7 +118,7 @@ class RivaTranscriber:
         Transcribe complete audio data (offline mode)
         
         Args:
-            audio_data: Audio data in WAV format
+            audio_data: Audio data in WAV format or raw PCM
             language: Language code
             
         Returns:
@@ -131,8 +132,18 @@ class RivaTranscriber:
             audio_channel_count=1,
         )
         
-        # Add audio specs from WAV data
-        riva.client.add_audio_file_specs_to_config(config, audio_data)
+        # Try to detect WAV header
+        try:
+            riva.client.add_audio_file_specs_to_config(config, audio_data)
+        except Exception:
+            # Ignore errors if not a WAV file
+            pass
+            
+        # If encoding is still not set (e.g. raw PCM), default to LINEAR_PCM/16k
+        if not config.encoding:
+            config.encoding = AudioEncoding.LINEAR_PCM
+            config.sample_rate_hertz = 16000
+            config.audio_channel_count = 1
         
         response = self.asr_service.offline_recognize(audio_data, config)
         
@@ -146,13 +157,29 @@ class RivaTranscriber:
             # Hallucination Filter
             # Filter out common hallucinations that occur during silence
             hallucinations = [
-                "Gracias.", "Gracias", 
-                "Thank you.", "Thank you",
-                "Subtítulos por...", "Subtítulos realizados por..."
+                "gracias", "thank you",
+                "subtítulos por", "subtítulos realizados por",
+                "subtítulos", "subtitles",
+                "amara.org", "transcripción",
+                "traducido por", "translated by"
             ]
             
-            if transcript.strip() in hallucinations:
-                return ""
+            # Normalize for checking: lowercase, remove punctuation
+            # Remove common punctuation including Spanish inverted marks
+            cleaned = transcript.strip().lower()
+            cleaned = re.sub(r'[!¡?¿.,;:]', '', cleaned).strip()
+            
+            # Check if exact match or starts with hallucination (common in short segments)
+            for h in hallucinations:
+                # Clean the hallucination term too just in case
+                h_clean = re.sub(r'[!¡?¿.,;:]', '', h).strip()
+                
+                # Exact match
+                if cleaned == h_clean:
+                    return ""
+                # Starts with hallucination and is short (likely just the hallucination + noise)
+                if cleaned.startswith(h_clean) and len(cleaned) < len(h_clean) + 5:
+                    return ""
 
             return transcript.strip()
         

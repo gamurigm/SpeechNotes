@@ -46,6 +46,10 @@ app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 from routers import formatter
 app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 
+# Import and include chat router
+from routers import chat
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+
 # Socket.IO event handlers
 from services.socket_handler import register_socket_events
 register_socket_events(sio)

@@ -65,26 +65,117 @@ class DocumentGenerator:
         
         if not segments:
             return
-            
+
+        # Calculate total text content
+        full_text_content = " ".join([seg.get("content", "") for seg in segments]).strip()
+        
+        # 1. Check for No Audio / Empty Content
+        if not full_text_content or "[No se detectó audio o no se pudo transcribir]" in full_text_content:
+            print(f"[INFO] No audio detected for {transcription['filename']}. Skipping detailed generation.")
+            md = self._generate_no_audio_markdown(transcription)
+            self._save_document(transcription, md)
+            return
+
         # Group by topic
         topics = self._group_by_topic(segments)
+        
+        # 2. Check for Low Content (Short text)
+        # Threshold: e.g., less than 300 characters
+        is_short_content = len(full_text_content) < 300
         
         # Build Markdown
         if self.client:
             print(f"[INFO] Generating document with Minimax M2 for {transcription['filename']}...")
-            md = self._generate_with_minimax(transcription, topics)
+            if is_short_content:
+                print(f"[INFO] Content is short ({len(full_text_content)} chars). Generating brief summary.")
+                md = self._generate_short_summary_with_minimax(transcription, topics)
+            else:
+                md = self._generate_with_minimax(transcription, topics)
         else:
             md = self._build_markdown(transcription, topics)
         
-        # Save file
+        self._save_document(transcription, md)
+
+    def _save_document(self, transcription: Dict, content: str):
+        """Helper to save the generated markdown file."""
         filename = transcription["filename"].replace("transcripcion_", "processed_")
         if not filename.startswith("processed_"):
             filename = f"processed_{filename}"
             
         output_path = self.output_dir / filename
-        output_path.write_text(md, encoding='utf-8')
+        output_path.write_text(content, encoding='utf-8')
         print(f"[INFO] Generated document: {output_path}")
-        
+
+    def _generate_no_audio_markdown(self, metadata: Dict) -> str:
+        """Generate a simple markdown for empty/no-audio transcriptions."""
+        return f"""---
+original: {metadata['filename']}
+fecha: {metadata['date']}
+estado: Sin Audio Detectado
+generado: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
+---
+
+# 🔇 No se detectó audio
+
+El sistema no detectó audio válido o no se pudo realizar la transcripción para esta sesión.
+
+**Detalles:**
+- **Archivo original**: `{metadata['filename']}`
+- **Fecha**: {metadata['date']}
+- **Hora**: {metadata['time']}
+
+Por favor, verifique su micrófono y vuelva a intentarlo.
+"""
+
+    def _generate_short_summary_with_minimax(self, metadata: Dict, topics: List[Dict]) -> str:
+        """Generate a brief summary for short transcriptions."""
+        # Prepare context
+        context = f"Transcripción: {metadata['filename']}\nFecha: {metadata['date']}\n\nContenido:\n"
+        for topic in topics:
+            # Join content segments
+            content_text = "\n".join(topic['content'])
+            context += content_text + "\n\n"
+            
+        prompt = """Actúa como un asistente útil.
+La siguiente transcripción es muy corta. 
+Genera un resumen MUY BREVE (1-2 párrafos máximo) indicando de qué trata el texto.
+No inventes información. Si el texto es incoherente, indícalo.
+
+Formato:
+# Resumen Breve
+[Tu resumen aquí]
+"""
+
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.minimax_model,
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": context}
+                ],
+                temperature=0.5, # Lower temperature for factual brevity
+                top_p=0.95,
+                max_tokens=1000
+            )
+            
+            content = completion.choices[0].message.content
+            
+            # Add metadata header
+            header = f"""---
+original: {metadata['filename']}
+fecha: {metadata['date']}
+tipo: Resumen Breve
+generado_con: Minimax M2
+fecha_generacion: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
+---
+
+"""
+            return header + content
+            
+        except Exception as e:
+            print(f"[ERROR] Minimax short generation failed: {e}")
+            return self._build_markdown(metadata, topics) # Fallback
+
     def _group_by_topic(self, segments: List[Dict]) -> List[Dict[str, Any]]:
         """Group segments by their assigned topic."""
         topics = []

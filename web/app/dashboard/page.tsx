@@ -6,6 +6,7 @@ import { RecordingPanel } from './components/RecordingPanel';
 import LogoutButton from './components/LogoutButton';
 import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
+import { MicTest } from './components/MicTest';
 import { apiClient } from '@/utils/api-client';
 import { useRecording } from '@/hooks/useRecording';
 import { getSocket } from '@/utils/socket';
@@ -91,10 +92,20 @@ export default function DashboardPage() {
             <header className="bg-white shadow-sm p-4 border-b">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                            SpeechNotes - Transcripción en Tiempo Real
-                        </h1>
-                        <div className="flex items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                                SpeechNotes - Transcripción en Tiempo Real
+                            </h1>
+                            <nav className="flex gap-4 text-sm">
+                                <a href="/dashboard" className="text-blue-600 font-semibold">
+                                    📝 Transcribir
+                                </a>
+                                <a href="/dashboard/chat" className="text-gray-600 hover:text-blue-600">
+                                    💬 Chat con Documentos
+                                </a>
+                            </nav>
+                        </div>
+                        <div className="flex items-center gap-2">
                             <RecordingPanel />
                             <LogoutButton />
                         </div>
@@ -104,7 +115,8 @@ export default function DashboardPage() {
 
             <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
                 {/* Sidebar izquierda */}
-                <aside className="w-80 p-4">
+                <aside className="w-80 p-4 space-y-4 overflow-y-auto">
+                    <MicTest />
                     <LiveTranscription />
                 </aside>
 

@@ -278,18 +278,17 @@ def register_socket_events(sio):
                 for item in session["transcription_buffer"]
             ]
             
-            # Use realtime.py's formatter (SegmentedMarkdownFormatter for timestamped content)
-            formatter = FormatterFactory.create('segmented_markdown')
-            metadata = {'title': 'Transcripción de Audio', 'method': 'Real-time VAD'}
-            formatted_content = formatter.format(all_transcripts, metadata)
+            # Use realtime.py's formatter
+            formatter = FormatterFactory.create_markdown_formatter()
+            formatted_content = formatter.format(all_transcripts)
             
             # 3. Save markdown file
             md_filename = f"transcripcion_{timestamp}.md"
             md_path = Path(f"notas/{md_filename}")
             
             # Use realtime.py's OutputWriter
-            writer = OutputWriter(Path("notas"))
-            writer.write(formatted_content, filename=md_filename)
+            writer = OutputWriter(md_path)
+            writer.write(formatted_content)
             
             print(f"[Socket.IO] Saved transcription: {md_filename}")
             print(f"[Socket.IO] Saved audio: {audio_filename}")

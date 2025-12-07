@@ -83,6 +83,8 @@ TIMESTAMP | TÍTULO DEL TEMA
             return self._parse_llm_response(response)
         except Exception as e:
             print(f"[WARN] LLM analysis failed: {e}")
+            if "403" in str(e):
+                print("[WARN] Check NVIDIA_API_KEY in .env. It might be invalid, expired, or missing permissions.")
             # Fallback: Single topic
             return [{"timestamp": "00:00:00", "title": "Clase General"}]
             

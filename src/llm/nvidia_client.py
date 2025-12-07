@@ -8,8 +8,8 @@ from typing import Optional, List, Dict, Any, Iterator
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables, overriding system vars to ensure .env is used
+load_dotenv(override=True)
 
 
 class NvidiaInferenceClient:
@@ -31,11 +31,24 @@ class NvidiaInferenceClient:
         """Initialize the NVIDIA client (only once)."""
         if not self._initialized:
             self.api_key = os.getenv("NVIDIA_API_KEY")
+            # Clean API key (remove comments and whitespace)
+            if self.api_key:
+                self.api_key = self.api_key.split('#')[0].strip()
+
             self.base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
             self.model_name = os.getenv("MODEL_NAME", "deepseek-ai/deepseek-v3.1-terminus")
             
             if not self.api_key:
                 raise ValueError("NVIDIA_API_KEY not found in environment variables")
+            
+            # Log initialization (masked key)
+            masked_key = f"{self.api_key[:10]}...{self.api_key[-5:]}" if self.api_key else "None"
+            print(f"[NVIDIA Client] Initialized with model: {self.model_name}")
+            print(f"[NVIDIA Client] Base URL: {self.base_url}")
+            print(f"[NVIDIA Client] API Key: {masked_key}")
+
+            if not self.api_key.startswith("nvapi-"):
+                print(f"[NVIDIA Client] WARNING: API Key does not start with 'nvapi-'. It might be invalid.")
             
             self.client = OpenAI(
                 base_url=self.base_url,
