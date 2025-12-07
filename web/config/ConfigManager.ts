@@ -25,7 +25,7 @@ export class ConfigManager {
      */
     private constructor() {
         // Cargar variables de entorno
-        this.nextAuthUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        this.nextAuthUrl = process.env.NEXTAUTH_URL || 'http://localhost:3006';
         this.nextAuthSecret = process.env.NEXTAUTH_SECRET || '';
         this.googleClientId = process.env.GOOGLE_CLIENT_ID || '';
         this.googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || '';

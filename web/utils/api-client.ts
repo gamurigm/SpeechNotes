@@ -2,7 +2,7 @@
  * API Client for REST endpoints
  */
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8001/api';
 
 export const apiClient = {
     async getLatestTranscription() {

@@ -1,0 +1,6 @@
+{
+	"devDependencies": {
+		"cross-env": "^10.1.0",
+		"baseline-browser-mapping": "^2.9.4"
+	}
+}

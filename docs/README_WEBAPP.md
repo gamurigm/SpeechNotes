@@ -35,7 +35,7 @@ npm install
 python backend/main.py
 ```
 
-El backend estará disponible en `http://localhost:8000`
+El backend estará disponible en `http://localhost:8001`
 
 ### Terminal 2: Frontend
 
@@ -44,11 +44,11 @@ cd web
 npm run dev
 ```
 
-El frontend estará disponible en `http://localhost:3000`
+El frontend estará disponible en `http://localhost:3006`
 
 ## Uso
 
-1. Abre `http://localhost:3000/dashboard` en tu navegador
+1. Abre `http://localhost:3006/dashboard` en tu navegador
 2. Haz clic en el botón azul de micrófono para comenzar a grabar
 3. Habla y verás la transcripción aparecer en tiempo real en la barra lateral izquierda
 4. Haz clic en el botón rojo para detener la grabación

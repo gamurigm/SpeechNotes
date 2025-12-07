@@ -11,7 +11,15 @@ from src.llm.nvidia_client import NvidiaInferenceClient
 
 # Global instances (initialized once)
 vector_store = VectorStore()
-llm_client = NvidiaInferenceClient()
+_llm_client = None  # Lazy-loaded
+
+
+def get_llm_client():
+    """Lazy load LLM client only when needed"""
+    global _llm_client
+    if _llm_client is None:
+        _llm_client = NvidiaInferenceClient()
+    return _llm_client
 
 
 def router_node(state: AgentState) -> AgentState:
@@ -94,7 +102,8 @@ Respuesta:"""
     
     # Generate response
     try:
-        response = llm_client.generate(prompt)
+        llm = get_llm_client()  # Lazy load
+        response = llm.generate(prompt)
         state["generated_text"] = response
         
         # Add to messages

@@ -14,7 +14,7 @@ from routers import transcriptions
 # Create Socket.IO server
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins=['http://localhost:3000']
+    cors_allowed_origins=['http://localhost:3006']
 )
 
 # Create FastAPI app
@@ -27,7 +27,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3006"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +35,10 @@ app.add_middleware(
 
 # Include REST API routers
 app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"])
+
+# Import and include formatter router
+from routers import formatter
+app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 
 # Socket.IO event handlers
 from services.socket_handler import register_socket_events

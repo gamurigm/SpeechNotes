@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env PORT=3006 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -31,6 +31,7 @@
     "eslint-config-next": "16.0.4",
     "prisma": "^7.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "cross-env": "^7.0.3"
   }
 }

@@ -81,7 +81,7 @@ Proveer una búsqueda semántica sobre las transcripciones y notas del proyecto 
   - `components/SearchResults.tsx` — lista de resultados con snippets, timestamps y botón `Insertar en nota`.
   - `pages/search.tsx` o integrar el `SearchBar` en la `TopBar` existente.
 - Comportamiento:
-  - Llamar a `POST http://localhost:8000/search` o a la ruta proxy en Next (`/api/search`) y mostrar resultados.
+   - Llamar a `POST http://localhost:8001/search` o a la ruta proxy en Next (`/api/search`) y mostrar resultados.
   - Al hacer click en un resultado: mostrar contexto (chunks adyacentes) y permitir insertar el texto en el editor Markdown activo.
 
 ## Scripts sugeridos (archivos)
