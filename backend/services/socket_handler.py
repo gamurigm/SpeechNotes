@@ -210,12 +210,14 @@ def register_socket_events(sio):
             formatter = FormatterFactory.create_markdown_formatter()
             formatted_content = formatter.format(all_transcripts)
             
-            # 3. Save markdown file
+            # 3. Save markdown file to a temporary location
             md_filename = f"transcripcion_{timestamp}.md"
-            md_path = Path(f"notas/{md_filename}")
+            temp_dir = Path("temporal_docs/raw_transcriptions")
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            md_path = temp_dir / md_filename
             
             # Use realtime.py's OutputWriter
-            writer = OutputWriter(md_path)
+            writer = OutputWriter(str(md_path))
             writer.write(formatted_content)
             
             print(f"[Socket.IO] Saved transcription: {md_filename}")

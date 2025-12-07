@@ -17,7 +17,7 @@ class DocumentGenerator:
     Generates markdown files from MongoDB data.
     """
     
-    def __init__(self, output_dir: str = "knowledge_base/transcriptions"):
+    def __init__(self, output_dir: str = "notas"):
         self.db = MongoManager()
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
