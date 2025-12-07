@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from openai import OpenAI
 from dotenv import load_dotenv
+from src.database.mongo_manager import MongoManager
 
 load_dotenv()
 
@@ -409,7 +410,31 @@ modelo: {self.model}
                 # Save formatted version
                 formatted_file = output_path / f"{original_path.stem}_formatted.md"
                 formatted_file.write_text(formatted_content, encoding='utf-8')
-                
+
+                # Ingest formatted file into MongoDB so UI reads from DB
+                try:
+                    db = MongoManager()
+                    # Build document for formatted transcription
+                    formatted_doc = {
+                        "filename": formatted_file.name,
+                        "original_filename": original_path.name,
+                        "formatted_content": formatted_content,
+                        "formatted_at": datetime.now(),
+                        "word_count": len(formatted_content.split()),
+                        "source_path": str(formatted_file),
+                        "processed": True
+                    }
+                    # Insert or upsert by filename
+                    existing = db.transcriptions.find_one({"filename": formatted_file.name})
+                    if existing:
+                        db.transcriptions.replace_one({"_id": existing["_id"]}, formatted_doc)
+                        print(f"[FORMATTER] Updated formatted document in MongoDB: {formatted_file.name}")
+                    else:
+                        db.transcriptions.insert_one(formatted_doc)
+                        print(f"[FORMATTER] Inserted formatted document into MongoDB: {formatted_file.name}")
+                except Exception as e:
+                    print(f"[FORMATTER] Warning: failed to ingest formatted file into MongoDB: {e}")
+
                 return formatted_file
                 
             except Exception as e:

@@ -46,16 +46,34 @@ export default function DashboardPage() {
     }, [messages]);
 
     const loadLatestTranscription = async () => {
-        try {
-            setIsLoading(true);
-            const data = await apiClient.getLatestTranscription();
-            setLatestContent(data.content);
-            setTranscriptionId(data.id);
-        } catch (error) {
-            console.error('Error loading transcription:', error);
-        } finally {
-            setIsLoading(false);
+        const maxRetries = 3;
+        let attempt = 0;
+        let lastErr: any = null;
+
+        setIsLoading(true);
+        while (attempt < maxRetries) {
+            try {
+                const data = await apiClient.getLatestTranscription();
+                setLatestContent(data.content);
+                setTranscriptionId(data.id);
+                lastErr = null;
+                break;
+            } catch (error) {
+                lastErr = error;
+                console.warn(`loadLatestTranscription attempt ${attempt + 1} failed:`, error);
+                attempt += 1;
+                // exponential backoff
+                await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt)));
+            }
         }
+
+        if (lastErr) {
+            console.error('Error loading transcription after retries:', lastErr);
+            setLatestContent('[Error cargando transcripción — reintenta o revisa el backend]');
+            setTranscriptionId(null);
+        }
+
+        setIsLoading(false);
     };
 
     const handleSave = async (content: string) => {

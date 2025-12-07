@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import socketio
 from routers import transcriptions
 from routers import debug
+from routers import admin
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -39,6 +40,7 @@ app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["t
 
 # Debug routes
 app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 # Import and include formatter router
 from routers import formatter
