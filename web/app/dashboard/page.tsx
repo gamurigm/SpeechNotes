@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { RecordingPanel } from './components/RecordingPanel';
+import LogoutButton from './components/LogoutButton';
 import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { apiClient } from '@/utils/api-client';
@@ -71,10 +72,15 @@ export default function DashboardPage() {
         <div className="h-screen flex flex-col bg-gray-100">
             <header className="bg-white shadow-sm p-4 border-b">
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-4">
-                        SpeechNotes - Transcripción en Tiempo Real
-                    </h1>
-                    <RecordingPanel />
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                            SpeechNotes - Transcripción en Tiempo Real
+                        </h1>
+                        <div className="flex items-center">
+                            <RecordingPanel />
+                            <LogoutButton />
+                        </div>
+                    </div>
                 </div>
             </header>
 
