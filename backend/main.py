@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
 from routers import transcriptions
+from routers import debug
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -35,6 +36,9 @@ app.add_middleware(
 
 # Include REST API routers
 app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"])
+
+# Debug routes
+app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
 
 # Import and include formatter router
 from routers import formatter

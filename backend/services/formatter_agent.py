@@ -269,6 +269,21 @@ Contenido a formatear:
 
 {file_data['clean_content'][:15000]}"""  # Limit to avoid token limits
         
+        # If no remote client is configured, use a local heuristic formatter
+        if not self.client:
+            formatted_content = self._local_format(file_data)
+            header = f"""---
+original: {file_data['metadata'].get('original', file_data['file_name'])}
+fecha: {file_data['metadata'].get('fecha', 'N/A')}
+palabras_original: {file_data['metadata'].get('palabras', 'N/A')}
+formateado_con: local-fallback
+fecha_formato: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
+modelo: local-fallback
+---
+
+"""
+            return header + formatted_content
+
         for attempt in range(max_retries + 1):
             try:
                 completion = self.client.chat.completions.create(
@@ -281,9 +296,9 @@ Contenido a formatear:
                     top_p=0.9,
                     max_tokens=8192
                 )
-                
+
                 formatted_content = completion.choices[0].message.content.strip()
-                
+
                 # Add metadata header
                 header = f"""---
 original: {file_data['metadata'].get('original', file_data['file_name'])}
@@ -296,12 +311,72 @@ modelo: {self.model}
 
 """
                 return header + formatted_content
-                
+
             except Exception as e:
                 if attempt < max_retries:
                     await asyncio.sleep(2 * (2 ** attempt))  # Exponential backoff
                     continue
                 raise
+
+    def _local_format(self, file_data: Dict) -> str:
+        """Simple local formatter (fallback when Minimax not configured).
+
+        Produces an executive summary, key points, development sections
+        and conclusions using basic heuristics.
+        """
+        text = file_data.get('clean_content', '')
+        # Heuristics: split by headings or long pauses / double newlines
+        paragraphs = [p.strip() for p in re.split(r"\n{2,}", text) if p.strip()]
+
+        # Executive summary: first 1-2 paragraphs
+        summary = ''
+        if paragraphs:
+            summary = ' '.join(paragraphs[:2])
+            if len(summary) > 500:
+                summary = summary[:500].rsplit(' ', 1)[0] + '...'
+
+        # Key points: extract short sentences with keywords or first lines
+        key_points = []
+        for p in paragraphs[:6]:
+            # take first sentence-ish
+            s = re.split(r'[\.\?!]\s+', p)[0]
+            if len(s) > 10:
+                key_points.append(s.strip())
+        if not key_points and paragraphs:
+            key_points = [paragraphs[0][:120]]
+
+        # Development: group remaining paragraphs into sections of ~400-800 chars
+        sections = []
+        buffer = []
+        buf_len = 0
+        for p in paragraphs[2:]:
+            buffer.append(p)
+            buf_len += len(p)
+            if buf_len > 800:
+                sections.append('\n\n'.join(buffer))
+                buffer = []
+                buf_len = 0
+        if buffer:
+            sections.append('\n\n'.join(buffer))
+
+        # Build markdown
+        md = []
+        md.append('## Resumen Ejecutivo')
+        md.append(summary or 'No hay contenido suficiente para generar un resumen.')
+
+        md.append('## Puntos Clave')
+        for kp in key_points:
+            md.append(f'- **{kp}**')
+
+        md.append('## Desarrollo Detallado')
+        for i, sec in enumerate(sections, 1):
+            md.append(f'### Sección {i}')
+            md.append(sec)
+
+        md.append('## Conclusiones')
+        md.append('Resumen de ideas clave y posibles próximos pasos.')
+
+        return '\n\n'.join(md)
     
     async def _save_file_step(self, file_data: Dict, formatted_content: str, output_dir: str, max_retries: int = 2) -> Path:
         """Step: Save formatted file and backup original with retry logic"""

@@ -45,8 +45,33 @@ export default function FormatterPage() {
   const loadFiles = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost:8001/api/format/files');
+      // Try with session cookies first (preferred)
+      let res = await fetch('http://localhost:8001/api/format/files', {
+        credentials: 'include'
+      });
+
+      // If session request failed (e.g., not authenticated), fall back to dev API key
+      if (!res.ok) {
+        console.warn('Session fetch failed, retrying with dev API key', res.status);
+        res = await fetch('http://localhost:8001/api/format/files', {
+          headers: { 'x-api-key': 'dev-secret-api-key' }
+        });
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Failed to load files:', res.status, text);
+        setFiles([]);
+        return;
+      }
+
       const data = await res.json();
+      if (!Array.isArray(data)) {
+        console.error('Invalid response for files (expected array):', data);
+        setFiles([]);
+        return;
+      }
+
       setFiles(data);
     } catch (error) {
       console.error('Error loading files:', error);
@@ -82,16 +107,33 @@ export default function FormatterPage() {
 
     try {
       // Start formatting job
-      const res = await fetch('http://localhost:8001/api/format/start', {
+      // Try to start job with session cookies first
+      let res = await fetch('http://localhost:8001/api/format/start', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          files: Array.from(selectedFiles),
-          output_dir: 'notas'
-        })
+        body: JSON.stringify({ files: Array.from(selectedFiles), output_dir: 'notas' })
       });
 
-      const { job_id, ws_url } = await res.json();
+      // If session attempt failed, retry with dev API key as fallback
+      if (!res.ok) {
+        console.warn('Session start failed, retrying with dev API key', res.status);
+        res = await fetch('http://localhost:8001/api/format/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
+          body: JSON.stringify({ files: Array.from(selectedFiles), output_dir: 'notas' })
+        });
+      }
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Failed to start formatting job:', res.status, text);
+        setIsRunning(false);
+        return;
+      }
+
+      const body = await res.json();
+      const { job_id, ws_url } = body;
       setJobId(job_id);
 
       // Connect to WebSocket for progress updates

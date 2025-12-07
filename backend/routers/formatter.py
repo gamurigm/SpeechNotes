@@ -12,11 +12,11 @@ import os
 
 from services.formatter_agent import FormatterAgent
 try:
-    # Prefer absolute import when running as a script/module
-    from utils.auth import require_api_key
+    # Prefer importing via package name when backend is on sys.path
+    from backend.utils.auth import require_auth
 except Exception:
     # Fallback to relative import for package contexts
-    from ..utils.auth import require_api_key
+    from ..utils.auth import require_auth
 
 router = APIRouter()
 
@@ -73,7 +73,7 @@ class FileInfo(BaseModel):
 
 
 @router.get("/files", response_model=List[FileInfo])
-async def list_available_files(api_ok: bool = Depends(require_api_key)):
+async def list_available_files(api_ok: bool = Depends(require_auth)):
     """
     List all available markdown files in notas/ directory
     """
@@ -153,7 +153,7 @@ async def list_available_files(api_ok: bool = Depends(require_api_key)):
 
 
 @router.post("/start", response_model=FormatJobResponse)
-async def start_format_job(request: FormatRequest, api_ok: bool = Depends(require_api_key)):
+async def start_format_job(request: FormatRequest, api_ok: bool = Depends(require_auth)):
     """
     Start a new formatting job
     Returns job_id and WebSocket URL for progress updates
@@ -171,7 +171,9 @@ async def start_format_job(request: FormatRequest, api_ok: bool = Depends(requir
         return FormatJobResponse(
             job_id=job_id,
             total_files=len(request.files),
-            ws_url=f"/ws/format/{job_id}"
+            # WebSocket endpoint is mounted at /api/format/ws/{job_id}
+            # so we return the ws path relative to the router: /ws/{job_id}
+            ws_url=f"/ws/{job_id}"
         )
         
     except Exception as e:
