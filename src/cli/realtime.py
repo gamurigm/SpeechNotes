@@ -5,6 +5,7 @@ This script simulates real-time transcription by recording audio segments
 when voice is detected and transcribing them one by one.
 """
 import sys
+import os
 from pathlib import Path
 from datetime import datetime
 import argparse
@@ -293,6 +294,8 @@ def _save_transcription_results(all_transcripts, bg_recorder):
             print(f"✅ Transcripción guardada en: {output_path}")
         except Exception as e:
             print(f"⚠️ Error al guardar transcripción: {e}")
+        else:
+            _format_transcripts_with_minimax(all_transcripts)
     else:
         print("⚠️ No hay transcripciones para guardar.")
 
@@ -324,6 +327,67 @@ def _save_transcription_results(all_transcripts, bg_recorder):
 
         except Exception as e:
             print(f"⚠️ Error al detener/guardar la grabación background: {e}")
+
+
+def _format_transcripts_with_minimax(all_transcripts):
+    """Genera un resumen formateado con Minimax si hay credenciales disponibles."""
+    minimax_key = os.getenv("MINIMAX_API_KEY")
+    if not minimax_key:
+        print("   ℹ️ Minimax no configurado (MINIMAX_API_KEY ausente).")
+        return
+
+    try:
+        from openai import OpenAI
+    except ImportError:
+        print("   ⚠️ Paquete 'openai' no disponible; omitiendo formateo con Minimax.")
+        return
+
+    base_url = os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    model = os.getenv("MINIMAX_MODEL_NAME", "minimaxai/minimax-m2")
+
+    client = OpenAI(base_url=base_url, api_key=minimax_key)
+
+    formatted_segments = "\n".join(
+        f"[{timestamp.strftime('%H:%M:%S')}] {text}" for timestamp, text in all_transcripts
+    )
+
+    system_prompt = (
+        "Actúa como editor profesional. Recibe segmentos transcritos con timestamps y crea un informe "
+        "en Markdown que incluya un resumen ejecutivo, puntos clave organizados y acciones sugeridas. "
+        "Mantén el idioma original."
+    )
+
+    try:
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": formatted_segments}
+            ],
+            temperature=0.5,
+            top_p=0.9,
+            max_tokens=4096
+        )
+    except Exception as exc:
+        print(f"   ⚠️ Error al formatear con Minimax: {exc}")
+        return
+
+    content = completion.choices[0].message.content.strip() if completion.choices else ""
+    if not content:
+        print("   ⚠️ Minimax no devolvió contenido; omitiendo.")
+        return
+
+    header = (
+        "---\n"
+        "generado_con: Minimax M2\n"
+        f"fecha_generacion: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}\n"
+        "---\n\n"
+    )
+
+    writer = OutputWriter()
+    filename = f"transcripcion_minimax_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    output_path = writer.write(header + content, filename=filename, extension=".md")
+    print(f"✅ Formato Minimax guardado en: {output_path}")
 
 
 if __name__ == "__main__":
