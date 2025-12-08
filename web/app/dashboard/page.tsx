@@ -227,54 +227,87 @@ export default function DashboardPage() {
                     <div className="flex flex-col gap-2 items-start">
                         <div className="flex items-center gap-2">
                             {/* Zoom - Beautiful Icon */}
-                            <div className="group relative">
-                                <button
-                                    className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
-                                    title="Zoom (Ctrl+Scroll)"
-                                >
-                                    <ZoomIn size={18} className="group-hover:stroke-2" />
-                                </button>
-                                {/* Beautiful Tooltip with Slider */}
-                                <div className="hidden group-hover:flex absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 flex-col gap-2 min-w-max backdrop-blur-sm bg-opacity-95">
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="range"
-                                            min="50"
-                                            max="145"
-                                            step="5"
-                                            value={zoomLevel}
-                                            onChange={(e) => handleZoom(parseInt(e.target.value))}
-                                            className="w-40 h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700"
-                                            style={{
-                                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - 50) / 95) * 100}%, #dbeafe ${((zoomLevel - 50) / 95) * 100}%, #dbeafe 100%)`
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-2 px-1">
-                                        <span className="text-xs font-semibold text-blue-600">{zoomLevel}%</span>
-                                        <span className="text-xs text-slate-400">Ctrl+Scroll</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <div className="flex items-center gap-2">
+                                {activeTool === null ? (
+                                    <>
+                                        <div className="group relative">
+                                            <button
+                                                className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
+                                                title="Zoom (Ctrl+Scroll)"
+                                            >
+                                                <ZoomIn size={18} className="group-hover:stroke-2" />
+                                            </button>
+                                            {/* Beautiful Tooltip with Slider */}
+                                            <div className="hidden group-hover:flex absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 flex-col gap-2 min-w-max backdrop-blur-sm bg-opacity-95">
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="range"
+                                                        min="50"
+                                                        max="145"
+                                                        step="5"
+                                                        value={zoomLevel}
+                                                        onChange={(e) => handleZoom(parseInt(e.target.value))}
+                                                        className="w-40 h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700"
+                                                        style={{
+                                                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - 50) / 95) * 100}%, #dbeafe ${((zoomLevel - 50) / 95) * 100}%, #dbeafe 100%)`
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between gap-2 px-1">
+                                                    <span className="text-xs font-semibold text-blue-600">{zoomLevel}%</span>
+                                                    <span className="text-xs text-slate-400">Ctrl+Scroll</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                            <ToolbarIcon 
-                                icon={<Wand2 size={18} />} 
-                                tooltip="Format Markdown" 
-                                onClick={() => toggleTool('format')}
-                                isActive={activeTool === 'format'}
-                            />
-                            <ToolbarIcon 
-                                icon={<FileAudio2 size={18} />} 
-                                tooltip="Transcribe Audio File" 
-                                onClick={() => toggleTool('upload')}
-                                isActive={activeTool === 'upload'}
-                            />
-                            <ToolbarIcon
-                                icon={<SlidersHorizontal size={18} />}
-                                tooltip="Calibrate Audio"
-                                onClick={() => toggleTool('calibrate')}
-                                isActive={activeTool === 'calibrate'}
-                            />
+                                        <ToolbarIcon 
+                                            icon={<Wand2 size={18} />} 
+                                            tooltip="Format Markdown" 
+                                            onClick={() => toggleTool('format')}
+                                            isActive={activeTool === 'format'}
+                                        />
+                                        <ToolbarIcon 
+                                            icon={<FileAudio2 size={18} />} 
+                                            tooltip="Transcribe Audio File" 
+                                            onClick={() => toggleTool('upload')}
+                                            isActive={activeTool === 'upload'}
+                                        />
+                                        <ToolbarIcon
+                                            icon={<SlidersHorizontal size={18} />}
+                                            tooltip="Calibrate Audio"
+                                            onClick={() => toggleTool('calibrate')}
+                                            isActive={activeTool === 'calibrate'}
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        {activeTool === 'format' && (
+                                            <ToolbarIcon
+                                                icon={<Wand2 size={18} />}
+                                                tooltip="Formato Markdown"
+                                                onClick={() => toggleTool('format')}
+                                                isActive={true}
+                                            />
+                                        )}
+                                        {activeTool === 'upload' && (
+                                            <ToolbarIcon
+                                                icon={<FileAudio2 size={18} />}
+                                                tooltip="Transcribir Archivo"
+                                                onClick={() => toggleTool('upload')}
+                                                isActive={true}
+                                            />
+                                        )}
+                                        {activeTool === 'calibrate' && (
+                                            <ToolbarIcon
+                                                icon={<SlidersHorizontal size={18} />}
+                                                tooltip="Calibración"
+                                                onClick={() => toggleTool('calibrate')}
+                                                isActive={true}
+                                            />
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         {/* Active Tool Panels */}
@@ -405,12 +438,14 @@ export default function DashboardPage() {
                         <RecordingPanel />
                     </div>
 
-                    <div className="bg-white border border-slate-200 rounded-md p-1.5 flex gap-1.5 shadow-sm">
-                        <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Ideas" />
-                        <ToolbarIcon icon={<Beaker size={18} />} tooltip="Labs" />
-                        <ToolbarIcon icon={<Rocket size={18} />} tooltip="Launch" />
-                        <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Placeholder" />
-                    </div>
+                    {activeTool === null && (
+                        <div className="bg-white border border-slate-200 rounded-md p-1.5 flex gap-1.5 shadow-sm transition-opacity duration-200">
+                            <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Ideas" />
+                            <ToolbarIcon icon={<Beaker size={18} />} tooltip="Labs" />
+                            <ToolbarIcon icon={<Rocket size={18} />} tooltip="Launch" />
+                            <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Placeholder" />
+                        </div>
+                    )}
                 </div>
             </div>
             
