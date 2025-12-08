@@ -1,51 +1,68 @@
 # SpeechNotes
-## Propuesta V1.2.52
-Repositorio de trabajo para SpeechNotes — aplicación para captura, transcripción, edición y búsqueda semántica de notas de audio.
 
-Este proyecto incluye: frontend web (Next.js), herramientas y demos Python para RAG/ búsqueda semántica, integración con clientes ASR (Riva), y un agente que combina indexación + generación con NVIDIA NIM.
+Propuesta V1.2.52 — Aplicación para captura, transcripción, edición y búsqueda semántica de notas de audio.
 
 ---
 
-## Estructura principal
-- `web/` — frontend Next.js (React). Componentes: editor Markdown, panel de transcripción en tiempo real, grabador y reproductor.
-- `src/` — lógica Python de la aplicación (agent, llm wrappers, audio helpers).
-  - `src/agent/` — vector store, indexer, loader, nodes/graph para el agente RAG.
-  - `src/llm/` — wrappers para llamadas a LLMs (NVIDIA NIM client).
-- `python-clients/` — clientes y scripts para Riva (ASR) y utilidades relacionadas.
-- `server/` — utilidades y demos ejecutables (RAG demo, agent demo, scripts de limpieza).
-- `notas/` — transcripciones en Markdown (entrada para indexación).
-- `docs/` — documentación y planes (semantic search plan, diseños, etc.).
+## Índice
+- [Resumen](#resumen)
+- [Estado y alcance](#estado-y-alcance)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Requisitos](#requisitos)
+- [Variables de entorno](#variables-de-entorno)
+- [Inicio rápido](#inicio-rápido)
+  - [Frontend (Next.js)](#frontend-nextjs)
+  - [Demos / Scripts Python](#demos--scripts-python)
+- [Flujo de datos (alto nivel)](#flujo-de-datos-alto-nivel)
+- [Componentes principales](#componentes-principales)
+- [Operaciones comunes](#operaciones-comunes)
+- [Notas de desarrollo](#notas-de-desarrollo)
+- [Contacto / Contribución](#contacto--contribución)
 
 ---
 
-## Qué contiene este repo (resumen)
-- Demo RAG local: `server/rag_demo.py` (usa `sentence-transformers` + FAISS; opcional OpenAI para generación).
-- Demo agent-RAG: `server/agent_rag_demo.py` (usa `src.agent.VectorStore` con embeddings NVIDIA y `NvidiaInferenceClient` para generación con NIM).
-- Scripts ASR (Riva): `python-clients/scripts/asr/transcribe_file_offline.py` (soporta `--dry-run` para depuración de headers y conexión).
-- Limpieza de transcripciones: `server/cleanup_transcriptions.py` (mueve o borra transcripciones inválidas en `notas/`).
+## Resumen
+SpeechNotes convierte grabaciones en notas útiles: captura audio, genera transcripciones en Markdown enriquecido, permite edición y exportación, y habilita búsqueda semántica y RAG (recuperación + generación). Soporta integración con clientes ASR (Riva) y generación con proveedores (NVIDIA NIM, OpenAI opcional).
 
 ---
 
-## Requisitos (rápido)
-- Python 3.10+ (recomendado) con un entorno virtual.
-- Node.js 18+ para el frontend (Next 16 usa React 19).
-- Paquetes Python necesarios para demos y agent (ejemplo):
+## Estado y alcance
+Versión: V1.2.52 — proyecto en desarrollo. Contiene:
+- Frontend (Next.js) con panel de grabación, editor Markdown y UI de transcripción.
+- Herramientas Python para indexación (FAISS), generación RAG y demos.
+- Integraciones experimentales con Riva (ASR) y NVIDIA (embeddings + generación).
 
-```
-pip install sentence-transformers faiss-cpu transformers openai python-dotenv
-```
+---
 
-Nota: `faiss-cpu` puede requerir compilación en algunos sistemas; alternativamente usar `faiss` provisto por conda.
+## Estructura del repositorio
+- `web/` — Frontend Next.js (React). Componentes: grabador, transcripción en vivo, Markdown editor/viewer.
+- `src/` — Lógica Python principal (agent, indexer, loaders, wrappers LLM).
+  - `src/agent/` — indexer, loader y vector store.
+  - `src/llm/` — wrappers para NIM / otros LLMs.
+- `python-clients/` — clientes y scripts para Riva (ASR) y utilidades.
+- `server/` — demos ejecutables (RAG demo, agent demo, cleaning scripts).
+- `notas/` — transcripciones y notas en formato Markdown.
+- `docs/` — diseños, planes y documentación de alto nivel.
+
+---
+
+## Requisitos
+- Node.js 18+ (recomendado) — ejecutar frontend (Next.js).
+- Python 3.10+ — para demos y herramientas (virtualenv recomendado).
+- Paquetes Python (ejemplo):
+  ```
+  pip install sentence-transformers faiss-cpu transformers openai python-dotenv
+  ```
+  Nota: `faiss-cpu` puede requerir conda o compilación en algunos sistemas.
 
 ---
 
 ## Variables de entorno importantes
-- `NVIDIA_EMBEDDING_API_KEY` — clave para embeddings NVIDIA (usada por `src.agent.VectorStore`).
-- `NVIDIA_API_KEY` — clave para generación en NVIDIA NIM (usada por `src.llm.nvidia_client.NvidiaInferenceClient`).
-- `OPENAI_API_KEY` — opcional: si está presente `server/rag_demo.py` usará OpenAI (`gpt-4o-mini`) para generar la respuesta final.
-
+- `NVIDIA_EMBEDDING_API_KEY` — embeddings NVIDIA (opcional).
+- `NVIDIA_API_KEY` — generación con NVIDIA NIM (opcional).
+- `OPENAI_API_KEY` — usar OpenAI para generación si está disponible.
 Export ejemplo (PowerShell):
-```
+```powershell
 $env:NVIDIA_EMBEDDING_API_KEY = 'tu_key'
 $env:NVIDIA_API_KEY = 'tu_key'
 $env:OPENAI_API_KEY = 'tu_key'  # opcional
@@ -53,94 +70,91 @@ $env:OPENAI_API_KEY = 'tu_key'  # opcional
 
 ---
 
-## Comandos útiles
-# SpeechNotes — Descripción del sistema
+## Inicio rápido
 
-Este repositorio contiene el sistema SpeechNotes: una plataforma para capturar audio, generar transcripciones, almacenar y enriquecer notas en Markdown y habilitar búsqueda semántica y generación de respuestas (RAG). El objetivo es convertir grabaciones en notas útiles y consultables, permitiendo búsquedas por contenido, recuperación de fragmentos relevantes y generación de resúmenes o respuestas a preguntas basadas en las transcripciones.
-
-Este README describe el propósito del sistema, su arquitectura lógica y los flujos principales —no se centra en una implementación concreta de frontend—, según la especificación en `docs/SpeechNotes.pdf`.
-
----
-
-## Propósito del sistema
-- Capturar y procesar audio (local o remoto) para producir transcripciones de alta calidad.
-- Estandarizar y almacenar las transcripciones en Markdown enriquecido (metadatos, timestamps, temas).
-- Indexar el contenido para búsqueda semántica eficiente (embeddings + vector DB local o remota).
-- Permitir respuestas contextuales mediante RAG: recuperar fragmentos relevantes y generar texto (resúmenes, respuestas, exportación).
-
----
-
-## Arquitectura lógica (visión general)
-
-1. Captura de audio
-  - Origenes: grabación en la app, carga de archivos, integración con clientes ASR (Riva).
-  - Formatos soportados: WAV (mono/16-bit), FLAC, OPUS.
-
-2. Transcripción (ASR)
-  - Motor principal: Riva (scripts en `python-clients/`) o servicios locales/cloud alternativos.
-  - Resultado: archivo `.md` por sesión con metadata (fecha, duración, idioma) y sección de transcripción completa.
-
-3. Procesamiento y enriquecimiento
-  - Post-procesado: limpieza, detección de tópicos, timestamps, formato profesional en Markdown (`src/agent/transcription_loader.py`).
-  - Validación: heurística para detectar transcripciones ruidosas/invalidas y opciones para moverlas o eliminarlas (`server/cleanup_transcriptions.py`).
-
-4. Indexación y vectorización
-  - Embeddings: proveedor configurable (local con `sentence-transformers` o remoto con NVIDIA embeddings via `NVIDIA_EMBEDDING_API_KEY`).
-  - Vector store: FAISS local o alternativa gestionada.
-  - Indexer: extrae chunks temáticos y los añade al vector store (`src/agent/transcription_indexer.py`).
-
-5. Recuperación y generación (RAG)
-  - Recuperación: consulta semántica que devuelve fragmentos relevantes con metadata y score.
-  - Generación: uso opcional de LLMs para construir respuestas (OpenAI si `OPENAI_API_KEY` presente, o NVIDIA NIM si `NVIDIA_API_KEY` está configurada). Implementaciones de demo en `server/rag_demo.py` y `server/agent_rag_demo.py`.
-
-6. Interfaz y exportación
-  - Notas en Markdown editables, exportación a formatos (Markdown/SRT), integración con UI para insertar fragmentos recuperados.
-
----
-
-## Flujo de datos (ejemplo de uso)
-1. Usuario graba audio en la aplicación o sube un archivo.
-2. El sistema llama al motor ASR y genera una transcripción `.md` en `notas/`.
-3. El indexer procesa la `.md`, crea chunks temáticos y solicita embeddings.
-4. Embeddings se almacenan en FAISS (vector store) junto con metadata (archivo, timestamp, tópico).
-5. Al realizar una búsqueda o pregunta, el sistema consulta la base vectorial, recupera los mejores fragmentos y, si está habilitado, pasa ese contexto a un LLM para generar la respuesta final.
-
----
-
-## Componentes principales (lógica, no UI)
-- Captura/ASR: `python-clients/` (scripts y helpers Riva).
-- Ingestión y formateo: `src/agent/transcription_loader.py`.
-- Indexación: `src/agent/transcription_indexer.py`, `src/agent/transcription_embedder.py`.
-- Vector store: `src/agent/vector_store.py` (FAISS + proveedor de embeddings).
-- Generación LLM: `src/llm/nvidia_client.py` (wrapper para NIM). Demos de RAG en `server/`.
-
----
-
-## Requisitos mínimos y variables de entorno
-- Python 3.10+ (entorno virtual recomendado).
-- Dependencias para demos: `sentence-transformers`, `faiss-cpu`, `transformers`, `openai`, `python-dotenv`.
-- Env vars claves:
-  - `NVIDIA_EMBEDDING_API_KEY`: clave para embeddings NVIDIA (opcional, permite usar NIM embeddings).
-  - `NVIDIA_API_KEY`: clave para llamadas a NVIDIA NIM (generación).
-  - `OPENAI_API_KEY`: si existe, se puede usar OpenAI para generación en demos.
-
----
-
-## Operaciones comunes (línea de comandos)
-- Indexar todas las transcripciones (demo agent):
+### Frontend (Next.js)
+1. En la carpeta `web/`:
+```bash
+pnpm install      # o npm/yarn según tu setup
+pnpm dev
 ```
-setx NVIDIA_EMBEDDING_API_KEY "<key>"      # Windows / PowerShell example
-setx NVIDIA_API_KEY "<key>"
-python server/agent_rag_demo.py --query "¿Cómo exporto una transcripción?"
-```
-- Ejecutar demo RAG local (sin NVIDIA):
-```
+2. Visitar `http://localhost:3000` (o puerto que indique la app).
+
+Notas:
+- El frontend usa Tailwind + HeroUI (config en `web/hero.ts`).
+- Si ves warnings ESM por archivos `.ts`, añadir `"type": "module"` en `web/package.json` puede resolverlos.
+
+### Demos / Scripts Python
+- Demo RAG local:
+```bash
 python server/rag_demo.py --query "¿Cómo exporto una transcripción?"
 ```
-- Probar transcripción Riva en modo diagnóstico (no envía audio):
+- Demo agent-RAG (usa `src.agent.VectorStore`):
+```bash
+python server/agent_rag_demo.py --query "Resumen de la última clase"
 ```
-python python-clients/scripts/asr/transcribe_file_offline.py --input-file "ruta/al/audio.wav" --server grpc.nvcf.nvidia.com:443 --use-ssl --metadata function-id "<id>" --metadata "authorization" "Bearer <token>" --language-code en-US --model-name pa_canary1b --dry-run
+- Prueba ASR (modo diagnóstico):
+```bash
+python python-clients/scripts/asr/transcribe_file_offline.py --input-file "audio.wav" --dry-run
 ```
+
+---
+
+## Flujo de datos (resumen)
+1. Usuario graba o sube audio.
+2. Sistema llama al motor ASR → genera `.md` en `notas/` con metadata.
+3. Indexer procesa `.md`, crea chunks y solicita embeddings.
+4. Embeddings almacenados en FAISS (vector store).
+5. Consultas recuperan fragmentos relevantes; opcionalmente se pasan a un LLM para generar respuestas/sumarizados.
+
+---
+
+## Componentes principales (funcionales)
+- Captura/ASR: `python-clients/` (Riva helpers).
+- Formateo/ingestión: `src/agent/transcription_loader.py`.
+- Indexación/embeddings: `src/agent/transcription_indexer.py`, `src/agent/transcription_embedder.py`.
+- Vector store: `src/agent/vector_store.py` (FAISS).
+- Generación: `src/llm/nvidia_client.py`.
+- Frontend: `web/app/` — grabador, Markdown viewer/editor, panel de transcripción.
+
+---
+
+## Operaciones comunes
+- Indexar todas las transcripciones:
+```bash
+python server/agent_rag_demo.py --index-all
+```
+- Ejecutar demo RAG:
+```bash
+python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
+```
+- Ejecutar frontend:
+```bash
+cd web
+pnpm dev
+```
+
+---
+
+## Notas de desarrollo / fixes recientes
+- Integración inicial con HeroUI y ajustes de Tailwind.
+- Adaptación del frontend a React 18 donde fue necesario.
+- Fix: renderizado de chat adaptado a `message.content` (antes `message.parts`).
+- Fix: corrección de un parse error en JSX (duplicación en clase).
+- Mejora del MarkdownViewer para que `#` y otros elementos se muestren con estilos `prose`.
+
+---
+
+## Contribución
+1. Leer `TAREAS.md` y el checklist de tareas antes de comenzar cambios.
+2. Abrir PR por cada feature/bugfix con descripción clara y pasos para reproducir.
+3. Mantener commits atómicos y mensajes claros (ej. `chore/ui: ...`, `fix(chat): ...`).
+
+---
+
+## Licencia y contacto
+- Proyecto interno / académico. Agregar licencia explícita si se publica.
+- Para dudas y coordinar cambios: abrir un issue en este repositorio.
 
 ---
 
