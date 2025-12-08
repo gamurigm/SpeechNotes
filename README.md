@@ -1,10 +1,10 @@
-# SpeechNotes
+# 🎙️ SpeechNotes
 
 Propuesta V1.2.52 — Aplicación para captura, transcripción, edición y búsqueda semántica de notas de audio.
 
 ---
 
-## Índice
+## 📚 Índice
 - [Resumen](#resumen)
 - [Estado y alcance](#estado-y-alcance)
 - [Estructura del repositorio](#estructura-del-repositorio)
@@ -16,145 +16,146 @@ Propuesta V1.2.52 — Aplicación para captura, transcripción, edición y búsq
 - [Flujo de datos (alto nivel)](#flujo-de-datos-alto-nivel)
 - [Componentes principales](#componentes-principales)
 - [Operaciones comunes](#operaciones-comunes)
-- [Notas de desarrollo](#notas-de-desarrollo)
-- [Contacto / Contribución](#contacto--contribución)
+- [Notas de desarrollo / fixes recientes](#notas-de-desarrollo--fixes-recientes)
+- [Tareas (TAREAS.md)](#tareas-tareasmd)
+- [Contribución](#contribución)
+- [Licencia y contacto](#licencia-y-contacto)
 
 ---
 
-## Resumen
-SpeechNotes convierte grabaciones en notas útiles: captura audio, genera transcripciones en Markdown enriquecido, permite edición y exportación, y habilita búsqueda semántica y RAG (recuperación + generación). Soporta integración con clientes ASR (Riva) y generación con proveedores (NVIDIA NIM, OpenAI opcional).
+## ✨ Resumen
+SpeechNotes convierte grabaciones en notas útiles: captura audio, genera transcripciones en Markdown enriquecido, permite edición y exportación, y habilita búsqueda semántica y RAG (recuperación + generación). Soporta integraciones ASR (Riva) y generación/embeddings (NVIDIA NIM, OpenAI opcional).
 
 ---
 
-## Estado y alcance
-Versión: V1.2.52 — proyecto en desarrollo. Contiene:
+## 📈 Estado y alcance
+**Versión:** V1.2.52 — en desarrollo.
+
+Incluye:
 - Frontend (Next.js) con panel de grabación, editor Markdown y UI de transcripción.
 - Herramientas Python para indexación (FAISS), generación RAG y demos.
-- Integraciones experimentales con Riva (ASR) y NVIDIA (embeddings + generación).
+- Integraciones experimentales con Riva y NVIDIA.
 
 ---
 
-## Estructura del repositorio
-- `web/` — Frontend Next.js (React). Componentes: grabador, transcripción en vivo, Markdown editor/viewer.
-- `src/` — Lógica Python principal (agent, indexer, loaders, wrappers LLM).
-  - `src/agent/` — indexer, loader y vector store.
-  - `src/llm/` — wrappers para NIM / otros LLMs.
-- `python-clients/` — clientes y scripts para Riva (ASR) y utilidades.
-- `server/` — demos ejecutables (RAG demo, agent demo, cleaning scripts).
-- `notas/` — transcripciones y notas en formato Markdown.
-- `docs/` — diseños, planes y documentación de alto nivel.
+## 🗂️ Estructura del repositorio
+- `web/` — Frontend Next.js (React, Tailwind, HeroUI).
+- `src/` — Lógica Python (agent, indexer, loaders, wrappers LLM).
+- `python-clients/` — clientes y scripts ASR (Riva).
+- `server/` — demos ejecutables (RAG demo, agent demo).
+- `notas/` — transcripciones (.md).
+- `docs/` — diseño y documentación.
 
 ---
 
-## Requisitos
-- Node.js 18+ (recomendado) — ejecutar frontend (Next.js).
-- Python 3.10+ — para demos y herramientas (virtualenv recomendado).
-- Paquetes Python (ejemplo):
-  ```
-  pip install sentence-transformers faiss-cpu transformers openai python-dotenv
-  ```
-  Nota: `faiss-cpu` puede requerir conda o compilación en algunos sistemas.
+## 🛠️ Requisitos
+- Node.js 18+ (recomendado)
+- Python 3.10+
+- Ejemplo de paquetes Python:
+```bash
+pip install sentence-transformers faiss-cpu transformers openai python-dotenv
+```
 
 ---
 
-## Variables de entorno importantes
-- `NVIDIA_EMBEDDING_API_KEY` — embeddings NVIDIA (opcional).
-- `NVIDIA_API_KEY` — generación con NVIDIA NIM (opcional).
-- `OPENAI_API_KEY` — usar OpenAI para generación si está disponible.
-Export ejemplo (PowerShell):
+## 🔐 Variables de entorno importantes
+- `NVIDIA_EMBEDDING_API_KEY`
+- `NVIDIA_API_KEY`
+- `OPENAI_API_KEY` (opcional)
+
+Ejemplo (PowerShell):
 ```powershell
 $env:NVIDIA_EMBEDDING_API_KEY = 'tu_key'
 $env:NVIDIA_API_KEY = 'tu_key'
-$env:OPENAI_API_KEY = 'tu_key'  # opcional
+$env:OPENAI_API_KEY = 'tu_key'
 ```
 
 ---
 
-## Inicio rápido
+## 🚀 Inicio rápido
 
 ### Frontend (Next.js)
-1. En la carpeta `web/`:
+1. Entrar a `web/`:
 ```bash
-pnpm install      # o npm/yarn según tu setup
+pnpm install
 pnpm dev
 ```
-2. Visitar `http://localhost:3000` (o puerto que indique la app).
+2. Abrir: http://localhost:3000
 
 Notas:
-- El frontend usa Tailwind + HeroUI (config en `web/hero.ts`).
-- Si ves warnings ESM por archivos `.ts`, añadir `"type": "module"` en `web/package.json` puede resolverlos.
+- Frontend usa Tailwind + HeroUI (config en `web/hero.ts`).
+- Si aparece warning ESM: añade `"type": "module"` en `web/package.json`.
 
 ### Demos / Scripts Python
-- Demo RAG local:
+- Demo RAG:
 ```bash
 python server/rag_demo.py --query "¿Cómo exporto una transcripción?"
 ```
-- Demo agent-RAG (usa `src.agent.VectorStore`):
-```bash
-python server/agent_rag_demo.py --query "Resumen de la última clase"
-```
-- Prueba ASR (modo diagnóstico):
-```bash
-python python-clients/scripts/asr/transcribe_file_offline.py --input-file "audio.wav" --dry-run
-```
-
----
-
-## Flujo de datos (resumen)
-1. Usuario graba o sube audio.
-2. Sistema llama al motor ASR → genera `.md` en `notas/` con metadata.
-3. Indexer procesa `.md`, crea chunks y solicita embeddings.
-4. Embeddings almacenados en FAISS (vector store).
-5. Consultas recuperan fragmentos relevantes; opcionalmente se pasan a un LLM para generar respuestas/sumarizados.
-
----
-
-## Componentes principales (funcionales)
-- Captura/ASR: `python-clients/` (Riva helpers).
-- Formateo/ingestión: `src/agent/transcription_loader.py`.
-- Indexación/embeddings: `src/agent/transcription_indexer.py`, `src/agent/transcription_embedder.py`.
-- Vector store: `src/agent/vector_store.py` (FAISS).
-- Generación: `src/llm/nvidia_client.py`.
-- Frontend: `web/app/` — grabador, Markdown viewer/editor, panel de transcripción.
-
----
-
-## Operaciones comunes
 - Indexar todas las transcripciones:
 ```bash
 python server/agent_rag_demo.py --index-all
 ```
-- Ejecutar demo RAG:
-```bash
-python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
-```
+
+---
+
+## 🔁 Flujo de datos (alto nivel)
+1. Usuario graba/sube audio → ASR genera `.md` en `notas/`.
+2. Indexer crea chunks → solicita embeddings.
+3. Embeddings guardados en FAISS.
+4. Consultas recuperan fragmentos; LLM opcional para respuestas/sumarizados.
+
+---
+
+## 🧩 Componentes principales
+- Captura/ASR: `python-clients/`
+- Formateo/ingestión: `src/agent/transcription_loader.py`
+- Indexación/embeddings: `src/agent/transcription_indexer.py`
+- Vector store: `src/agent/vector_store.py` (FAISS)
+- Generación: `src/llm/nvidia_client.py`
+- Frontend: `web/app/` — grabador, Markdown viewer/editor
+
+---
+
+## ⚙️ Operaciones comunes
 - Ejecutar frontend:
 ```bash
 cd web
 pnpm dev
 ```
+- Ejecutar demo RAG:
+```bash
+python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
+```
 
 ---
 
-## Notas de desarrollo / fixes recientes
+## 🛠️ Notas de desarrollo / fixes recientes
 - Integración inicial con HeroUI y ajustes de Tailwind.
-- Adaptación del frontend a React 18 donde fue necesario.
-- Fix: renderizado de chat adaptado a `message.content` (antes `message.parts`).
-- Fix: corrección de un parse error en JSX (duplicación en clase).
-- Mejora del MarkdownViewer para que `#` y otros elementos se muestren con estilos `prose`.
+- Migración parcial a React 18.
+- Fix: renderizado de chat adaptado a `message.content`.
+- Fix: corrección de un parse error en JSX.
+- Mejora de MarkdownViewer (clases `prose`) para headings, listas y código.
+- Añadido `"type": "module"` en `web/package.json` para resolver warnings ESM.
 
 ---
 
-## Contribución
-1. Leer `TAREAS.md` y el checklist de tareas antes de comenzar cambios.
-2. Abrir PR por cada feature/bugfix con descripción clara y pasos para reproducir.
-3. Mantener commits atómicos y mensajes claros (ej. `chore/ui: ...`, `fix(chat): ...`).
+## ✅ Tareas (revisar `TAREAS.md`)
+- [x] actualizar la ui para usar componentes de HeroUI (Next.js) — estudiada e integrada.
+  - Detalles: configuración `hero.ts`, `providers.tsx`, uso de componentes HeroUI en Navbar, Buttons, Cards.
+- (Ver `TAREAS.md` para historial completo y nuevas tareas.)
 
 ---
 
-## Licencia y contacto
-- Proyecto interno / académico. Agregar licencia explícita si se publica.
-- Para dudas y coordinar cambios: abrir un issue en este repositorio.
+## 🤝 Contribución
+1. Leer `TAREAS.md` antes de trabajar.
+2. Abrir PR con descripción y pasos para reproducir.
+3. Commits atómicos; mensajes claros (ej. `chore/ui: ...`, `fix(chat): ...`).
+
+---
+
+## 📄 Licencia y contacto
+- Proyecto interno / académico. Añadir licencia si se publica.
+- Para dudas: abrir un issue en el repositorio.
 
 ---
 
