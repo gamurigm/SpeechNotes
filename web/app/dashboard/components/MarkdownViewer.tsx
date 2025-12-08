@@ -236,7 +236,7 @@ export function MarkdownViewer({ content, onSave, nav, title }: Props) {
                     <div className="flex flex-col min-w-0">
                         <h2
                             className="text-2xl sm:text-3xl font-sans font-semibold text-slate-900 leading-tight break-words whitespace-pre-wrap max-w-prose"
-                            style={{ fontFamily: 'var(--font-geist-sans)', letterSpacing: '0.2px' }}
+                            style={{ fontFamily: 'Times New Roman, Times, serif', letterSpacing: '0.2px' }}
                         >
                             {displayTitle}
                         </h2>
@@ -310,7 +310,7 @@ export function MarkdownViewer({ content, onSave, nav, title }: Props) {
 
             <div className="flex-1 overflow-y-auto p-6">
                 {isEditing ? (
-                    <div data-color-mode="light" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                    <div data-color-mode="light" style={{ fontFamily: 'Times New Roman, Times, serif' }}>
                         <MDEditor
                             value={editedContent}
                             onChange={(val) => setEditedContent(val || '')}
@@ -320,7 +320,7 @@ export function MarkdownViewer({ content, onSave, nav, title }: Props) {
                     </div>
                 ) : (
                         <div className="markdown-content">
-                            <div id="markdown-preview" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+                            <div id="markdown-preview" style={{ fontFamily: 'Times New Roman, Times, serif' }}>
                                 <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{
