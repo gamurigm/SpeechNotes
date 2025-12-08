@@ -38,12 +38,15 @@ export function RecordingPanel() {
                         <Button
                             onPress={isRecording ? stopRecording : startRecording}
                             isIconOnly
-                            size="sm"
+                            size="lg"
                             radius="full"
-                            color={isRecording ? "danger" : "primary"}
-                            className={`min-w-11 h-11 ${isRecording ? 'animate-pulse' : ''}`}
+                            className={`min-w-14 h-14 font-bold shadow-lg transition-all duration-300 transform hover:scale-110 ${
+                                isRecording 
+                                    ? 'bg-gradient-to-br from-red-500 to-red-700 text-white animate-pulse shadow-red-400/50 hover:shadow-red-500/70' 
+                                    : 'bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700 text-white hover:shadow-blue-500/50 hover:from-blue-600 hover:to-purple-800'
+                            }`}
                         >
-                            {isRecording ? <Square size={18} /> : <Mic size={18} />}
+                            {isRecording ? <Square size={24} /> : <Mic size={24} />}
                         </Button>
 
                         <div className="flex flex-col">

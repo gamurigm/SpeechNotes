@@ -55,25 +55,25 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                 </h2>
                 <div className="flex gap-2">
                     {nav && (
-                        <div className="flex items-center mr-4">
+                        <div className="flex items-center mr-4 gap-2">
                             <button
                                 onClick={nav.onPrev}
                                 disabled={!nav.hasPrev}
                                 aria-label="Anterior"
-                                className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 mr-2"
+                                className="p-2.5 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 hover:from-slate-400 hover:to-slate-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all transform hover:scale-110 duration-200"
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronLeft size={20} className="text-white" />
                             </button>
                             <button
                                 onClick={nav.onNext}
                                 disabled={!nav.hasNext}
                                 aria-label="Siguiente"
-                                className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                                className="p-2.5 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 hover:from-slate-400 hover:to-slate-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all transform hover:scale-110 duration-200"
                             >
-                                <ChevronRight size={18} />
+                                <ChevronRight size={20} className="text-white" />
                             </button>
                             {typeof nav.index === 'number' && typeof nav.total === 'number' && (
-                                <span className="ml-3 text-sm text-gray-600">{nav.index + 1}/{nav.total}</span>
+                                <span className="ml-2 px-3 py-1 text-sm font-semibold text-white bg-gradient-to-r from-slate-500 to-slate-600 rounded-full shadow-md">{nav.index + 1}/{nav.total}</span>
                             )}
                         </div>
                     )}
@@ -81,7 +81,7 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                         <>
                             <button
                                 onClick={handleCancel}
-                                className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-gray-400 to-gray-500 rounded-lg hover:from-gray-500 hover:to-gray-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105 duration-200 font-medium"
                             >
                                 <X size={20} />
                                 Cancelar
@@ -89,7 +89,7 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="flex items-center gap-2 px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105 duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium"
                             >
                                 <Save size={20} />
                                 {isSaving ? 'Guardando...' : 'Guardar'}
@@ -99,13 +99,13 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                         <>
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105 duration-200 font-medium"
                             >
                                 <Edit size={20} />
                                 Editar
                             </button>
                             <button
-                                className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                                className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105 duration-200 font-medium"
                             >
                                 <Download size={20} />
                                 PDF
