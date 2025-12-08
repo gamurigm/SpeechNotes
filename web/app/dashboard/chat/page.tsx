@@ -3,6 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
+import { Navbar, NavbarBrand, NavbarContent, NavbarItem, Link } from "@heroui/react";
 
 export default function ChatPage() {
   const { messages, sendMessage, status } = useChat({
@@ -18,29 +19,28 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      {/* Header with Navigation */}
-      <header className="bg-white shadow-sm p-4 border-b">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                SpeechNotes - Chat con Documentos
-              </h1>
-              <nav className="flex gap-4 text-sm">
-                <a href="/dashboard" className="text-gray-600 hover:text-blue-600">
-                  📝 Transcribir
-                </a>
-                <a href="/dashboard/chat" className="text-blue-600 font-semibold">
-                  💬 Chat con Documentos
-                </a>
-              </nav>
-            </div>
-          </div>
-          <p className="text-sm text-gray-500 mt-3">
+      <Navbar isBordered maxWidth="xl" className="bg-white">
+        <NavbarBrand>
+          <p className="font-bold text-inherit text-2xl">SpeechNotes</p>
+        </NavbarBrand>
+        <NavbarContent className="hidden sm:flex gap-4" justify="center">
+          <NavbarItem>
+            <Link color="foreground" href="/dashboard">
+              📝 Transcribir
+            </Link>
+          </NavbarItem>
+          <NavbarItem isActive>
+            <Link href="/dashboard/chat" aria-current="page">
+              💬 Chat con Documentos
+            </Link>
+          </NavbarItem>
+        </NavbarContent>
+      </Navbar>
+      <div className="max-w-4xl mx-auto w-full p-4 pb-0">
+          <p className="text-sm text-gray-500">
             Pregunta sobre tus clases grabadas y transcripciones
           </p>
-        </div>
-      </header>
+      </div>
 
       <div className="flex-1 flex flex-col max-w-4xl mx-auto p-4 w-full overflow-hidden">
         {/* Messages Area */}

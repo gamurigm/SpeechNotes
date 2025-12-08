@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Mic, AlertCircle, CheckCircle } from 'lucide-react';
+import { Card, CardHeader, CardBody, Button, Progress, Chip } from '@heroui/react';
 
 export function MicTest() {
     const [isTesting, setIsTesting] = useState(false);
@@ -121,79 +122,96 @@ export function MicTest() {
     };
 
     return (
-        <div className="p-4 bg-white rounded-lg shadow-sm border">
-            <div className="flex items-center gap-3 mb-4">
-                <Mic size={24} className="text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Prueba de Micrófono</h3>
-            </div>
-
-            {/* Status Indicator */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg flex items-center gap-2">
-                {status === 'success' && <CheckCircle size={20} className="text-green-500" />}
-                {status === 'error' && <AlertCircle size={20} className="text-red-500" />}
-                {status === 'testing' && <div className="animate-spin"><Mic size={20} className="text-blue-500" /></div>}
-                <span className="text-sm text-gray-700">{message}</span>
-            </div>
-
-            {/* Real-time Level Display */}
-            {isTesting && (
-                <div className="mb-4 space-y-3">
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Nivel Actual</span>
-                            <span className="text-sm font-bold text-gray-900">{rmsLevel}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div
-                                className={`h-full transition-all duration-100 ${getStatusColor()}`}
-                                style={{ width: `${Math.min((rmsLevel / 500) * 100, 100)}%` }}
-                            />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{getStatusText()}</p>
+        <Card className="shadow-lg border-none">
+            <CardHeader className="flex gap-3 px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                        <Mic size={24} className="text-blue-600" />
                     </div>
-
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Pico Detectado</span>
-                            <span className="text-sm font-bold text-gray-900">{peakLevel}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div
-                                className="h-full bg-purple-500 transition-all duration-100"
-                                style={{ width: `${Math.min((peakLevel / 500) * 100, 100)}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Voice/Silence Threshold Indicators */}
-                    <div className="bg-blue-50 p-2 rounded text-xs text-gray-600 space-y-1">
-                        <p>🎙 <strong>Umbral Voz:</strong> &gt; 300 (para iniciar)</p>
-                        <p>🔇 <strong>Umbral Silencio:</strong> &lt; 150 (para detener)</p>
-                        <p>📊 <strong>Tu nivel:</strong> {rmsLevel}</p>
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800">Prueba de Micrófono</h3>
                 </div>
-            )}
+            </CardHeader>
 
-            {/* Control Buttons */}
-            <div className="flex gap-2">
-                {!isTesting ? (
-                    <button
-                        onClick={startMicTest}
-                        className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                        Iniciar Prueba
-                    </button>
-                ) : (
-                    <button
-                        onClick={stopMicTest}
-                        className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                        Detener Prueba
-                    </button>
+            <CardBody className="px-6 py-4 space-y-4">
+                {/* Status Indicator */}
+                {message && (
+                    <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-2">
+                        {status === 'success' && <CheckCircle size={20} className="text-green-500" />}
+                        {status === 'error' && <AlertCircle size={20} className="text-red-500" />}
+                        {status === 'testing' && <div className="animate-spin"><Mic size={20} className="text-blue-500" /></div>}
+                        <span className="text-sm text-gray-700">{message}</span>
+                    </div>
                 )}
-            </div>
 
-            
-        </div>
+                {/* Real-time Level Display */}
+                {isTesting && (
+                    <div className="space-y-4">
+                        <div>
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-700">Nivel Actual</span>
+                                <Chip size="sm" variant="flat" color={rmsLevel > 300 ? "success" : rmsLevel > 150 ? "warning" : "default"}>
+                                    {rmsLevel}
+                                </Chip>
+                            </div>
+                            <Progress 
+                                value={Math.min((rmsLevel / 500) * 100, 100)}
+                                color={rmsLevel > 300 ? "success" : rmsLevel > 150 ? "warning" : "default"}
+                                className="max-w-md"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">{getStatusText()}</p>
+                        </div>
+
+                        <div>
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-700">Pico Detectado</span>
+                                <Chip size="sm" variant="flat" color="secondary">
+                                    {peakLevel}
+                                </Chip>
+                            </div>
+                            <Progress 
+                                value={Math.min((peakLevel / 500) * 100, 100)}
+                                color="secondary"
+                                className="max-w-md"
+                            />
+                        </div>
+
+                        {/* Voice/Silence Threshold Indicators */}
+                        <Card className="bg-blue-50">
+                            <CardBody className="py-3 px-4">
+                                <div className="text-xs text-gray-700 space-y-1">
+                                    <p>🎙 <strong>Umbral Voz:</strong> &gt; 300 (para iniciar)</p>
+                                    <p>🔇 <strong>Umbral Silencio:</strong> &lt; 150 (para detener)</p>
+                                    <p>📊 <strong>Tu nivel:</strong> {rmsLevel}</p>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    </div>
+                )}
+
+                {/* Control Buttons */}
+                <div className="flex gap-2 pt-2">
+                    {!isTesting ? (
+                        <Button
+                            onPress={startMicTest}
+                            color="primary"
+                            variant="shadow"
+                            className="w-full font-semibold"
+                            startContent={<Mic size={18} />}
+                        >
+                            Iniciar Prueba
+                        </Button>
+                    ) : (
+                        <Button
+                            onPress={stopMicTest}
+                            color="danger"
+                            variant="shadow"
+                            className="w-full font-semibold"
+                        >
+                            Detener Prueba
+                        </Button>
+                    )}
+                </div>
+            </CardBody>
+        </Card>
     );
 }

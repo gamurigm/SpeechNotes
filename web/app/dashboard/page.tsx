@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, Card, CardBody, Spinner } from "@heroui/react";
 import { RecordingPanel } from './components/RecordingPanel';
 import LogoutButton from './components/LogoutButton';
 import { LiveTranscription } from './components/LiveTranscription';
@@ -88,31 +89,13 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="h-screen flex flex-col bg-gray-100">
-            <header className="bg-white shadow-sm p-4 border-b">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                                SpeechNotes - Transcripción en Tiempo Real
-                            </h1>
-                            <nav className="flex gap-4 text-sm">
-                                <a href="/dashboard" className="text-blue-600 font-semibold">
-                                    📝 Transcribir
-                                </a>
-                                <a href="/dashboard/chat" className="text-gray-600 hover:text-blue-600">
-                                    💬 Chat con Documentos
-                                </a>
-                            </nav>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <RecordingPanel />
-                            <LogoutButton />
-                        </div>
-                    </div>
+        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+            <div className="px-4 pt-4 pb-2 flex justify-center">
+                <div className="max-w-xl w-full">
+                    <RecordingPanel />
                 </div>
-            </header>
-
+            </div>
+            
             <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
                 {/* Sidebar izquierda */}
                 <aside className="w-80 p-4 space-y-4 overflow-y-auto">
@@ -121,25 +104,29 @@ export default function DashboardPage() {
                 </aside>
 
                 {/* Panel principal */}
-                <main className="flex-1 p-4">
+                <main className="flex-1 p-4 flex flex-col overflow-y-auto">
                     {isLoading ? (
-                        <div className="h-full flex items-center justify-center">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                                <p className="text-gray-500">Cargando...</p>
-                            </div>
-                        </div>
+                        <Card className="h-full shadow-lg">
+                            <CardBody className="flex items-center justify-center">
+                                <div className="text-center space-y-4">
+                                    <Spinner size="lg" color="primary" />
+                                    <p className="text-gray-500 font-medium">Cargando transcripción...</p>
+                                </div>
+                            </CardBody>
+                        </Card>
                     ) : (
                         <div className="h-full flex flex-col">
                             {isProcessing && (
-                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                    <div className="flex items-center gap-2">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                                        <span className="text-sm text-yellow-800">
-                                            Procesando con DeepSeek... Se actualizará automáticamente
-                                        </span>
-                                    </div>
-                                </div>
+                                <Card className="mb-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 shadow-md">
+                                    <CardBody className="py-3">
+                                        <div className="flex items-center gap-3">
+                                            <Spinner size="sm" color="warning" />
+                                            <span className="text-sm text-yellow-900 font-medium">
+                                                Procesando con DeepSeek... Se actualizará automáticamente
+                                            </span>
+                                        </div>
+                                    </CardBody>
+                                </Card>
                             )}
                             <MarkdownViewer content={latestContent} onSave={handleSave} />
                         </div>
