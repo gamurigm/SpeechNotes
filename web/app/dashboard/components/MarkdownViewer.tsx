@@ -47,6 +47,96 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
         setIsEditing(false);
     };
 
+    const handleExportPdf = () => {
+        try {
+            const preview = document.getElementById('markdown-preview');
+            if (!preview) {
+                alert('Vista previa no disponible para exportar');
+                return;
+            }
+            const html = `
+                <!doctype html>
+                <html>
+                <head>
+                  <meta charset="utf-8" />
+                  <title>Transcripción</title>
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color: #111827; padding: 24px; }
+                    h1,h2,h3,h4 { color: #0f172a; }
+                    pre, code { background: #f3f4f6; padding: 8px; border-radius: 6px; display: block; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #e5e7eb; padding: 8px; }
+                    blockquote { border-left: 4px solid #60a5fa; padding-left: 12px; color: #374151; }
+                    img { max-width: 100%; height: auto; }
+                  </style>
+                </head>
+                <body>
+                  ${preview.innerHTML}
+                </body>
+                </html>
+            `;
+
+            const newWin = window.open('', '_blank', 'noopener,noreferrer');
+            if (newWin) {
+                newWin.document.open();
+                newWin.document.write(html);
+                newWin.document.close();
+                // Give the new window a moment to render styles, then trigger print
+                setTimeout(() => {
+                    try {
+                        newWin.focus();
+                        newWin.print();
+                    } catch (e) {
+                        console.error('Print in new window failed:', e);
+                    }
+                }, 500);
+                return;
+            }
+
+            // Fallback: browser blocked pop-up — generate PDF client-side and trigger download
+            // Dynamically load html2pdf bundle from CDN and use it to export the preview element.
+            const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+                const existing = document.querySelector(`script[src="${src}"]`);
+                if (existing) return resolve();
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = () => resolve();
+                s.onerror = (err) => reject(err);
+                document.head.appendChild(s);
+            });
+
+            const generatePdf = async () => {
+                try {
+                    // html2pdf will create the PDF and prompt download
+                    // @ts-ignore
+                    const opt = {
+                        margin:       12,
+                        filename:     'transcripcion.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2 },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    // @ts-ignore
+                    window.html2pdf().set(opt).from(preview).save();
+                } catch (err) {
+                    console.error('html2pdf generation error:', err);
+                    alert('No se pudo generar el PDF automáticamente. Intenta permitir pop-ups o usa la opción de imprimir del navegador.');
+                }
+            };
+
+            const cdn = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js';
+            loadScript(cdn)
+                .then(() => generatePdf())
+                .catch((err) => {
+                    console.error('Failed loading html2pdf lib:', err);
+                    alert('No se pudo cargar la librería de exportación. Permite pop-ups o revisa la consola.');
+                });
+        } catch (err) {
+            console.error('Export PDF error:', err);
+            alert('Error al exportar a PDF');
+        }
+    };
+
     return (
         <div className="h-full flex flex-col bg-white rounded-lg shadow">
             <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
@@ -105,7 +195,10 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                                 Editar
                             </button>
                             <button
+                                type="button"
+                                onClick={handleExportPdf}
                                 className="flex items-center gap-2 px-4 py-2.5 text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105 duration-200 font-medium"
+                                title="Exportar a PDF"
                             >
                                 <Download size={20} />
                                 PDF
@@ -127,7 +220,8 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                     </div>
                 ) : (
                     <div className="markdown-content">
-                        <ReactMarkdown 
+                            <div id="markdown-preview">
+                                <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{
                                 h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-6 mb-4 text-gray-900" {...props} />,
@@ -156,6 +250,7 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                         >
                             {content}
                         </ReactMarkdown>
+                            </div>
                     </div>
                 )}
             </div>
