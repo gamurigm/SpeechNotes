@@ -50,6 +50,7 @@ async def chat_stream(request: ChatRequest):
         async def generate():
             try:
                 # Stream the RAG response
+                # rag_service.chat_stream() is an async generator
                 async for chunk in rag_service.chat_stream(query):
                     # Format as Server-Sent Events
                     data = json.dumps({"content": chunk, "done": False})

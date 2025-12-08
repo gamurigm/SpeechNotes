@@ -10,3 +10,10 @@ PyJWT>=2.8.0
 httpx>=0.24.1
 chromadb>=0.4.0
 openai>=1.0.0
+smolagents
+langchain
+langchain-community
+langchain-huggingface
+langchain-chroma
+sentence-transformers
+tf-keras

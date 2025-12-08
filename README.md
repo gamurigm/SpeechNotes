@@ -70,6 +70,15 @@ $env:NVIDIA_API_KEY = 'tu_key'
 $env:OPENAI_API_KEY = 'tu_key'
 ```
 
+> Nota rápida (PowerShell): para evitar `ModuleNotFoundError: No module named 'src'` al correr scripts desde `server/`, exporta `PYTHONPATH` antes de ejecutar.
+
+```powershell
+cd server
+$env:PYTHONPATH = '..'
+python agent_rag_demo.py --index-new-only
+python agent_rag_demo.py --query "¿Cómo exporto una transcripción?" --topk 5
+```
+
 ---
 
 ## 🚀 Inicio rápido
@@ -136,6 +145,7 @@ python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
 - Fix: corrección de un parse error en JSX.
 - Mejora de MarkdownViewer (clases `prose`) para headings, listas y código.
 - Añadido `"type": "module"` en `web/package.json` para resolver warnings ESM.
+- Chat/UI depende de que el índice FAISS esté cargado en la sesión; reindexa tras reiniciar backend (`python agent_rag_demo.py --index-new-only`).
 
 ---
 
