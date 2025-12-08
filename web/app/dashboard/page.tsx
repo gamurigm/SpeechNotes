@@ -214,6 +214,8 @@ export default function DashboardPage() {
 
     // Zoom control ref for click-outside
     const zoomRef = useRef<HTMLDivElement | null>(null);
+    const uploadInputRef = useRef<HTMLInputElement | null>(null);
+    const [uploadFileName, setUploadFileName] = useState<string | null>(null);
 
     const currentTitle = extractTitleFromMarkdown(latestContent);
 
@@ -414,6 +416,81 @@ export default function DashboardPage() {
                                                 showTooltip={true}
                                             />
                                             <p className="text-xs text-slate-500">RMS para DETENER grabación — {silenceThreshold} RMS</p>
+                                        </div>
+                                    </div>
+                                </CardBody>
+                            </Card>
+                        )}
+                        {activeTool === 'format' && (
+                            <Card className="w-72 bg-white border border-slate-100 shadow-sm">
+                                <CardBody className="p-3">
+                                    <div className="flex items-center justify-between">
+                                        <h5 className="text-sm font-semibold text-slate-800">Formato</h5>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-slate-500">Mejora legibilidad: títulos, puntuación y limpieza básica.</p>
+
+                                    <div className="mt-3 flex flex-col gap-2">
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="solid" className="flex-1" onClick={() => { /* TODO: apply formatting */ }}>Aplicar</Button>
+                                            <Button size="sm" variant="outline" onClick={() => { /* TODO: cleanup */ }}>Limpiar</Button>
+                                        </div>
+                                        <div className="flex justify-end">
+                                            <Button size="sm" variant="ghost" onClick={() => setActiveTool(null)}>Cerrar</Button>
+                                        </div>
+                                    </div>
+                                </CardBody>
+                            </Card>
+                        )}
+
+                        {activeTool === 'upload' && (
+                            <Card className="w-72 bg-white border border-slate-100 shadow-sm">
+                                <CardBody className="p-3">
+                                    <div className="flex items-center justify-between">
+                                        <h5 className="text-sm font-semibold text-slate-800">Transcribir</h5>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-slate-500">Sube un archivo de audio para generar la transcripción.</p>
+
+                                    <div className="mt-3 space-y-2">
+                                        <input
+                                            ref={uploadInputRef}
+                                            id="upload-audio-input"
+                                            type="file"
+                                            accept="audio/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const f = e.target.files && e.target.files[0];
+                                                setUploadFileName(f ? f.name : null);
+                                            }}
+                                        />
+
+                                        <div className="flex items-center gap-2">
+                                            <label htmlFor="upload-audio-input" className="inline-flex items-center px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">Seleccionar</label>
+                                            <div className="text-xs text-slate-600 truncate">{uploadFileName ?? 'Ningún archivo seleccionado'}</div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="solid" className="flex-1" onClick={async () => {
+                                                const input = uploadInputRef.current;
+                                                if (!input || !input.files || input.files.length === 0) { alert('Selecciona un archivo de audio'); return; }
+                                                const file = input.files[0];
+                                                const fd = new FormData();
+                                                fd.append('file', file);
+                                                try {
+                                                    setIsProcessing(true);
+                                                    const resp = await fetch('/api/transcribe-file', { method: 'POST', body: fd });
+                                                    if (!resp.ok) throw new Error('Upload failed');
+                                                    setActiveTool(null);
+                                                    setUploadFileName(null);
+                                                    if (uploadInputRef.current) uploadInputRef.current.value = '';
+                                                    await loadTranscriptionsList();
+                                                } catch (err) {
+                                                    console.error('Upload error', err);
+                                                    alert('Error subiendo archivo');
+                                                } finally { setIsProcessing(false); }
+                                            }}>Transcribir</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => { setActiveTool(null); setUploadFileName(null); if (uploadInputRef.current) uploadInputRef.current.value = ''; }}>Cancelar</Button>
                                         </div>
                                     </div>
                                 </CardBody>

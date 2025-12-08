@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
@@ -30,6 +30,12 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
+    const [showStyleMenu, setShowStyleMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement | null>(null);
+
+    // Font style state
+    const [fontFamily, setFontFamily] = useState<string>('Times New Roman, Times, serif');
+    const [fontSize, setFontSize] = useState<number>(16);
 
     // Title will use the app's global Geist sans variable for consistent appearance
 
@@ -214,6 +220,21 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
         }
     };
 
+    // click outside to close style menu
+    useEffect(() => {
+        const onDocClick = (ev: MouseEvent) => {
+            if (!showStyleMenu) return;
+            if (menuRef.current && !menuRef.current.contains(ev.target as Node)) setShowStyleMenu(false);
+        };
+        const onEsc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setShowStyleMenu(false); };
+        document.addEventListener('mousedown', onDocClick);
+        document.addEventListener('keydown', onEsc);
+        return () => {
+            document.removeEventListener('mousedown', onDocClick);
+            document.removeEventListener('keydown', onEsc);
+        };
+    }, [showStyleMenu]);
+
     // Try to extract a date (YYYY-MM-DD) from the content to show as subtitle
     let extractedDate = '';
     try {
@@ -225,19 +246,53 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
 
     const displayTitle = title || 'Última Clase';
 
+    // compute scaled sizes per element type based on base fontSize
+    const headingScale = {
+        h1: 2.1,
+        h2: 1.6,
+        h3: 1.3,
+        h4: 1.15,
+        h5: 1.0,
+        h6: 0.95,
+    };
+
     return (
         <div className="h-full flex flex-col bg-white rounded-lg shadow" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
             <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="flex-none p-2 rounded-md bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-md">
-                        {
+                    <div className="flex items-start gap-2">
+                        <div className="flex-none p-2 rounded-md bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-md cursor-pointer" onClick={() => setShowStyleMenu((s) => !s)}>
                             <FileText size={18} />
-                        }
+                        </div>
+
+                        {showStyleMenu && (
+                            <div ref={menuRef} className="bg-white border border-slate-200 rounded-xl shadow-lg p-3 min-w-[200px]">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="text-sm font-semibold text-slate-800">Apariencia</div>
+                                    <button onClick={() => setShowStyleMenu(false)} className="text-xs text-slate-500">Cerrar</button>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs text-slate-600">Fuente</label>
+                                    <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="w-full text-sm px-2 py-1 border rounded">
+                                        <option value={'Times New Roman, Times, serif'}>Times New Roman</option>
+                                        <option value={'Georgia, serif'}>Georgia</option>
+                                        <option value={'Inter, system-ui, -apple-system, sans-serif'}>Inter (System)</option>
+                                        <option value={'Arial, Helvetica, sans-serif'}>Arial</option>
+                                        <option value={'Courier New, monospace'}>Courier New (Mono)</option>
+                                    </select>
+
+                                    <div>
+                                        <label className="text-xs text-slate-600">Tamaño: <span className="font-medium">{fontSize}px</span></label>
+                                        <input type="range" min={12} max={24} step={1} value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))} className="w-full mt-1" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex flex-col min-w-0">
                         <h2
                             className="text-2xl sm:text-3xl font-sans font-semibold text-slate-900 leading-tight break-words whitespace-pre-wrap max-w-prose"
-                            style={{ fontFamily: 'Times New Roman, Times, serif', letterSpacing: '0.2px' }}
+                            style={{ fontFamily, letterSpacing: '0.2px', fontSize: `${Math.round(fontSize * 1.4)}px` }}
                         >
                             {displayTitle}
                         </h2>
@@ -311,47 +366,48 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
 
             <div className="flex-1 overflow-y-auto p-6">
                 {isEditing ? (
-                    <div data-color-mode="light" style={{ fontFamily: 'Times New Roman, Times, serif' }}>
+                    <div data-color-mode="light" style={{ fontFamily }}>
                         <MDEditor
                             value={editedContent}
                             onChange={(val) => setEditedContent(val || '')}
                             height="100%"
                             preview="edit"
+                            style={{ fontFamily, fontSize: `${fontSize}px` }}
                         />
                     </div>
                 ) : (
-                        <div className="markdown-content">
-                            <div id="markdown-preview" style={{ fontFamily: 'Times New Roman, Times, serif' }}>
-                                <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-6 mb-4 text-gray-900" {...props} />,
-                                h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-5 mb-3 text-gray-900" {...props} />,
-                                h3: ({node, ...props}) => <h3 className="text-xl font-bold mt-4 mb-2 text-gray-800" {...props} />,
-                                h4: ({node, ...props}) => <h4 className="text-lg font-bold mt-3 mb-2 text-gray-800" {...props} />,
-                                h5: ({node, ...props}) => <h5 className="text-base font-bold mt-2 mb-1 text-gray-800" {...props} />,
-                                h6: ({node, ...props}) => <h6 className="text-sm font-bold text-gray-800" {...props} />,
-                                p: ({node, ...props}) => <p className="text-base leading-7 text-gray-700 mb-4" {...props} />,
-                                ul: ({node, ...props}) => <ul className="list-disc list-inside text-gray-700 mb-4" {...props} />,
-                                ol: ({node, ...props}) => <ol className="list-decimal list-inside text-gray-700 mb-4" {...props} />,
-                                li: ({node, ...props}) => <li className="mb-1 ml-2" {...props} />,
-                                strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
-                                em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
-                                code: ({node, inline, ...props}: any) => 
-                                    inline 
-                                        ? <code className="bg-gray-100 px-2 py-1 rounded text-sm text-red-600 font-mono" {...props} />
-                                        : <code className="block bg-gray-100 p-4 rounded text-sm text-gray-900 font-mono overflow-x-auto mb-4" {...props} />,
-                                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 my-4" {...props} />,
-                                hr: () => <hr className="my-6 border-gray-300" />,
-                                table: ({node, ...props}) => <table className="w-full border-collapse border border-gray-300 my-4" {...props} />,
-                                th: ({node, ...props}) => <th className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-bold" {...props} />,
-                                td: ({node, ...props}) => <td className="border border-gray-300 px-4 py-2" {...props} />,
-                                a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
-                            }}
-                        >
-                            {content}
-                        </ReactMarkdown>
-                            </div>
+                    <div className="markdown-content">
+                        <div id="markdown-preview" style={{ fontFamily, fontSize: `${fontSize}px` }}>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                    h1: ({node, ...props}) => <h1 style={{ fontFamily, fontSize: `${Math.round(fontSize * 2.1)}px` }} className="font-bold mt-6 mb-4 text-gray-900" {...props} />,
+                                    h2: ({node, ...props}) => <h2 style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.6)}px` }} className="font-bold mt-5 mb-3 text-gray-900" {...props} />,
+                                    h3: ({node, ...props}) => <h3 style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.3)}px` }} className="font-bold mt-4 mb-2 text-gray-800" {...props} />,
+                                    h4: ({node, ...props}) => <h4 style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.15)}px` }} className="font-bold mt-3 mb-2 text-gray-800" {...props} />,
+                                    h5: ({node, ...props}) => <h5 style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.0)}px` }} className="font-bold mt-2 mb-1 text-gray-800" {...props} />,
+                                    h6: ({node, ...props}) => <h6 style={{ fontFamily, fontSize: `${Math.round(fontSize * 0.95)}px` }} className="font-bold text-gray-800" {...props} />,
+                                    p: ({node, ...props}) => <p style={{ fontFamily, fontSize: `${fontSize}px`, lineHeight: 1.6 }} className="text-gray-700 mb-4" {...props} />,
+                                    ul: ({node, ...props}) => <ul className="list-disc list-inside text-gray-700 mb-4" {...props} />,
+                                    ol: ({node, ...props}) => <ol className="list-decimal list-inside text-gray-700 mb-4" {...props} />,
+                                    li: ({node, ...props}) => <li className="mb-1 ml-2" {...props} />,
+                                    strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                                    em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
+                                    code: ({node, inline, ...props}: any) =>
+                                        inline
+                                            ? <code style={{ fontFamily }} className="bg-gray-100 px-2 py-1 rounded text-sm text-red-600 font-mono" {...props} />
+                                            : <code style={{ fontFamily }} className="block bg-gray-100 p-4 rounded text-sm text-gray-900 font-mono overflow-x-auto mb-4" {...props} />,
+                                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 my-4" {...props} />,
+                                    hr: () => <hr className="my-6 border-gray-300" />,
+                                    table: ({node, ...props}) => <table className="w-full border-collapse border border-gray-300 my-4" {...props} />,
+                                    th: ({node, ...props}) => <th className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-bold" {...props} />,
+                                    td: ({node, ...props}) => <td className="border border-gray-300 px-4 py-2" {...props} />,
+                                    a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
+                                }}
+                            >
+                                {content}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                 )}
             </div>
