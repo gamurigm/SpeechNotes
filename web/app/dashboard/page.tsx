@@ -1,7 +1,7 @@
 'use client';
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, Card, CardBody, Spinner, Slider, Button } from "@heroui/react";
 import { RecordingPanel } from './components/RecordingPanel';
 import LogoutButton from './components/LogoutButton';
@@ -51,49 +51,44 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
-    const [zoomLevel, setZoomLevel] = useState(100);
-    const [showZoomMenu, setShowZoomMenu] = useState(false);
+    // mdZoom -> zoom applied only to MarkdownViewer (keyboard + Ctrl+Scroll)
+    const [mdZoom, setMdZoom] = useState(100);
+    // appZoom -> zoom applied to the whole app (controlled by toolbar slider)
+    const [appZoom, setAppZoom] = useState(100);
+    const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
     const [activeTool, setActiveTool] = useState<string | null>(null);
 
     const toggleTool = (tool: string) => {
         setActiveTool(current => current === tool ? null : tool);
     };
 
-    const handleZoom = (level: number) => {
-        setZoomLevel(Math.max(50, Math.min(145, level)));
-    };
+    const clampZoom = (v: number) => Math.max(50, Math.min(145, v));
 
-    const handleZoomIn = () => {
-        handleZoom(Math.min(145, zoomLevel + 10));
-    };
+    const handleMdZoom = (level: number) => setMdZoom(clampZoom(level));
+    const handleMdZoomIn = () => handleMdZoom(mdZoom + 10);
+    const handleMdZoomOut = () => handleMdZoom(mdZoom - 10);
 
-    const handleZoomOut = () => {
-        handleZoom(Math.max(50, zoomLevel - 10));
-    };
+    const handleAppZoom = (level: number) => setAppZoom(clampZoom(level));
 
     // Keyboard shortcuts: Ctrl/Cmd + +, -, 0, and wheel scroll
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === '+') {
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
                 e.preventDefault();
-                handleZoomIn();
+                handleMdZoomIn();
             } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
                 e.preventDefault();
-                handleZoomOut();
+                handleMdZoomOut();
             } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
                 e.preventDefault();
-                handleZoom(100);
+                handleMdZoom(100);
             }
         };
 
         const handleWheel = (e: WheelEvent) => {
             if ((e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                if (e.deltaY < 0) {
-                    handleZoomIn();
-                } else {
-                    handleZoomOut();
-                }
+                if (e.deltaY < 0) handleMdZoomIn(); else handleMdZoomOut();
             }
         };
 
@@ -103,7 +98,7 @@ export default function DashboardPage() {
             window.removeEventListener('keydown', handleKeyPress);
             window.removeEventListener('wheel', handleWheel);
         };
-    }, [zoomLevel]);
+    }, [mdZoom]);
 
     useEffect(() => {
         // load list + latest selected transcription
@@ -217,10 +212,60 @@ export default function DashboardPage() {
         return 'Última Clase';
     };
 
+    // Zoom control ref for click-outside
+    const zoomRef = useRef<HTMLDivElement | null>(null);
+
     const currentTitle = extractTitleFromMarkdown(latestContent);
 
+    // Inline ZoomControl: icon on left, panel on right (doesn't overlay)
+    const ZoomControl = () => (
+        <div ref={zoomRef} className="flex items-start gap-2">
+            <button
+                onClick={(e) => { e.stopPropagation(); setShowAppZoomMenu((s) => !s); }}
+                className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50 shadow-sm'}`}
+                title="Zoom de la app"
+            >
+                <ZoomIn size={18} />
+            </button>
+
+            {showAppZoomMenu && (
+                <div onMouseDown={(e) => e.stopPropagation()} className="bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-2 min-w-[160px] max-w-[260px]">
+                    <div className="flex items-center gap-2 px-1">
+                        <input
+                            type="range"
+                            min={50}
+                            max={145}
+                            step={1}
+                            value={appZoom}
+                            onChange={(e) => handleAppZoom(parseInt(e.target.value))}
+                            className="w-36 h-2 appearance-none cursor-pointer"
+                            style={{ background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((appZoom - 50) / 95) * 100}%, #dbeafe ${((appZoom - 50) / 95) * 100}%, #dbeafe 100%)` }}
+                        />
+                        <div className="text-sm font-semibold text-blue-600 w-10 text-right">{appZoom}%</div>
+                    </div>
+                    <div className="text-xs text-slate-500 px-1">Este slider escala toda la aplicación. Ctrl+Scroll controla solo el visor Markdown.</div>
+                </div>
+            )}
+        </div>
+    );
+
+    // close AppZoom menu on click outside / Esc
+    useEffect(() => {
+        const onDocClick = (ev: MouseEvent) => {
+            if (!showAppZoomMenu) return;
+            if (zoomRef.current && !zoomRef.current.contains(ev.target as Node)) setShowAppZoomMenu(false);
+        };
+        const onEsc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setShowAppZoomMenu(false); };
+        document.addEventListener('mousedown', onDocClick);
+        document.addEventListener('keydown', onEsc);
+        return () => {
+            document.removeEventListener('mousedown', onDocClick);
+            document.removeEventListener('keydown', onEsc);
+        };
+    }, [showAppZoomMenu]);
+
     return (
-        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden" style={{ transform: `scale(${appZoom/100})`, transformOrigin: 'top left', width: `${100*(100/appZoom)}%`, height: `${100*(100/appZoom)}%` }}>
             <div className="px-4 pt-4 pb-2 flex justify-center">
                 <div className="max-w-7xl w-full flex items-center justify-center gap-6">
                     {/* Left Toolbar - Ultra Minimal */}
@@ -230,36 +275,7 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2">
                                 {activeTool === null ? (
                                     <>
-                                        <div className="group relative">
-                                            <button
-                                                className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
-                                                title="Zoom (Ctrl+Scroll)"
-                                            >
-                                                <ZoomIn size={18} className="group-hover:stroke-2" />
-                                            </button>
-                                            {/* Beautiful Tooltip with Slider */}
-                                            <div className="hidden group-hover:flex absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 flex-col gap-2 min-w-max backdrop-blur-sm bg-opacity-95">
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="range"
-                                                        min="50"
-                                                        max="145"
-                                                        step="5"
-                                                        value={zoomLevel}
-                                                        onChange={(e) => handleZoom(parseInt(e.target.value))}
-                                                        className="w-40 h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700"
-                                                        style={{
-                                                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - 50) / 95) * 100}%, #dbeafe ${((zoomLevel - 50) / 95) * 100}%, #dbeafe 100%)`
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center justify-between gap-2 px-1">
-                                                    <span className="text-xs font-semibold text-blue-600">{zoomLevel}%</span>
-                                                    <span className="text-xs text-slate-400">Ctrl+Scroll</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                                        <ZoomControl />
                                         <ToolbarIcon 
                                             icon={<Wand2 size={18} />} 
                                             tooltip="Format Markdown" 
@@ -309,35 +325,6 @@ export default function DashboardPage() {
                                 )}
                             </div>
                         </div>
-
-                        {/* Active Tool Panels */}
-                        {activeTool === 'format' && (
-                            <Card className="w-72 shadow-md border-none">
-                                <CardBody className="p-4">
-                                    <h4 className="text-base font-semibold mb-4 text-gray-800">Formato Markdown</h4>
-                                    <p className="text-sm text-slate-600 mb-3">
-                                        Aplica formato automático al texto transcrito para mejorar la legibilidad.
-                                    </p>
-                                    <Button size="sm" color="primary" onClick={() => alert('Función de formato (simulada)')}>
-                                        Aplicar Formato
-                                    </Button>
-                                </CardBody>
-                            </Card>
-                        )}
-
-                        {activeTool === 'upload' && (
-                            <Card className="w-72 shadow-md border-none">
-                                <CardBody className="p-4">
-                                    <h4 className="text-base font-semibold mb-4 text-gray-800">Transcribir Archivo</h4>
-                                    <p className="text-sm text-slate-600 mb-3">
-                                        Sube un archivo de audio para transcribirlo.
-                                    </p>
-                                    <Button size="sm" color="primary" onClick={() => alert('Función de subida (simulada)')}>
-                                        Seleccionar Archivo
-                                    </Button>
-                                </CardBody>
-                            </Card>
-                        )}
 
                         {activeTool === 'calibrate' && (
                             <Card className="w-80 shadow-md border-none">
@@ -485,7 +472,7 @@ export default function DashboardPage() {
                                 title={currentTitle}
                                 content={latestContent}
                                 onSave={handleSave}
-                                zoomLevel={zoomLevel}
+                                zoomLevel={mdZoom}
                                 nav={{
                                     onPrev: handlePrev,
                                     onNext: handleNext,
