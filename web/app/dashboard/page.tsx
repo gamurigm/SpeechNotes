@@ -27,14 +27,14 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
         <div className="relative group">
             <button
                 onClick={onClick}
-                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${isActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg' : 'text-slate-500 hover:text-slate-700 hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md'} ${className}`}
+                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg' : 'text-slate-500 hover:text-slate-700 hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md'} ${className}`}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
                 {icon}
             </button>
             {showTooltip && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg">
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg animate-in fade-in slide-in-from-bottom-1 duration-200">
                     {tooltip}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800"></div>
                 </div>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
     return (
         <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
             <div className="px-4 pt-4 pb-2 flex justify-center">
-                <div className="max-w-6xl w-full flex items-center gap-1.5">
+                <div className="max-w-7xl w-full flex items-center justify-center gap-6">
                     {/* Left Toolbar - Ultra Minimal */}
                     <div className="flex flex-col gap-2 items-start">
                         <div className="flex items-center gap-2">
