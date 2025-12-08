@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit, Save, X, Download } from 'lucide-react';
+import { Edit, Save, X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const MDEditor = dynamic(
@@ -14,9 +14,17 @@ const MDEditor = dynamic(
 interface Props {
     content: string;
     onSave: (content: string) => Promise<void>;
+    nav?: {
+        onPrev?: () => void;
+        onNext?: () => void;
+        hasPrev?: boolean;
+        hasNext?: boolean;
+        index?: number;
+        total?: number;
+    };
 }
 
-export function MarkdownViewer({ content, onSave }: Props) {
+export function MarkdownViewer({ content, onSave, nav }: Props) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
@@ -46,6 +54,29 @@ export function MarkdownViewer({ content, onSave }: Props) {
                     Última Clase
                 </h2>
                 <div className="flex gap-2">
+                    {nav && (
+                        <div className="flex items-center mr-4">
+                            <button
+                                onClick={nav.onPrev}
+                                disabled={!nav.hasPrev}
+                                aria-label="Anterior"
+                                className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50 mr-2"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button
+                                onClick={nav.onNext}
+                                disabled={!nav.hasNext}
+                                aria-label="Siguiente"
+                                className="p-2 rounded-md bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                            {typeof nav.index === 'number' && typeof nav.total === 'number' && (
+                                <span className="ml-3 text-sm text-gray-600">{nav.index + 1}/{nav.total}</span>
+                            )}
+                        </div>
+                    )}
                     {isEditing ? (
                         <>
                             <button

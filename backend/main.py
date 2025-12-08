@@ -7,6 +7,13 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fastapi import FastAPI
+# Initialize tracing as early as possible
+try:
+    from backend.tracing import init_tracing, instrument_fastapi
+    init_tracing()
+except Exception:
+    init_tracing = None
+    instrument_fastapi = None
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
 from routers import transcriptions
@@ -29,7 +36,12 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3006"],
+    allow_origins=[
+        "http://localhost:3006",
+        "http://127.0.0.1:3006",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,6 +61,13 @@ app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 # Import and include chat router
 from routers import chat
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+
+# Instrument FastAPI app for tracing (if available)
+try:
+    if instrument_fastapi:
+        instrument_fastapi(app)
+except Exception:
+    pass
 
 # Socket.IO event handlers
 from services.socket_handler import register_socket_events

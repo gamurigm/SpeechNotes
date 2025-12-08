@@ -15,12 +15,17 @@ import { getSocket } from '@/utils/socket';
 export default function DashboardPage() {
     const [latestContent, setLatestContent] = useState('');
     const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
+    const [transcriptions, setTranscriptions] = useState<Array<{id:string|null, filename?:string|null, date?:any}>>([]);
+    const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages } = useRecording();
 
     useEffect(() => {
-        loadLatestTranscription();
+        // load list + latest selected transcription
+        (async () => {
+            await loadTranscriptionsList();
+        })();
 
         // Listen for recording stopped event
         const socket = getSocket();
@@ -35,9 +40,9 @@ export default function DashboardPage() {
             setLatestContent(rawContent || '[Procesando transcripción...]');
             setIsProcessing(true);
 
-            // Wait a bit for processing, then reload
-            setTimeout(() => {
-                loadLatestTranscription();
+            // Wait a bit for processing, then reload list and selected transcription
+            setTimeout(async () => {
+                await loadTranscriptionsList();
                 setIsProcessing(false);
             }, 3000);
         });
@@ -47,35 +52,44 @@ export default function DashboardPage() {
         };
     }, [messages]);
 
-    const loadLatestTranscription = async () => {
-        const maxRetries = 3;
-        let attempt = 0;
-        let lastErr: any = null;
-
+    const loadTranscriptionsList = async () => {
         setIsLoading(true);
-        while (attempt < maxRetries) {
-            try {
-                const data = await apiClient.getLatestTranscription();
-                setLatestContent(data.content);
-                setTranscriptionId(data.id);
-                lastErr = null;
-                break;
-            } catch (error) {
-                lastErr = error;
-                console.warn(`loadLatestTranscription attempt ${attempt + 1} failed:`, error);
-                attempt += 1;
-                // exponential backoff
-                await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt)));
-            }
-        }
+        try {
+            const res = await apiClient.getTranscriptions();
+            const items = res.items || [];
+            setTranscriptions(items);
 
-        if (lastErr) {
-            console.error('Error loading transcription after retries:', lastErr);
+            if (items.length > 0) {
+                // default to first (most recent)
+                setSelectedIndex(0);
+                const firstId = items[0].id;
+                if (firstId) await loadTranscriptionById(firstId);
+            } else {
+                // fallback to latest endpoint
+                const latest = await apiClient.getLatestTranscription();
+                setLatestContent(latest.content);
+                setTranscriptionId(latest.id);
+            }
+        } catch (e) {
+            console.error('Error loading transcriptions list', e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const loadTranscriptionById = async (id: string) => {
+        setIsLoading(true);
+        try {
+            const data = await apiClient.getTranscription(id);
+            setLatestContent(data.content);
+            setTranscriptionId(data.id);
+        } catch (e) {
+            console.error('Error loading transcription by id', e);
             setLatestContent('[Error cargando transcripción — reintenta o revisa el backend]');
             setTranscriptionId(null);
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(false);
     };
 
     const handleSave = async (content: string) => {
@@ -86,6 +100,24 @@ export default function DashboardPage() {
 
         await apiClient.updateTranscription(transcriptionId, content);
         setLatestContent(content);
+    };
+
+    const handlePrev = async () => {
+        if (selectedIndex > 0) {
+            const nextIndex = selectedIndex - 1;
+            setSelectedIndex(nextIndex);
+            const id = transcriptions[nextIndex].id;
+            if (id) await loadTranscriptionById(id);
+        }
+    };
+
+    const handleNext = async () => {
+        if (selectedIndex < transcriptions.length - 1) {
+            const nextIndex = selectedIndex + 1;
+            setSelectedIndex(nextIndex);
+            const id = transcriptions[nextIndex].id;
+            if (id) await loadTranscriptionById(id);
+        }
     };
 
     return (
@@ -128,7 +160,18 @@ export default function DashboardPage() {
                                     </CardBody>
                                 </Card>
                             )}
-                            <MarkdownViewer content={latestContent} onSave={handleSave} />
+                            <MarkdownViewer
+                                content={latestContent}
+                                onSave={handleSave}
+                                nav={{
+                                    onPrev: handlePrev,
+                                    onNext: handleNext,
+                                    hasPrev: selectedIndex > 0,
+                                    hasNext: selectedIndex < transcriptions.length - 1,
+                                    index: selectedIndex,
+                                    total: transcriptions.length
+                                }}
+                            />
                         </div>
                     )}
                 </main>

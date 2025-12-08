@@ -72,6 +72,65 @@ async def get_latest_transcription():
         traceback.print_exc()
         raise HTTPException(500, f"Error: {str(e)}")
 
+
+@router.get("/")
+async def list_transcriptions(limit: int = 50):
+    """List recent processed transcriptions (metadata only)"""
+    try:
+        cursor = db.transcriptions.find({"processed": True}).sort("ingested_at", -1).limit(limit)
+        items = []
+        for doc in cursor:
+            items.append({
+                "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
+                "filename": doc.get("filename"),
+                "date": doc.get("date")
+            })
+
+        return {"items": items}
+    except Exception as e:
+        print("[ERROR] /api/transcriptions list exception:")
+        traceback.print_exc()
+        raise HTTPException(500, f"Error: {str(e)}")
+
+
+@router.get("/{transcription_id}")
+async def get_transcription_by_id(transcription_id: str):
+    """Get a specific processed transcription by id"""
+    try:
+        doc = db.transcriptions.find_one({"_id": ObjectId(transcription_id)})
+        if not doc:
+            raise HTTPException(404, "Not found")
+
+        segments = list(db.segments.find({"transcription_id": doc["_id"]}).sort("sequence", 1))
+
+        if not segments and doc.get("formatted_content"):
+            content = doc.get("formatted_content")
+        else:
+            try:
+                topics = generator._group_by_topic(segments)
+                content = generator._build_markdown(doc, topics)
+            except Exception as e:
+                print(f"[ERROR] DocumentGenerator failed for {doc.get('filename')}: {e}")
+                if doc.get("formatted_content"):
+                    content = doc.get("formatted_content")
+                elif doc.get("raw_content"):
+                    content = doc.get("raw_content")
+                else:
+                    content = "# Error generating document\n\nNo content available."
+
+        return {
+            "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
+            "filename": doc.get("filename"),
+            "date": doc.get("date"),
+            "content": content
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[ERROR] /api/transcriptions/{id} exception:")
+        traceback.print_exc()
+        raise HTTPException(500, f"Error: {str(e)}")
+
 @router.put("/{transcription_id}")
 async def update_transcription(transcription_id: str, update: TranscriptionUpdate):
     """Update transcription content"""

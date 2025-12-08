@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 from smolagents import ToolCallingAgent, tool
 from langchain_chroma import Chroma
 from openai import OpenAI
+from opentelemetry import trace
+
+_tracer = trace.get_tracer(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -134,15 +137,15 @@ class RagAgent:
 
     def _call_llm(self, prompt: str) -> str:
         """Call NVIDIA NIM DeepSeek model with the given prompt."""
-
-        completion = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=self.temperature,
-            top_p=self.top_p,
-            max_tokens=self.max_tokens,
-            stream=False,
-        )
+        with _tracer.start_as_current_span("llm.call", attributes={"model": self.model_name}):
+            completion = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.temperature,
+                top_p=self.top_p,
+                max_tokens=self.max_tokens,
+                stream=False,
+            )
 
         return completion.choices[0].message.content
 
@@ -175,20 +178,22 @@ class RagAgent:
                 f"Pregunta del usuario: {user_query}"
             )
 
-            stream = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=self.temperature,
-                top_p=self.top_p,
-                max_tokens=self.max_tokens,
-                stream=True,
-            )
+            # Stream LLM response and create a span for streaming
+            with _tracer.start_as_current_span("llm.stream", attributes={"model": self.model_name}):
+                stream = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=self.temperature,
+                    top_p=self.top_p,
+                    max_tokens=self.max_tokens,
+                    stream=True,
+                )
 
-            for chunk in stream:
-                if not chunk.choices:
-                    continue
-                delta = chunk.choices[0].delta
-                if delta and getattr(delta, "content", None):
-                    yield delta.content
+                for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
+                    if delta and getattr(delta, "content", None):
+                        yield delta.content
         except Exception as e:
             yield f"Error generating streamed response: {str(e)}"

@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import wave
 import struct
 import math
+import asyncio
 
 load_dotenv()
 
@@ -226,25 +227,28 @@ def register_socket_events(sio):
 
         # Transcribe with realtime.py if speaking
         if is_speaking:
+            # Offload blocking transcription to a thread to avoid blocking the event loop
             try:
-                # Pass 0 as threshold to skip internal check since we handled it
-                text = transcribe_audio_chunk(data, threshold=0)
-                
+                text = await asyncio.to_thread(transcribe_audio_chunk, data, 0)
+
                 if text and text.strip():
                     # Add to buffer
                     session["transcription_buffer"].append({
                         "timestamp": timestamp,
                         "text": text
                     })
-                    
+
                     # Send transcription back to client
-                    await sio.emit('transcription', {
-                        "timestamp": timestamp,
-                        "text": text
-                    }, room=sid)
-                    
+                    try:
+                        await sio.emit('transcription', {
+                            "timestamp": timestamp,
+                            "text": text
+                        }, room=sid)
+                    except Exception as e_emit:
+                        print(f"[Socket.IO] emit error: {e_emit}")
+
                     print(f"[Socket.IO] Transcribed for {sid}: {text[:50]}...")
-                    
+
             except Exception as e:
                 print(f"[Socket.IO] Error transcribing chunk: {e}")
                 import traceback
@@ -252,83 +256,118 @@ def register_socket_events(sio):
     
     @sio.event
     async def stop_recording(sid):
-        """Stop recording and save transcription (realtime.py workflow)"""
+        """Stop recording: schedule post-processing in background to avoid blocking."""
         print(f"[Socket.IO] Stop recording: {sid}")
-        
+
         if sid not in active_sessions:
             await sio.emit('error', {'message': 'No active session'}, room=sid)
             return
-        
-        session = active_sessions[sid]
-        
+
+        # Schedule the heavy work in background so we don't block the Socket.IO event loop
+        asyncio.create_task(_handle_stop_recording(sid))
+
+        # Immediately acknowledge receipt to the client
+        try:
+            await sio.emit('recording_stopped', {
+                'message': 'Transcription saved and processing started',
+                'filename': None,
+                'audio_file': None,
+                'segments': len(active_sessions.get(sid, {}).get('transcription_buffer', []))
+            }, room=sid)
+        except Exception as e:
+            print(f"[Socket.IO] emit ack error: {e}")
+
+
+    async def _handle_stop_recording(sid: str):
+        """Background worker to perform blocking post-processing steps."""
+        session = active_sessions.get(sid)
+        if not session:
+            return
+
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            
-            # 1. Save audio as WAV (like realtime.py does)
+
+            # 1. Save audio as WAV (run in thread)
             audio_filename = f"audio_{timestamp}.wav"
             audio_path = Path(f"notas/{audio_filename}")
             audio_path.parent.mkdir(exist_ok=True)
-            
+
             if session["audio_chunks"]:
-                save_audio_as_wav(session["audio_chunks"], audio_path)
-            
-            # 2. Create markdown transcription (like realtime.py)
+                await asyncio.to_thread(save_audio_as_wav, session["audio_chunks"], audio_path)
+
+            # 2. Create markdown transcription (use thread for blocking formatter/write)
             all_transcripts = [
                 (datetime.now(), item['text'])
                 for item in session["transcription_buffer"]
             ]
-            
-            # Use realtime.py's formatter (SegmentedMarkdownFormatter for timestamped content)
+
             formatter = FormatterFactory.create('segmented_markdown')
             metadata = {'title': 'Transcripción de Audio', 'method': 'Real-time VAD'}
-            formatted_content = formatter.format(all_transcripts, metadata)
-            
-            # 3. Save markdown file
+            formatted_content = await asyncio.to_thread(formatter.format, all_transcripts, metadata)
+
             md_filename = f"transcripcion_{timestamp}.md"
             md_path = Path(f"notas/{md_filename}")
-            
-            # Use realtime.py's OutputWriter
             writer = OutputWriter(Path("notas"))
-            writer.write(formatted_content, filename=md_filename)
-            
+            await asyncio.to_thread(writer.write, formatted_content, md_filename)
+
             print(f"[Socket.IO] Saved transcription: {md_filename}")
             print(f"[Socket.IO] Saved audio: {audio_filename}")
-            
-            # 4. Ingest into MongoDB
+
+            # 3. Post-processing: ingest/analyze/generate (run in thread)
             try:
-                db = MongoManager()
-                ingestor = TranscriptionIngestor()
-                ingestor._ingest_file(md_path)
-                print(f"[Socket.IO] Ingested to MongoDB")
-                
-                # 5. Analyze with LLM
-                analyzer = TranscriptionAnalyzer()
-                analyzer.analyze_pending()
-                print(f"[Socket.IO] Analyzed with LLM")
-                
-                # 6. Generate formatted document
-                generator = DocumentGenerator()
-                generator.generate_all()
-                print(f"[Socket.IO] Generated formatted document")
-                
+                def _postprocess():
+                    db = MongoManager()
+                    ingestor = TranscriptionIngestor()
+                    ingestor._ingest_file(md_path)
+                    analyzer = TranscriptionAnalyzer()
+                    analyzer.analyze_pending()
+                    generator = DocumentGenerator()
+                    generator.generate_all()
+
+                await asyncio.to_thread(_postprocess)
+                print(f"[Socket.IO] Post-processing completed for {sid}")
             except Exception as e:
                 print(f"[Socket.IO] Warning: Post-processing error: {e}")
-                # Continue anyway, files were saved
-            
-            await sio.emit('recording_stopped', {
-                'message': 'Transcription saved and processed',
-                'filename': md_filename,
-                'audio_file': audio_filename,
-                'segments': len(session["transcription_buffer"])
-            }, room=sid)
-            
+
+            # Try to notify the client that processing finished (best-effort)
+            try:
+                await sio.emit('processing_complete', {
+                    'message': 'Processing finished',
+                    'filename': md_filename,
+                    'audio_file': audio_filename,
+                    'segments': len(session["transcription_buffer"])
+                }, room=sid)
+            except Exception as e_emit:
+                print(f"[Socket.IO] emit processing_complete error: {e_emit}")
+
             print(f"[Socket.IO] Completed session for {sid}")
-            
+
+        except asyncio.CancelledError:
+            # The application is shutting down or the task was cancelled.
+            # Attempt a minimal, synchronous save of current state to avoid data loss.
+            print(f"[Socket.IO] _handle_stop_recording cancelled for {sid}, performing minimal cleanup")
+            try:
+                # Attempt to persist what we have so far (sync via to_thread)
+                if session and session.get("audio_chunks"):
+                    await asyncio.to_thread(save_audio_as_wav, session["audio_chunks"], Path(f"notas/audio_cancelled_{timestamp}.wav"))
+
+                if session and session.get("transcription_buffer"):
+                    minimal_content = "\n\n".join(item['text'] for item in session.get("transcription_buffer", []))
+                    minimal_md = f"# Partial transcription (task cancelled)\n\n{minimal_content}"
+                    await asyncio.to_thread(OutputWriter(Path("notas")).write, minimal_md, f"transcripcion_cancelled_{timestamp}.md")
+            except Exception as e_cancel:
+                print(f"[Socket.IO] Error during cancellation cleanup: {e_cancel}")
+            # Re-raise to allow proper task cancellation handling upstream
+            raise
+
         except Exception as e:
             print(f"[Socket.IO] Error saving transcription: {e}")
             import traceback
             traceback.print_exc()
-            await sio.emit('error', {'message': str(e)}, room=sid)
+            try:
+                await sio.emit('error', {'message': str(e)}, room=sid)
+            except Exception:
+                pass
 
 def format_timestamp(seconds: float) -> str:
     """Format seconds as HH:MM:SS"""

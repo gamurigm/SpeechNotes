@@ -46,22 +46,26 @@ async def chat_stream(request: ChatRequest):
             raise HTTPException(status_code=400, detail="No user message found")
         
         query = user_messages[-1].content
+        logger.info("/api/chat request received; query: %s", query)
         
         async def generate():
             try:
+                # Send an immediate small chunk so the UI doesn't look frozen
+                start_data = json.dumps({"content": "[Procesando...]", "done": False})
+                yield f"data: {start_data}\n\n"
+
                 # Stream the RAG response
-                # rag_service.chat_stream() is an async generator
                 async for chunk in rag_service.chat_stream(query):
                     # Format as Server-Sent Events
                     data = json.dumps({"content": chunk, "done": False})
                     yield f"data: {data}\n\n"
-                
+
                 # Send done signal
                 yield f"data: {json.dumps({'done': True})}\n\n"
-                
+
             except Exception as e:
-                logger.error(f"Error in chat stream: {e}")
-                error_data = json.dumps({"error": str(e)})
+                logger.exception("Error in chat stream")
+                error_data = json.dumps({"error": str(e), "done": True})
                 yield f"data: {error_data}\n\n"
         
         return StreamingResponse(

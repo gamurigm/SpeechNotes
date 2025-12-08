@@ -30,17 +30,23 @@ class RagService:
                 "answer": "El servicio de chat no está disponible en este momento.",
                 "sources": []
             }
-            
-        answer = self.agent.chat(query)
-        
-        # SmolAgents currently returns a string. 
-        # Source tracking would require parsing the agent's steps or modifying the tool to return structured data.
-        # For now, we return empty sources or could try to extract them from the answer if formatted.
-        
-        return {
-            "answer": answer,
-            "sources": [] # TODO: Extract sources from agent execution logs if possible
-        }
+        try:
+            logger.debug("RagService.chat called with query: %s", query)
+            answer = self.agent.chat(query)
+            logger.debug("RagService.chat got answer (len=%d)", len(str(answer)))
+
+            # SmolAgents currently returns a string.
+            return {
+                "answer": answer,
+                "sources": []  # TODO: Extract sources from agent execution logs if possible
+            }
+        except Exception as e:
+            # Log full exception with traceback for easier debugging
+            logger.exception("Exception in RagService.chat for query: %s", query)
+            return {
+                "answer": f"Error generating response: {str(e)}",
+                "sources": []
+            }
     
     async def chat_stream(self, query: str):
         """
@@ -49,7 +55,10 @@ class RagService:
         if not self.agent:
             yield "El servicio de chat no está disponible en este momento."
             return
-            
-        # The agent's chat_stream currently yields the full response
-        for chunk in self.agent.chat_stream(query):
-            yield chunk
+        try:
+            logger.debug("RagService.chat_stream called with query: %s", query)
+            for chunk in self.agent.chat_stream(query):
+                yield chunk
+        except Exception as e:
+            logger.exception("Exception in RagService.chat_stream for query: %s", query)
+            yield f"Error in stream: {str(e)}"

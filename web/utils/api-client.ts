@@ -6,13 +6,25 @@ const API_URL = 'http://localhost:8001/api';
 
 export const apiClient = {
     async getLatestTranscription() {
-        const res = await fetch(`${API_URL}/transcriptions/latest`);
+        const res = await fetch(`${API_URL}/transcriptions/latest/`);
         if (!res.ok) throw new Error('Failed to fetch');
         return res.json();
     },
 
+    async getTranscriptions(limit: number = 50) {
+        const res = await fetch(`${API_URL}/transcriptions/?limit=${limit}`);
+        if (!res.ok) throw new Error('Failed to fetch list');
+        return res.json();
+    },
+
+    async getTranscription(id: string) {
+        const res = await fetch(`${API_URL}/transcriptions/${id}/`);
+        if (!res.ok) throw new Error('Failed to fetch transcription');
+        return res.json();
+    },
+
     async updateTranscription(id: string, content: string) {
-        const res = await fetch(`${API_URL}/transcriptions/${id}`, {
+        const res = await fetch(`${API_URL}/transcriptions/${id}/`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content })

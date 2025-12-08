@@ -14,6 +14,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
+# Optional NVIDIA / OpenAI-compatible embeddings (preferred when available)
+try:
+    from openai import OpenAI
+except Exception:
+    OpenAI = None
+
+
 # Load environment variables
 load_dotenv()
 
@@ -65,12 +72,47 @@ def create_vector_store(chunks, persist_directory: str):
         except Exception as e:
             print(f"Warning: Could not clear directory: {e}")
     
-    # Initialize HuggingFace embeddings model
+    # Initialize embedding model: prefer NVIDIA/OpenAI-compatible if configured
     print("Initializing embedding model...")
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-mpnet-base-v2",
-        model_kwargs={'device': 'cpu'}
-    )
+    embeddings = None
+    # Use NVIDIA/OpenAI-compatible embeddings if env var provided
+    emb_api_key = os.getenv("NVIDIA_EMBEDDING_API_KEY") or os.getenv("NVIDIA_API_KEY")
+    emb_model = os.getenv("EMBEDDING_MODEL")
+    emb_base = os.getenv("NVIDIA_BASE_URL")
+
+    if emb_api_key and emb_model and OpenAI is not None:
+        print(f"Using NVIDIA/OpenAI-compatible embedding model: {emb_model}")
+
+        class NvidiaEmbeddingsWrapper:
+            def __init__(self, model, api_key, base_url):
+                self.model = model
+                self.client = OpenAI(api_key=api_key, base_url=base_url)
+
+            def embed_documents(self, texts: list):
+                resp = self.client.embeddings.create(
+                    model=self.model,
+                    input=texts,
+                    encoding_format="float",
+                    extra_body={"input_type": "passage", "truncate": "NONE"},
+                )
+                return [item.embedding for item in resp.data]
+
+            def embed_query(self, text: str):
+                resp = self.client.embeddings.create(
+                    model=self.model,
+                    input=[text],
+                    encoding_format="float",
+                    extra_body={"input_type": "query", "truncate": "NONE"},
+                )
+                return resp.data[0].embedding
+
+        embeddings = NvidiaEmbeddingsWrapper(model=emb_model, api_key=emb_api_key, base_url=emb_base)
+    else:
+        print("Falling back to HuggingFace embeddings (sentence-transformers/all-mpnet-base-v2)")
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-mpnet-base-v2",
+            model_kwargs={'device': 'cpu'}
+        )
     
     # Create ChromaDB vector store
     print("Creating vector embeddings and building database...")
