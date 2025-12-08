@@ -23,9 +23,10 @@ interface Props {
         total?: number;
     };
     title?: string;
+    zoomLevel?: number;
 }
 
-export function MarkdownViewer({ content, onSave, nav, title }: Props) {
+export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }: Props) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
@@ -225,7 +226,7 @@ export function MarkdownViewer({ content, onSave, nav, title }: Props) {
     const displayTitle = title || 'Última Clase';
 
     return (
-        <div className="h-full flex flex-col bg-white rounded-lg shadow" style={{ fontFamily: 'var(--font-geist-sans)' }}>
+        <div className="h-full flex flex-col bg-white rounded-lg shadow" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
             <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-3">
                     <div className="flex-none p-2 rounded-md bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-md">

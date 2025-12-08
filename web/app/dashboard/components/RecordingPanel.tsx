@@ -120,37 +120,7 @@ export function RecordingPanel() {
                                 <p className="text-xs text-gray-500 mt-1">Nivel mínimo para considerar "voz" (visual).</p>
                             </div>
 
-                            <div className="space-y-2">
-                                <Slider
-                                    label="Umbral Voz (Inicio)"
-                                    size="sm"
-                                    step={50}
-                                    minValue={100}
-                                    maxValue={2000}
-                                    value={voiceThreshold}
-                                    onChange={(value) => setVoiceThreshold(value as number)}
-                                    className="max-w-md"
-                                    color="success"
-                                    showTooltip={true}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">RMS para INICIAR grabación.</p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Slider
-                                    label="Umbral Silencio (Fin)"
-                                    size="sm"
-                                    step={50}
-                                    minValue={50}
-                                    maxValue={1000}
-                                    value={silenceThreshold}
-                                    onChange={(value) => setSilenceThreshold(value as number)}
-                                    className="max-w-md"
-                                    color="secondary"
-                                    showTooltip={true}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">RMS para DETENER grabación.</p>
-                            </div>
+                            {/* Voice and silence thresholds moved to Calibrate Audio in dashboard toolbar */}
                         </div>
                     </CardBody>
                 </Card>

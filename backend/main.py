@@ -7,6 +7,9 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import socketio
+
 # Initialize tracing as early as possible
 try:
     from backend.tracing import init_tracing, instrument_fastapi
@@ -14,11 +17,13 @@ try:
 except Exception:
     init_tracing = None
     instrument_fastapi = None
-from fastapi.middleware.cors import CORSMiddleware
-import socketio
+
 from routers import transcriptions
 from routers import debug
 from routers import admin
+from routers import formatter
+from routers import chat
+from routers import vad_config
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -49,18 +54,11 @@ app.add_middleware(
 
 # Include REST API routers
 app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"])
-
-# Debug routes
 app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-
-# Import and include formatter router
-from routers import formatter
 app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
-
-# Import and include chat router
-from routers import chat
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
 
 # Instrument FastAPI app for tracing (if available)
 try:
@@ -90,4 +88,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(socket_app, host="0.0.0.0", port=8000, reload=False)
+    # Running on port 8001 to match frontend fallback
+    uvicorn.run(socket_app, host="0.0.0.0", port=8001, reload=False)
