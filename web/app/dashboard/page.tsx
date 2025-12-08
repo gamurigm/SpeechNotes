@@ -120,6 +120,21 @@ export default function DashboardPage() {
         }
     };
 
+    const extractTitleFromMarkdown = (md: string) => {
+        if (!md) return 'Última Clase';
+        // Try to find the first markdown heading (#, ##, ###)
+        const headingMatch = md.match(/^#{1,3}\s*(.+)$/m);
+        if (headingMatch && headingMatch[1]) {
+            return headingMatch[1].trim();
+        }
+        // Fallback: look for "Transcripción: YYYY-MM-DD"
+        const transMatch = md.match(/Transcripci[oó]n:\s*(\d{4}-\d{2}-\d{2})/i);
+        if (transMatch && transMatch[1]) return `Transcripción: ${transMatch[1]}`;
+        return 'Última Clase';
+    };
+
+    const currentTitle = extractTitleFromMarkdown(latestContent);
+
     return (
         <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
             <div className="px-4 pt-4 pb-2 flex justify-center">
@@ -161,6 +176,7 @@ export default function DashboardPage() {
                                 </Card>
                             )}
                             <MarkdownViewer
+                                title={currentTitle}
                                 content={latestContent}
                                 onSave={handleSave}
                                 nav={{

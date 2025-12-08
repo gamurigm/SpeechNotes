@@ -109,6 +109,42 @@ def search_knowledge_base(query: str) -> str:
     except Exception as e:
         return f"Error searching knowledge base: {str(e)}"
 
+
+def search_knowledge_base_by_file(query: str, filename: str, k: int = 50) -> str:
+    """
+    Search the knowledge base for results that originate from a specific filename.
+    This is done by performing a similarity search and then filtering results by
+    the `filename` stored in each document's metadata.
+
+    Args:
+        query: search query
+        filename: filename to filter results by (exact match)
+        k: number of candidates to retrieve from the vector store before filtering
+    """
+    try:
+        if not vectordb:
+            if embeddings_error:
+                return f"Contexto no disponible (embeddings no inicializados: {embeddings_error})"
+            return "Contexto no disponible (vectordb no inicializado)"
+
+        # retrieve a larger set and then filter by filename
+        docs = vectordb.similarity_search(query, k=k)
+        if not docs:
+            return "No relevant documents found."
+
+        # filter
+        filtered = [doc for doc in docs if doc.metadata.get('filename') == filename]
+        if not filtered:
+            return f"No documents found for file '{filename}'."
+
+        context = "\n\n".join(
+            f"[Source: {doc.metadata.get('source','Unknown')} | file: {doc.metadata.get('filename')} ]\n{doc.page_content}"
+            for doc in filtered
+        )
+        return context
+    except Exception as e:
+        return f"Error searching knowledge base by file: {str(e)}"
+
 class RagAgent:
     def __init__(self):
         """Initialize RAG Agent and NVIDIA NIM client."""
@@ -164,6 +200,10 @@ class RagAgent:
             return answer
         except Exception as e:
             return f"Error generating response: {str(e)}"
+
+    def search_file_context(self, query: str, filename: str, k: int = 50) -> str:
+        """Return contextual passages from the vector store filtered by `filename`."""
+        return search_knowledge_base_by_file(query, filename, k=k)
 
     def chat_stream(self, user_query: str):
         """

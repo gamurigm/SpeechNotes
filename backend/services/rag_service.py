@@ -62,3 +62,18 @@ class RagService:
         except Exception as e:
             logger.exception("Exception in RagService.chat_stream for query: %s", query)
             yield f"Error in stream: {str(e)}"
+
+    def search_file(self, query: str, filename: str) -> Dict[str, Any]:
+        """
+        Search the knowledge base but restrict results to a specific filename.
+        Returns a small dict with 'context' that can be used to prompt the LLM.
+        """
+        if not self.agent:
+            return {"context": None, "error": "RAG agent not initialized"}
+        try:
+            logger.debug("RagService.search_file called with query=%s filename=%s", query, filename)
+            context = self.agent.search_file_context(query, filename)
+            return {"context": context}
+        except Exception as e:
+            logger.exception("Exception in RagService.search_file for query=%s file=%s", query, filename)
+            return {"context": None, "error": str(e)}

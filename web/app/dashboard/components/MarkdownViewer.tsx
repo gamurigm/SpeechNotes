@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit, Save, X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const MDEditor = dynamic(
@@ -22,12 +22,15 @@ interface Props {
         index?: number;
         total?: number;
     };
+    title?: string;
 }
 
-export function MarkdownViewer({ content, onSave, nav }: Props) {
+export function MarkdownViewer({ content, onSave, nav, title }: Props) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
+
+    // Title will use the app's global Geist sans variable for consistent appearance
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -54,27 +57,100 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                 alert('Vista previa no disponible para exportar');
                 return;
             }
-            const html = `
-                <!doctype html>
-                <html>
-                <head>
-                  <meta charset="utf-8" />
-                  <title>Transcripción</title>
-                  <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color: #111827; padding: 24px; }
-                    h1,h2,h3,h4 { color: #0f172a; }
-                    pre, code { background: #f3f4f6; padding: 8px; border-radius: 6px; display: block; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #e5e7eb; padding: 8px; }
-                    blockquote { border-left: 4px solid #60a5fa; padding-left: 12px; color: #374151; }
-                    img { max-width: 100%; height: auto; }
-                  </style>
-                </head>
-                <body>
-                  ${preview.innerHTML}
-                </body>
-                </html>
-            `;
+                        // Create a sanitized copy of the preview to avoid layout issues caused by
+                        // sticky/fixed elements or app-specific styles. We'll reset positioning
+                        // and apply print-friendly CSS to avoid overlapping content in the PDF.
+                        const temp = document.createElement('div');
+                        temp.innerHTML = preview.innerHTML;
+
+                        // Normalize any elements that are positioned (fixed/sticky) which can
+                        // overlap when printed — force them to static and remove offsets.
+                        const positioned = temp.querySelectorAll('*');
+                        positioned.forEach((el) => {
+                                try {
+                                        const cs = window.getComputedStyle(el as Element);
+                                        if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+                                                (el as HTMLElement).style.position = 'static';
+                                                (el as HTMLElement).style.top = 'auto';
+                                                (el as HTMLElement).style.left = 'auto';
+                                                (el as HTMLElement).style.right = 'auto';
+                                                (el as HTMLElement).style.bottom = 'auto';
+                                        }
+                                } catch (e) {
+                                        // ignore cross-origin or computed-style errors
+                                }
+                        });
+
+                        // Remove top metadata blocks that include noisy info like 'original:', 'generado:', etc.
+                        try {
+                            const metaKeywords = [/original:/i, /generad/i, /generado:/i, /transcripci.n:/i, /palabras:/i, /duraci.n:/i];
+                            // Remove any consecutive top nodes that match metadata patterns
+                            const children = Array.from(temp.childNodes);
+                            for (let i = 0; i < Math.min(children.length, 6); i++) {
+                                const node = children[i];
+                                if (node && node.textContent) {
+                                    const txt = node.textContent.trim();
+                                    if (!txt) continue;
+                                    if (metaKeywords.some((re) => re.test(txt))) {
+                                        // remove this node from temp
+                                        node.parentNode?.removeChild(node);
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            // ignore
+                        }
+
+                        const contentHtml = temp.innerHTML;
+
+                        // Build a clean header for the PDF. Try to extract a date from the content (YYYY-MM-DD), fallback to today.
+                        let titleDate = new Date();
+                        try {
+                            const dateMatch = contentHtml.match(/(\d{4}-\d{2}-\d{2})/);
+                            if (dateMatch) titleDate = new Date(dateMatch[1]);
+                        } catch (e) {}
+                        const titleDateStr = titleDate.toISOString().slice(0,10);
+
+                        const headerHtml = `
+                            <div style="margin-bottom:12px; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">
+                              <h1 style="margin:0; font-size:22px;">Transcripción: ${titleDateStr}</h1>
+                            </div>
+                        `;
+
+                        const html = `
+                                <!doctype html>
+                                <html>
+                                <head>
+                                    <meta charset="utf-8" />
+                                    <title>Transcripción</title>
+                                    <style>
+                                        /* Reset and print-friendly defaults */
+                                        html,body { height: auto; width: 100%; margin: 0; padding: 18px; }
+                                        *, *::before, *::after { box-sizing: border-box; word-break: break-word; }
+                                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #111827; line-height: 1.5; }
+                                        h1,h2,h3,h4 { color: #0f172a; margin-top: 1rem; margin-bottom: .5rem; }
+                                        p { margin: 0 0 0.75rem 0; }
+                                        pre, code { background: #f3f4f6; padding: 8px; border-radius: 6px; display: block; white-space: pre-wrap; }
+                                        table { width: 100%; border-collapse: collapse; }
+                                        th, td { border: 1px solid #e5e7eb; padding: 8px; }
+                                        blockquote { border-left: 4px solid #60a5fa; padding-left: 12px; color: #374151; margin: .5rem 0; }
+                                        img { max-width: 100%; height: auto; display: block; }
+                                        /* Prevent sticky/fixed headers or floats from overlapping */
+                                        [style*="position:fixed"], [style*="position: sticky"] { position: static !important; top: auto !important; }
+                                        .sticky, .fixed, .sticky-top, .header, header { position: static !important; }
+                                        /* Ensure sections break cleanly across pages */
+                                        h1, h2, h3, h4, p, pre, table, blockquote { page-break-inside: avoid; }
+                                        /* Small tweak to avoid content starting too close to top */
+                                        .pdf-root { padding-top: 8px; }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="pdf-root">
+                                        ${contentHtml}
+                                    </div>
+                                </body>
+                                </html>
+                        `;
 
             const newWin = window.open('', '_blank', 'noopener,noreferrer');
             if (newWin) {
@@ -137,12 +213,36 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
         }
     };
 
+    // Try to extract a date (YYYY-MM-DD) from the content to show as subtitle
+    let extractedDate = '';
+    try {
+        const m = content && content.match(/(\d{4}-\d{2}-\d{2})/);
+        if (m) {
+            extractedDate = new Date(m[1]).toISOString().slice(0, 10);
+        }
+    } catch (e) {}
+
+    const displayTitle = title || 'Última Clase';
+
     return (
-        <div className="h-full flex flex-col bg-white rounded-lg shadow">
+        <div className="h-full flex flex-col bg-white rounded-lg shadow" style={{ fontFamily: 'var(--font-geist-sans)' }}>
             <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
-                <h2 className="text-xl font-bold text-gray-900">
-                    Última Clase
-                </h2>
+                <div className="flex items-center gap-3">
+                    <div className="flex-none p-2 rounded-md bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-md">
+                        {
+                            <FileText size={18} />
+                        }
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <h2
+                            className="text-2xl sm:text-3xl font-sans font-semibold text-slate-900 leading-tight break-words whitespace-pre-wrap max-w-prose"
+                            style={{ fontFamily: 'var(--font-geist-sans)', letterSpacing: '0.2px' }}
+                        >
+                            {displayTitle}
+                        </h2>
+                        <span className="text-sm text-slate-500 mt-0.5">{extractedDate ? `Fecha: ${extractedDate}` : 'Transcripción reciente'}</span>
+                    </div>
+                </div>
                 <div className="flex gap-2">
                     {nav && (
                         <div className="flex items-center mr-4 gap-2">
@@ -210,7 +310,7 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
 
             <div className="flex-1 overflow-y-auto p-6">
                 {isEditing ? (
-                    <div data-color-mode="light">
+                    <div data-color-mode="light" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                         <MDEditor
                             value={editedContent}
                             onChange={(val) => setEditedContent(val || '')}
@@ -219,8 +319,8 @@ export function MarkdownViewer({ content, onSave, nav }: Props) {
                         />
                     </div>
                 ) : (
-                    <div className="markdown-content">
-                            <div id="markdown-preview">
+                        <div className="markdown-content">
+                            <div id="markdown-preview" style={{ fontFamily: 'var(--font-geist-sans)' }}>
                                 <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{
