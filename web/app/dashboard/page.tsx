@@ -11,7 +11,7 @@ import { MicTest } from './components/MicTest';
 import { apiClient } from '@/utils/api-client';
 import { useRecording } from '@/hooks/useRecording';
 import { getSocket } from '@/utils/socket';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Beaker, Rocket } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Beaker, Rocket, Check, X } from 'lucide-react';
 
 type ToolbarIconProps = {
     icon: React.ReactNode;
@@ -53,7 +53,11 @@ export default function DashboardPage() {
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
     const [zoomLevel, setZoomLevel] = useState(100);
     const [showZoomMenu, setShowZoomMenu] = useState(false);
-    const [showCalibrate, setShowCalibrate] = useState(false);
+    const [activeTool, setActiveTool] = useState<string | null>(null);
+
+    const toggleTool = (tool: string) => {
+        setActiveTool(current => current === tool ? null : tool);
+    };
 
     const handleZoom = (level: number) => {
         setZoomLevel(Math.max(50, Math.min(145, level)));
@@ -220,129 +224,181 @@ export default function DashboardPage() {
             <div className="px-4 pt-4 pb-2 flex justify-center">
                 <div className="max-w-6xl w-full flex items-center gap-1.5">
                     {/* Left Toolbar - Ultra Minimal */}
-                    <div className="flex items-center gap-2">
-                        {/* Zoom - Beautiful Icon */}
-                        <div className="group relative">
-                            <button
-                                className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
-                                title="Zoom (Ctrl+Scroll)"
-                            >
-                                <ZoomIn size={18} className="group-hover:stroke-2" />
-                            </button>
-                            {/* Beautiful Tooltip with Slider */}
-                            <div className="hidden group-hover:flex absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 flex-col gap-2 min-w-max backdrop-blur-sm bg-opacity-95">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="range"
-                                        min="50"
-                                        max="145"
-                                        step="5"
-                                        value={zoomLevel}
-                                        onChange={(e) => handleZoom(parseInt(e.target.value))}
-                                        className="w-40 h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700"
-                                        style={{
-                                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - 50) / 95) * 100}%, #dbeafe ${((zoomLevel - 50) / 95) * 100}%, #dbeafe 100%)`
-                                        }}
-                                    />
-                                </div>
-                                <div className="flex items-center justify-between gap-2 px-1">
-                                    <span className="text-xs font-semibold text-blue-600">{zoomLevel}%</span>
-                                    <span className="text-xs text-slate-400">Ctrl+Scroll</span>
+                    <div className="flex flex-col gap-2 items-start">
+                        <div className="flex items-center gap-2">
+                            {/* Zoom - Beautiful Icon */}
+                            <div className="group relative">
+                                <button
+                                    className="p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
+                                    title="Zoom (Ctrl+Scroll)"
+                                >
+                                    <ZoomIn size={18} className="group-hover:stroke-2" />
+                                </button>
+                                {/* Beautiful Tooltip with Slider */}
+                                <div className="hidden group-hover:flex absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 flex-col gap-2 min-w-max backdrop-blur-sm bg-opacity-95">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="range"
+                                            min="50"
+                                            max="145"
+                                            step="5"
+                                            value={zoomLevel}
+                                            onChange={(e) => handleZoom(parseInt(e.target.value))}
+                                            className="w-40 h-2 bg-gradient-to-r from-blue-200 to-blue-300 rounded-full appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700"
+                                            style={{
+                                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((zoomLevel - 50) / 95) * 100}%, #dbeafe ${((zoomLevel - 50) / 95) * 100}%, #dbeafe 100%)`
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 px-1">
+                                        <span className="text-xs font-semibold text-blue-600">{zoomLevel}%</span>
+                                        <span className="text-xs text-slate-400">Ctrl+Scroll</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <ToolbarIcon icon={<Wand2 size={18} />} tooltip="Format Markdown" />
-                        <ToolbarIcon icon={<FileAudio2 size={18} />} tooltip="Transcribe Audio File" />
-                        <div className="relative">
+                            <ToolbarIcon 
+                                icon={<Wand2 size={18} />} 
+                                tooltip="Format Markdown" 
+                                onClick={() => toggleTool('format')}
+                                isActive={activeTool === 'format'}
+                            />
+                            <ToolbarIcon 
+                                icon={<FileAudio2 size={18} />} 
+                                tooltip="Transcribe Audio File" 
+                                onClick={() => toggleTool('upload')}
+                                isActive={activeTool === 'upload'}
+                            />
                             <ToolbarIcon
                                 icon={<SlidersHorizontal size={18} />}
                                 tooltip="Calibrate Audio"
-                                onClick={() => setShowCalibrate(!showCalibrate)}
+                                onClick={() => toggleTool('calibrate')}
+                                isActive={activeTool === 'calibrate'}
                             />
-                            {showCalibrate && (
-                                <div className="absolute left-0 top-full mt-2 z-50">
-                                    <Card className="w-72 shadow-lg border">
-                                        <CardBody className="p-3">
-                                            <h4 className="text-sm font-semibold mb-3">Calibración de Audio</h4>
-                                            <div className="space-y-3">
-                                                <div className="space-y-1">
-                                                    <Slider
-                                                        label="Umbral Voz (Inicio)"
-                                                        size="sm"
-                                                        step={50}
-                                                        minValue={100}
-                                                        maxValue={2000}
-                                                        value={voiceThreshold}
-                                                        onChange={(v) => setVoiceThreshold(v as number)}
-                                                        color="success"
-                                                        showTooltip={true}
-                                                    />
-                                                    <p className="text-xs text-slate-500">RMS para INICIAR grabación — {voiceThreshold} RMS</p>
-                                                </div>
-
-                                                <div className="space-y-1">
-                                                    <Slider
-                                                        label="Umbral Silencio (Fin)"
-                                                        size="sm"
-                                                        step={50}
-                                                        minValue={50}
-                                                        maxValue={1000}
-                                                        value={silenceThreshold}
-                                                        onChange={(v) => setSilenceThreshold(v as number)}
-                                                        color="secondary"
-                                                        showTooltip={true}
-                                                    />
-                                                    <p className="text-xs text-slate-500">RMS para DETENER grabación — {silenceThreshold} RMS</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-end gap-2 mt-3">
-                                              <Button size="sm" color="primary" onClick={async () => {
-  const payload = { voice_threshold: voiceThreshold, silence_threshold: silenceThreshold };
-  const endpoints = ['/api/config/vad', 'http://localhost:8001/api/config/vad'];
-  let lastError: any = null;
-  let success = false;
-
-  for (const ep of endpoints) {
-    try {
-      const res = await fetch(ep, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        success = true;
-        break;
-      } else {
-        lastError = `HTTP ${res.status} (${ep})`;
-      }
-    } catch (e) {
-      lastError = e;
-    }
-  }
-
-  if (!success) {
-    console.error('[Calibrator] Failed to save VAD config:', lastError);
-    alert('Error al guardar configuración de calibración: ' + String(lastError));
-    return;
-  }
-
-  setShowCalibrate(false);
-  alert('Umbrales guardados correctamente');
-}}>
-  Aceptar
-</Button>
-
-                                              <Button size="sm" variant="ghost" onClick={() => setShowCalibrate(false)}>
-                                                Cancelar
-                                              </Button>
-                                            </div>
-                                        </CardBody>
-                                    </Card>
-                                </div>
-                            )}
                         </div>
+
+                        {/* Active Tool Panels */}
+                        {activeTool === 'format' && (
+                            <Card className="w-72 shadow-md border-none">
+                                <CardBody className="p-4">
+                                    <h4 className="text-base font-semibold mb-4 text-gray-800">Formato Markdown</h4>
+                                    <p className="text-sm text-slate-600 mb-3">
+                                        Aplica formato automático al texto transcrito para mejorar la legibilidad.
+                                    </p>
+                                    <Button size="sm" color="primary" onClick={() => alert('Función de formato (simulada)')}>
+                                        Aplicar Formato
+                                    </Button>
+                                </CardBody>
+                            </Card>
+                        )}
+
+                        {activeTool === 'upload' && (
+                            <Card className="w-72 shadow-md border-none">
+                                <CardBody className="p-4">
+                                    <h4 className="text-base font-semibold mb-4 text-gray-800">Transcribir Archivo</h4>
+                                    <p className="text-sm text-slate-600 mb-3">
+                                        Sube un archivo de audio para transcribirlo.
+                                    </p>
+                                    <Button size="sm" color="primary" onClick={() => alert('Función de subida (simulada)')}>
+                                        Seleccionar Archivo
+                                    </Button>
+                                </CardBody>
+                            </Card>
+                        )}
+
+                        {activeTool === 'calibrate' && (
+                            <Card className="w-80 shadow-md border-none">
+                                <CardBody className="p-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-base font-semibold text-gray-800">Calibración de Audio</h4>
+                                        <div className="flex items-center gap-1">
+                                            <Button 
+                                                isIconOnly 
+                                                size="sm" 
+                                                variant="light" 
+                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                onClick={async () => {
+                                                    const payload = { voice_threshold: voiceThreshold, silence_threshold: silenceThreshold };
+                                                    const endpoints = ['/api/config/vad', 'http://localhost:8001/api/config/vad'];
+                                                    let lastError: any = null;
+                                                    let success = false;
+
+                                                    for (const ep of endpoints) {
+                                                        try {
+                                                            const res = await fetch(ep, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(payload)
+                                                            });
+                                                            if (res.ok) {
+                                                                success = true;
+                                                                break;
+                                                            } else {
+                                                                lastError = `HTTP ${res.status} (${ep})`;
+                                                            }
+                                                        } catch (e) {
+                                                            lastError = e;
+                                                        }
+                                                    }
+
+                                                    if (!success) {
+                                                        console.error('[Calibrator] Failed to save VAD config:', lastError);
+                                                        alert('Error al guardar configuración de calibración: ' + String(lastError));
+                                                        return;
+                                                    }
+
+                                                    setActiveTool(null);
+                                                    alert('Umbrales guardados correctamente');
+                                                }}
+                                            >
+                                                <Check size={18} />
+                                            </Button>
+                                            <Button 
+                                                isIconOnly 
+                                                size="sm" 
+                                                variant="light" 
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                onClick={() => setActiveTool(null)}
+                                            >
+                                                <X size={18} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <Slider
+                                                label="Umbral Voz (Inicio)"
+                                                size="sm"
+                                                step={50}
+                                                minValue={100}
+                                                maxValue={2000}
+                                                value={voiceThreshold}
+                                                onChange={(v) => setVoiceThreshold(v as number)}
+                                                color="success"
+                                                showTooltip={true}
+                                            />
+                                            <p className="text-xs text-slate-500">RMS para INICIAR grabación — {voiceThreshold} RMS</p>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Slider
+                                                label="Umbral Silencio (Fin)"
+                                                size="sm"
+                                                step={50}
+                                                minValue={50}
+                                                maxValue={1000}
+                                                value={silenceThreshold}
+                                                onChange={(v) => setSilenceThreshold(v as number)}
+                                                color="secondary"
+                                                showTooltip={true}
+                                            />
+                                            <p className="text-xs text-slate-500">RMS para DETENER grabación — {silenceThreshold} RMS</p>
+                                        </div>
+                                    </div>
+                                </CardBody>
+                            </Card>
+                        )}
                     </div>
 
                     <div className="flex-none">
