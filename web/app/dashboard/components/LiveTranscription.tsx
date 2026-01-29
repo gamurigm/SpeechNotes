@@ -62,57 +62,75 @@ export function LiveTranscription() {
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] opacity-50" />
             </div>
 
-            {/* Header */}
-            <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/5">
-                <div className="flex items-center gap-4">
-                    {/* Animated icon container */}
-                    <div className="relative">
-                        <div className={`p-3 rounded-2xl bg-gradient-to-br ${isRecording ? 'from-rose-500 via-pink-500 to-fuchsia-600' : 'from-cyan-500 via-blue-500 to-indigo-600'} shadow-lg ${isRecording ? 'shadow-rose-500/30' : 'shadow-cyan-500/30'} transition-all duration-500`}>
-                            {isRecording ? <Waves size={22} className="text-white animate-pulse" /> : <Mic size={22} className="text-white" />}
+            {/* Unified Header & Divider Unit */}
+            <div className="relative z-20">
+                <div className="flex items-center justify-between px-6 py-5">
+                    <div className="flex items-center gap-4">
+                        {/* Animated icon container */}
+                        <div className="relative">
+                            <div className={`p-3 rounded-2xl bg-gradient-to-br ${isRecording ? 'from-rose-500 via-pink-500 to-fuchsia-600' : 'from-cyan-500 via-blue-500 to-indigo-600'} shadow-lg ${isRecording ? 'shadow-rose-500/30' : 'shadow-cyan-500/30'} transition-all duration-500`}>
+                                {isRecording ? <Waves size={20} className="text-white animate-pulse" /> : <Mic size={20} className="text-white" />}
+                            </div>
+                            {/* Ripple effect when recording */}
+                            {isRecording && (
+                                <>
+                                    <div className="absolute inset-0 rounded-2xl bg-rose-500/30 animate-ping" />
+                                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-rose-500/20 to-fuchsia-500/20 blur-md animate-pulse" />
+                                </>
+                            )}
                         </div>
-                        {/* Ripple effect when recording */}
-                        {isRecording && (
-                            <>
-                                <div className="absolute inset-0 rounded-2xl bg-rose-500/30 animate-ping" />
-                                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-rose-500/20 to-fuchsia-500/20 blur-md animate-pulse" />
-                            </>
-                        )}
+
+                        <div>
+                            <h3 className="text-base font-bold text-theme-primary tracking-tight flex items-center gap-2">
+                                Transcripción en Vivo
+                                {isRecording && <Zap size={14} className="text-yellow-400 animate-pulse" />}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-rose-500 animate-pulse shadow-lg shadow-rose-500/50' : 'bg-slate-600'}`} />
+                                <p className={`text-[11px] font-bold uppercase tracking-widest ${isRecording ? 'text-rose-400' : 'text-slate-500'}`}>
+                                    {isRecording ? 'Live' : 'Standby'}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <h3 className="text-lg font-bold text-theme-primary tracking-tight flex items-center gap-2">
-                            Transcripción en Vivo
-                            {isRecording && <Zap size={14} className="text-yellow-400 animate-pulse" />}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-rose-500 animate-pulse shadow-lg shadow-rose-500/50' : 'bg-slate-600'}`} />
-                            <p className={`text-sm font-medium ${isRecording ? 'text-rose-400' : 'text-slate-500'}`}>
-                                {isRecording ? 'Escuchando activamente...' : 'En espera'}
-                            </p>
+                    {/* Segment counter with animation */}
+                    <div className="flex items-center gap-3">
+                        <div className={`relative px-4 py-1.5 rounded-xl ${messages.length > 0 ? 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/5'} border backdrop-blur-md transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className={`text-lg font-black tabular-nums tracking-tighter ${messages.length > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                    {animatedCount}
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500/80">segmentos</span>
+                            </div>
+
+                            {/* Glow effect on new message */}
+                            {showWave && (
+                                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 animate-ping" />
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Segment counter with animation */}
-                <div className="flex items-center gap-3">
-                    {isRecording && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
-                            <Volume2 size={14} className="text-rose-400 animate-pulse" />
-                            <span className="text-xs font-semibold text-rose-400">REC</span>
-                        </div>
-                    )}
+                {/* Theme-Aware Neon Divider - Unified with Header Base */}
+                <div className="absolute bottom-0 inset-x-0 h-px">
+                    {/* Main glowing line */}
+                    <div className={`absolute inset-x-8 h-px transition-all duration-700 ${isRecording
+                        ? 'bg-gradient-to-r from-transparent via-rose-500/50 to-transparent shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                        : 'bg-gradient-to-r from-transparent via-cyan-500/40 dark:via-cyan-400/40 to-transparent'
+                        }`} />
 
-                    <div className={`relative px-4 py-2 rounded-2xl bg-gradient-to-r ${messages.length > 0 ? 'from-emerald-500/15 via-teal-500/15 to-cyan-500/15 border-emerald-500/25' : 'bg-white/5 border-white/10'} border backdrop-blur-sm transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
-                        <span className={`text-xl font-bold tabular-nums ${messages.length > 0 ? 'text-emerald-400' : 'text-theme-secondary'}`}>
-                            {animatedCount}
-                        </span>
-                        <span className="text-sm text-theme-secondary ml-1.5 font-medium">segmentos</span>
+                    {/* Secondary bloom/glow */}
+                    <div className={`absolute inset-x-12 h-px blur-[2px] transition-all duration-1000 ${isRecording
+                        ? 'bg-gradient-to-r from-transparent via-rose-400/30 to-transparent'
+                        : 'bg-gradient-to-r from-transparent via-blue-400/20 dark:via-cyan-400/30 to-transparent'
+                        }`} />
 
-                        {/* Glow effect on new message */}
-                        {showWave && (
-                            <div className="absolute inset-0 rounded-2xl bg-emerald-400/20 animate-ping" />
-                        )}
-                    </div>
+                    {/* Central Node */}
+                    <div className={`absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full transition-all duration-700 z-20 ${isRecording
+                        ? 'bg-rose-400 shadow-[0_0_12px_rgba(251,113,133,0.8)]'
+                        : 'bg-cyan-400 dark:bg-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.5)] dark:shadow-[0_0_12px_rgba(34,211,238,0.8)]'
+                        }`} />
                 </div>
             </div>
 

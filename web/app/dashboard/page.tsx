@@ -314,13 +314,34 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex-1 flex overflow-hidden w-full px-4 relative">
-                            {/* Toggleable tools panel */}
-                            <button
-                                onClick={() => setShowSidebar(!showSidebar)}
-                                className="absolute left-2 top-2 z-[60] p-1.5 rounded-xl bg-transparent hover:bg-white/10 backdrop-blur-sm border border-white/5 text-theme-secondary opacity-20 hover:opacity-100 transition-all duration-500 hover:scale-110 active:scale-95 shadow-sm"
-                            >
-                                {showSidebar ? <PanelRightClose size={14} className="rotate-180" /> : <PanelRightOpen size={14} />}
-                            </button>
+                            {/* Neon Edge Sidebar Toggle (Left) - Central Edge Interactor */}
+                            <div className="fixed left-0 top-0 bottom-0 w-8 z-[100] group flex items-center justify-center transition-all duration-300">
+                                <button
+                                    onClick={() => setShowSidebar(!showSidebar)}
+                                    className={`relative flex items-center justify-center w-2 hover:w-12 h-44 rounded-r-3xl transition-all duration-500 transform ${'bg-cyan-500/10 border-r border-y border-cyan-500/30 backdrop-blur-xl'
+                                        } ${showSidebar
+                                            ? 'opacity-30 group-hover:opacity-100 -translate-x-1 hover:translate-x-0'
+                                            : 'opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0'
+                                        } group-hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] shadow-cyan-500/20 shadow-[15px_0_30px_-5px_rgba(34,211,238,0.3)]`}
+                                >
+                                    {/* Inner Neon Line */}
+                                    <div className={`absolute right-[3px] inset-y-8 w-[3px] bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.9)] transition-opacity duration-500 ${showSidebar ? 'opacity-50 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+
+                                    {/* Icon */}
+                                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 scale-50 group-hover:scale-110">
+                                        {showSidebar ? (
+                                            <PanelRightClose size={20} className="text-cyan-400 rotate-180 mr-1" />
+                                        ) : (
+                                            <PanelRightOpen size={20} className="text-cyan-400 rotate-90 mr-1" />
+                                        )}
+                                    </div>
+
+                                    {/* Discovery Pulse */}
+                                    {!showSidebar && (
+                                        <div className="absolute top-8 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,1)] animate-pulse" />
+                                    )}
+                                </button>
+                            </div>
 
                             <aside className={`flex-shrink-0 transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] opacity-100' : 'w-0 opacity-0 pointer-events-none overflow-hidden'}`}>
                                 <div className="h-full flex flex-col p-4 gap-4">

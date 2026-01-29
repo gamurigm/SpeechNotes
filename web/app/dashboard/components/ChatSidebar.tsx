@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Sparkles, Bot, User, Loader2, FileText, Maximize2, Minimize2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useBackground } from '../../providers';
 
 interface Message {
     id: string;
@@ -22,6 +23,8 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded, onToggleExpand, onClose }: ChatSidebarProps) {
+    const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -135,13 +138,14 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
     };
 
     return (
-        <div className="h-full flex flex-col relative overflow-hidden rounded-[2.5rem] glass-dark shadow-[0_30px_100px_-20px_rgba(0,0,0,0.4)] transition-all duration-700">
+        <div className={`h-full flex flex-col relative overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_-20px_rgba(0,0,0,0.4)] transition-all duration-700 ${isLight ? 'glass border-slate-200/50' : 'glass-dark border-white/5'
+            } border`}>
 
             {/* Premium background effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-violet-600/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <div className={`absolute -top-[20%] -right-[10%] w-[60%] h-[60%] ${isLight ? 'bg-violet-400/10' : 'bg-violet-600/10'} rounded-full blur-[120px] animate-pulse`} />
+                <div className={`absolute top-[20%] -left-[10%] w-[50%] h-[50%] ${isLight ? 'bg-indigo-400/10' : 'bg-indigo-600/10'} rounded-full blur-[100px]`} />
+                <div className={`absolute bottom-0 inset-x-0 h-px ${isLight ? 'bg-black/5' : 'bg-white/10'}`} />
             </div>
 
             {/* Header */}
@@ -152,16 +156,16 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                                 <MessageCircle size={24} className="text-white" />
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 border-slate-950 shadow-sm" />
+                            <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            <h3 className={`text-lg font-bold tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                                 Kimi Intelligence
-                                <Sparkles size={14} className="text-violet-400" />
+                                <Sparkles size={14} className={isLight ? 'text-violet-600' : 'text-violet-400'} />
                             </h3>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                                <span className="text-[10px] uppercase tracking-widest font-black text-slate-500/80">Active Context</span>
+                                <span className={`text-[10px] uppercase tracking-widest font-black ${isLight ? 'text-slate-500' : 'text-slate-400/80'}`}>Active Context</span>
                             </div>
                         </div>
                     </div>
@@ -171,9 +175,9 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         <button
                             onClick={() => setUseThinking(!useThinking)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-500 ${useThinking
-                                ? 'bg-violet-500/10 border-violet-500/20 text-violet-400 shadow-[0_0_20px_rgba(139,92,246,0.1)]'
-                                : 'bg-white/5 border-white/5 text-slate-500 opacity-50 hover:opacity-100 hover:bg-white/10'
-                                }`}
+                                ? (isLight ? 'bg-violet-500/10 border-violet-500/20 text-violet-700 shadow-sm' : 'bg-violet-500/10 border-violet-500/20 text-violet-400 shadow-[0_0_20px_rgba(139,92,246,0.1)]')
+                                : (isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white/5 border-white/5 text-slate-500 opacity-50')
+                                } hover:opacity-100`}
                             title={useThinking ? "Desactivar análisis profundo (Más rápido)" : "Activar análisis profundo (Más inteligente)"}
                         >
                             <Sparkles size={10} className={useThinking ? 'animate-pulse' : ''} />

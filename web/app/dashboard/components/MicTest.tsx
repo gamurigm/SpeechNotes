@@ -136,10 +136,10 @@ export function MicTest({ onClose }: { onClose?: () => void }) {
             </div>
 
             {/* Header */}
-            <div className="relative z-10 flex items-center justify-between px-5 py-4 border-b border-slate-700/30">
+            <div className="relative z-10 flex items-center justify-between px-5 py-4">
                 <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${isTesting ? 'from-violet-500 to-indigo-600' : 'bg-white/5'} shadow-lg transition-all duration-500`}>
-                        <Mic size={18} className={`text-white ${isTesting ? 'animate-pulse' : ''}`} />
+                    <div className={`p-2.5 rounded-xl transition-all duration-500 ${isTesting ? 'bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg' : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'}`}>
+                        <Mic size={18} className={`${isTesting ? 'text-white animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
                     </div>
                     <div>
                         <h3 className="text-sm font-semibold text-theme-primary">Prueba de Micrófono</h3>
