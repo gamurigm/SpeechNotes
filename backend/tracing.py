@@ -35,15 +35,19 @@ def init_tracing(service_name: Optional[str] = None):
     Reads `OTEL_EXPORTER_OTLP_ENDPOINT` env var or defaults to `http://localhost:4318/v1/traces`.
     """
     service_name = service_name or os.getenv("OTEL_SERVICE_NAME", "speechnotes-backend")
-    endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318/v1/traces")
 
     resource = Resource.create({"service.name": service_name})
     provider = TracerProvider(resource=resource)
 
-    # OTLP exporter
-    otlp_exporter = OTLPSpanExporter(endpoint=endpoint)
-    provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
-
+    # OTLP exporter only if endpoint is explicitly provided
+    otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    if otlp_endpoint:
+        try:
+            otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
+            provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+        except Exception as e:
+            print(f"Failed to initialize OTLP exporter: {e}")
+    
     # Console exporter for local debugging
     provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
 

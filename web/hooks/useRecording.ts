@@ -86,17 +86,23 @@ export function useRecording() {
             connectSocket();
             const socket = getSocket();
 
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: 16000,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true
+                } 
+            });
             streamRef.current = stream;
 
-            // Setup Audio Context for Analysis and Gain
-            const audioContext = new AudioContext();
+            // Setup Audio Context at 16kHz for Riva compatibility
+            const audioContext = new AudioContext({ sampleRate: 16000 });
             audioContextRef.current = audioContext;
             
             const source = audioContext.createMediaStreamSource(stream);
             const gain = audioContext.createGain();
             const analyserNode = audioContext.createAnalyser();
-            const destination = audioContext.createMediaStreamDestination();
 
             // Configure Analyser
             analyserNode.fftSize = 256;
@@ -104,30 +110,71 @@ export function useRecording() {
             // Configure Gain
             gain.gain.value = gainValue;
 
-            // Connect graph: Source -> Gain -> Analyser and Destination
+            // Connect graph: Source -> Gain -> Analyser
             source.connect(gain);
             gain.connect(analyserNode);
-            analyserNode.connect(destination);  // IMPORTANT: Connect analyzer to destination so audio flows
 
             setAnalyser(analyserNode);
             setGainNode(gain);
 
-            // Use the processed stream for recording
-            const mediaRecorder = new MediaRecorder(destination.stream, {
-                mimeType: 'audio/webm'
-            });
+            // Use ScriptProcessorNode to capture raw PCM data
+            // Buffer size of 4096 at 16kHz = ~256ms per chunk
+            const bufferSize = 4096;
+            const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+            
+            // Accumulator to send ~1 second of audio at a time
+            let pcmAccumulator: Int16Array[] = [];
+            let samplesAccumulated = 0;
+            const samplesPerSecond = 16000;
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0 && socket.connected) {
-                    // Convert Blob to ArrayBuffer and send
-                    event.data.arrayBuffer().then(buffer => {
-                        socket.emit('audio_chunk', buffer);
-                    });
+            scriptProcessor.onaudioprocess = (event) => {
+                if (!socket.connected) return;
+                
+                const inputData = event.inputBuffer.getChannelData(0);
+                
+                // Convert Float32 to Int16 PCM
+                const pcmData = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    const s = Math.max(-1, Math.min(1, inputData[i]));
+                    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+                
+                pcmAccumulator.push(pcmData);
+                samplesAccumulated += pcmData.length;
+                
+                // Send approximately every second of audio
+                if (samplesAccumulated >= samplesPerSecond) {
+                    // Combine all accumulated chunks
+                    const totalLength = pcmAccumulator.reduce((acc, arr) => acc + arr.length, 0);
+                    const combined = new Int16Array(totalLength);
+                    let offset = 0;
+                    for (const chunk of pcmAccumulator) {
+                        combined.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+                    
+                    // Send as ArrayBuffer
+                    socket.emit('audio_chunk_pcm', combined.buffer);
+                    
+                    // Reset accumulator
+                    pcmAccumulator = [];
+                    samplesAccumulated = 0;
+                }
+                
+                // Pass through audio (required for ScriptProcessor to work)
+                const outputData = event.outputBuffer.getChannelData(0);
+                for (let i = 0; i < inputData.length; i++) {
+                    outputData[i] = 0; // Mute output to avoid feedback
                 }
             };
+            
+            // Connect script processor
+            analyserNode.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
+            
+            // Store reference for cleanup
+            (audioContextRef.current as any)._scriptProcessor = scriptProcessor;
 
-            mediaRecorder.start(1000); // Send chunks every 1 second
-            mediaRecorderRef.current = mediaRecorder;
             setIsRecording(true);
             setMessages([]);
             setDuration(0);

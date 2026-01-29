@@ -24,6 +24,7 @@ from routers import admin
 from routers import formatter
 from routers import chat
 from routers import vad_config
+from routers import documents
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -59,6 +60,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
+app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 
 # Instrument FastAPI app for tracing (if available)
 try:

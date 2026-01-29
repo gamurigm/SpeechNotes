@@ -244,10 +244,10 @@ class BackgroundRecorder(AudioRecorder):
 @dataclass
 class VADConfig:
     """Voice Activity Detection configuration"""
-    voice_threshold: int = 1200
-    silence_threshold: int = 800
-    silence_duration: float = 3.0
-    min_voice_duration: float = 1.0
+    voice_threshold: int = 400      # Lowered from 1200 for better sensitivity
+    silence_threshold: int = 200    # Lowered from 800 for better sensitivity
+    silence_duration: float = 2.0   # Reduced from 3.0s for faster response
+    min_voice_duration: float = 0.5 # Reduced from 1.0s to capture shorter phrases
     max_duration: float = 30.0
 
 

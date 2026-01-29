@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, AlertCircle, CheckCircle } from 'lucide-react';
-import { Card, CardHeader, CardBody, Button, Progress, Chip } from '@heroui/react';
+import { Mic, AlertCircle, CheckCircle, Volume2, Radio } from 'lucide-react';
 
 export function MicTest() {
     const [isTesting, setIsTesting] = useState(false);
@@ -10,7 +9,7 @@ export function MicTest() {
     const [status, setStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
     const [peakLevel, setPeakLevel] = useState(0);
-    
+
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -23,7 +22,7 @@ export function MicTest() {
             sum += normalized * normalized;
         }
         const rms = Math.sqrt(sum / dataArray.length);
-        return Math.round(rms * 1000); // Scale to 0-1000 range
+        return Math.round(rms * 1000);
     };
 
     const startMicTest = async () => {
@@ -100,7 +99,6 @@ export function MicTest() {
         }
     };
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (isTesting) {
@@ -110,108 +108,133 @@ export function MicTest() {
     }, [isTesting]);
 
     const getStatusColor = () => {
-        if (rmsLevel > 300) return 'bg-green-500';
-        if (rmsLevel > 150) return 'bg-yellow-500';
-        return 'bg-gray-300';
+        if (rmsLevel > 300) return 'from-emerald-500 to-teal-500';
+        if (rmsLevel > 150) return 'from-amber-500 to-orange-500';
+        return 'from-slate-600 to-slate-700';
+    };
+
+    const getProgressColor = () => {
+        if (rmsLevel > 300) return 'bg-emerald-500';
+        if (rmsLevel > 150) return 'bg-amber-500';
+        return 'bg-slate-600';
     };
 
     const getStatusText = () => {
-        if (rmsLevel > 300) return 'Fuerte';
-        if (rmsLevel > 150) return 'Medio';
+        if (rmsLevel > 300) return 'Señal fuerte';
+        if (rmsLevel > 150) return 'Señal media';
         return 'Débil/Silencio';
     };
 
     return (
-        <Card className="shadow-lg border-none">
-            <CardHeader className="flex gap-3 px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                        <Mic size={24} className="text-blue-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-800">Prueba de Micrófono</h3>
-                </div>
-            </CardHeader>
+        <div className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-700/40 shadow-xl">
 
-            <CardBody className="px-6 py-4 space-y-4">
-                {/* Status Indicator */}
+            {/* Subtle ambient glow */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[80px] transition-all duration-700 ${isTesting ? 'bg-violet-500/20' : 'bg-slate-700/10'}`} />
+                <div className={`absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-[80px] transition-all duration-700 ${isTesting ? 'bg-indigo-500/15' : 'bg-slate-700/10'}`} />
+            </div>
+
+            {/* Header */}
+            <div className="relative z-10 flex items-center justify-between px-5 py-4 border-b border-slate-700/30">
+                <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${isTesting ? 'from-violet-500 to-indigo-600' : 'from-slate-700 to-slate-800'} shadow-lg transition-all duration-500`}>
+                        <Mic size={18} className={`text-white ${isTesting ? 'animate-pulse' : ''}`} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold text-white">Prueba de Micrófono</h3>
+                        <p className="text-[10px] text-slate-500 font-medium">Verifica tu entrada de audio</p>
+                    </div>
+                </div>
+
+                {isTesting && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                        <Radio size={10} className="text-violet-400 animate-pulse" />
+                        <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wide">Live</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Body */}
+            <div className="relative z-10 p-5 space-y-4">
+
+                {/* Status Message */}
                 {message && (
-                    <div className="p-3 bg-gray-50 rounded-lg flex items-center gap-2">
-                        {status === 'success' && <CheckCircle size={20} className="text-green-500" />}
-                        {status === 'error' && <AlertCircle size={20} className="text-red-500" />}
-                        {status === 'testing' && <div className="animate-spin"><Mic size={20} className="text-blue-500" /></div>}
-                        <span className="text-sm text-gray-700">{message}</span>
+                    <div className={`flex items-center gap-2.5 p-3 rounded-xl border backdrop-blur-sm ${status === 'success' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                            status === 'error' ? 'bg-rose-500/10 border-rose-500/20' :
+                                'bg-slate-800/50 border-slate-700/30'
+                        }`}>
+                        {status === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
+                        {status === 'error' && <AlertCircle size={16} className="text-rose-400" />}
+                        {status === 'testing' && <Mic size={16} className="text-violet-400 animate-pulse" />}
+                        <span className="text-xs text-slate-300 font-medium">{message}</span>
                     </div>
                 )}
 
-                {/* Real-time Level Display */}
+                {/* Real-time Levels */}
                 {isTesting && (
                     <div className="space-y-4">
-                        <div>
-                            <div className="flex justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700">Nivel Actual</span>
-                                <Chip size="sm" variant="flat" color={rmsLevel > 300 ? "success" : rmsLevel > 150 ? "warning" : "default"}>
+                        {/* Current Level */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-slate-400">Nivel Actual</span>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${rmsLevel > 300 ? 'bg-emerald-500/20 text-emerald-400' :
+                                        rmsLevel > 150 ? 'bg-amber-500/20 text-amber-400' :
+                                            'bg-slate-700/50 text-slate-500'
+                                    }`}>
                                     {rmsLevel}
-                                </Chip>
+                                </span>
                             </div>
-                            <Progress 
-                                value={Math.min((rmsLevel / 500) * 100, 100)}
-                                color={rmsLevel > 300 ? "success" : rmsLevel > 150 ? "warning" : "default"}
-                                className="max-w-md"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">{getStatusText()}</p>
+                            <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full ${getProgressColor()} transition-all duration-75 rounded-full`}
+                                    style={{ width: `${Math.min((rmsLevel / 500) * 100, 100)}%` }}
+                                />
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-medium">{getStatusText()}</p>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-700">Pico Detectado</span>
-                                <Chip size="sm" variant="flat" color="secondary">
+                        {/* Peak Level */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-slate-400">Pico Detectado</span>
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-400">
                                     {peakLevel}
-                                </Chip>
+                                </span>
                             </div>
-                            <Progress 
-                                value={Math.min((peakLevel / 500) * 100, 100)}
-                                color="secondary"
-                                className="max-w-md"
-                            />
+                            <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-violet-500 transition-all duration-150 rounded-full"
+                                    style={{ width: `${Math.min((peakLevel / 500) * 100, 100)}%` }}
+                                />
+                            </div>
                         </div>
 
-                        {/* Voice/Silence Threshold Indicators */}
-                        <Card className="bg-blue-50">
-                            <CardBody className="py-3 px-4">
-                                <div className="text-xs text-gray-700 space-y-1">
-                                    <p>🎙 <strong>Umbral Voz:</strong> &gt; 300 (para iniciar)</p>
-                                    <p>🔇 <strong>Umbral Silencio:</strong> &lt; 150 (para detener)</p>
-                                    <p>📊 <strong>Tu nivel:</strong> {rmsLevel}</p>
-                                </div>
-                            </CardBody>
-                        </Card>
+                        {/* Threshold Info Card */}
+                        <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/30 space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                                <Volume2 size={12} className="text-slate-500" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Umbrales de Referencia</span>
+                            </div>
+                            <div className="text-[11px] text-slate-400 space-y-0.5">
+                                <p>🎙 <span className="text-slate-300">Voz:</span> &gt; 300 (inicio)</p>
+                                <p>🔇 <span className="text-slate-300">Silencio:</span> &lt; 150 (detener)</p>
+                            </div>
+                        </div>
                     </div>
                 )}
 
-                {/* Control Buttons */}
-                <div className="flex gap-2 pt-2">
-                    {!isTesting ? (
-                        <Button
-                            onPress={startMicTest}
-                            color="primary"
-                            variant="shadow"
-                            className="w-full font-semibold"
-                            startContent={<Mic size={18} />}
-                        >
-                            Iniciar Prueba
-                        </Button>
-                    ) : (
-                        <Button
-                            onPress={stopMicTest}
-                            color="danger"
-                            variant="shadow"
-                            className="w-full font-semibold"
-                        >
-                            Detener Prueba
-                        </Button>
-                    )}
-                </div>
-            </CardBody>
-        </Card>
+                {/* Action Button */}
+                <button
+                    onClick={isTesting ? stopMicTest : startMicTest}
+                    className={`w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${isTesting
+                            ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-lg shadow-rose-500/25'
+                            : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25'
+                        }`}
+                >
+                    <Mic size={16} />
+                    {isTesting ? 'Detener Prueba' : 'Iniciar Prueba'}
+                </button>
+            </div>
+        </div>
     );
 }

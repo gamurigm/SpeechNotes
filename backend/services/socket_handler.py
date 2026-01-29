@@ -13,6 +13,12 @@ import wave
 import struct
 import math
 import asyncio
+import traceback
+import tempfile
+import io
+from typing import Any
+
+from pydub import AudioSegment
 
 load_dotenv()
 
@@ -52,6 +58,93 @@ def calculate_rms(audio_data: bytes) -> float:
         print(f"[RMS] Error: {e}")
         return 0
 
+
+def apply_gain(pcm_data: bytes, gain: float = 1.0) -> bytes:
+    """
+    Apply gain (volume amplification) to PCM audio data.
+    
+    Args:
+        pcm_data: Raw PCM bytes (16-bit mono)
+        gain: Multiplier for audio amplitude (1.0 = no change, 2.0 = double volume)
+    
+    Returns:
+        Amplified PCM bytes
+    """
+    if not pcm_data or gain == 1.0:
+        return pcm_data
+    
+    try:
+        count = len(pcm_data) // 2
+        if count == 0:
+            return pcm_data
+        
+        # Unpack 16-bit integers
+        shorts = list(struct.unpack(f"{count}h", pcm_data[:count*2]))
+        
+        # Apply gain with clipping to avoid overflow
+        amplified = []
+        for s in shorts:
+            amplified_val = int(s * gain)
+            # Clip to 16-bit range
+            if amplified_val > 32767:
+                amplified_val = 32767
+            elif amplified_val < -32768:
+                amplified_val = -32768
+            amplified.append(amplified_val)
+        
+        # Pack back to bytes
+        return struct.pack(f"{len(amplified)}h", *amplified)
+    except Exception as e:
+        print(f"[Gain] Error applying gain: {e}")
+        return pcm_data
+
+
+def convert_webm_to_pcm(webm_data: bytes, sample_rate: int = 16000) -> bytes:
+    """
+    Convert WebM (Opus) audio from browser to PCM format for Riva transcriber
+    
+    Args:
+        webm_data: Raw WebM audio bytes from browser MediaRecorder
+        sample_rate: Target sample rate (default 16000 for Riva)
+    
+    Returns:
+        PCM audio bytes (16-bit mono) or empty bytes on failure
+    """
+    if not webm_data or len(webm_data) < 100:
+        return b""
+    
+    try:
+        # Create temp file for ffmpeg input (pydub needs file-like object)
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_in:
+            tmp_in.write(webm_data)
+            tmp_in_path = tmp_in.name
+        
+        try:
+            # Load WebM with pydub (uses ffmpeg)
+            audio = AudioSegment.from_file(tmp_in_path, format="webm")
+            
+            # Convert to mono, 16-bit, target sample rate
+            audio = audio.set_channels(1)
+            audio = audio.set_sample_width(2)  # 16-bit
+            audio = audio.set_frame_rate(sample_rate)
+            
+            # Export to raw PCM bytes
+            pcm_data = audio.raw_data
+            
+            return pcm_data
+            
+        finally:
+            # Cleanup temp file
+            try:
+                os.unlink(tmp_in_path)
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"[Audio Convert] Error converting WebM to PCM: {e}")
+        return b""
+
+
 def get_transcriber():
     """Get or create transcriber instance from realtime.py"""
     global transcriber
@@ -65,19 +158,26 @@ def get_transcriber():
             transcriber = None
     return transcriber
 
-def save_audio_as_wav(audio_chunks: list, output_path: Path, sample_rate: int = 16000):
+def save_audio_as_wav(audio_data_in: Any, output_path: Path, sample_rate: int = 16000):
     """
     Save audio chunks as WAV file
     
     Args:
-        audio_chunks: List of audio byte chunks
+        audio_data_in: List of audio byte chunks OR raw bytes
         output_path: Path to save WAV file
         sample_rate: Sample rate in Hz
     """
     try:
-        # Combine all chunks
-        audio_data = b''.join(audio_chunks)
-        
+        # Combine chunks if it's a list
+        if isinstance(audio_data_in, list):
+            audio_data = b''.join(audio_data_in)
+        else:
+            audio_data = audio_data_in
+            
+        if not audio_data:
+            print(f"[Audio] No audio data to save for {output_path}")
+            return False
+            
         # Create WAV file
         with wave.open(str(output_path), 'wb') as wav_file:
             wav_file.setnchannels(1)  # Mono
@@ -142,20 +242,25 @@ def register_socket_events(sio):
         active_sessions[sid] = {
             "transcription_buffer": [],
             "start_time": datetime.now(),
-            "audio_chunks": [],
-            "full_audio": b"",
-            "voice_threshold": 300,    # Default start threshold
-            "silence_threshold": 150,  # Default stop threshold
-            "is_speaking": False       # VAD state
+            "audio_chunks": [],      # Original WebM chunks
+            "pcm_audio": b"",        # Converted PCM audio
+            "voice_threshold": 120,    # Default start threshold (lowered for sensitivity)
+            "silence_threshold": 80,   # Default stop threshold (lowered for sensitivity)
+            "is_speaking": False,      # VAD state
+            "mic_gain": 1.5            # Microphone gain (1.0 = no change, >1 = amplify)
         }
         
         # Initialize transcriber on first connection
         get_transcriber()
-        
-        await sio.emit('connected', {
-            'message': 'Connected to transcription server',
-            'transcriber': 'Riva Live' if get_transcriber() else 'Unavailable'
-        }, room=sid)
+        # Emit connection ack (wrapped to avoid crashing on send failures)
+        try:
+            await sio.emit('connected', {
+                'message': 'Connected to transcription server',
+                'transcriber': 'Riva Live' if get_transcriber() else 'Unavailable'
+            }, room=sid)
+        except Exception as e:
+            print(f"[Socket.IO] emit connected error: {e}")
+            traceback.print_exc()
     
     @sio.event
     async def disconnect(sid):
@@ -176,7 +281,7 @@ def register_socket_events(sio):
             active_sessions[sid]["start_time"] = datetime.now()
             active_sessions[sid]["transcription_buffer"] = []
             active_sessions[sid]["audio_chunks"] = []
-            active_sessions[sid]["full_audio"] = b""
+            active_sessions[sid]["pcm_audio"] = b""
             active_sessions[sid]["is_speaking"] = False
             
             # Update settings if provided
@@ -188,48 +293,133 @@ def register_socket_events(sio):
                 
                 print(f"[Socket.IO] VAD Config - Voice: {active_sessions[sid].get('voice_threshold')}, Silence: {active_sessions[sid].get('silence_threshold')}")
             
-            await sio.emit('recording_started', {
-                'timestamp': datetime.now().isoformat()
+            try:
+                await sio.emit('recording_started', {
+                    'timestamp': datetime.now().isoformat()
+                }, room=sid)
+            except Exception as e:
+                print(f"[Socket.IO] emit recording_started error: {e}")
+                traceback.print_exc()
+    
+    @sio.event
+    async def set_mic_gain(sid, data):
+        """Set microphone gain level"""
+        if sid not in active_sessions:
+            return
+        
+        gain = 1.5  # Default
+        if isinstance(data, dict) and 'gain' in data:
+            gain = float(data['gain'])
+        elif isinstance(data, (int, float)):
+            gain = float(data)
+        
+        # Clamp gain between 0.5 and 5.0
+        gain = max(0.5, min(5.0, gain))
+        
+        active_sessions[sid]["mic_gain"] = gain
+        print(f"[Socket.IO] Mic gain set to {gain:.2f} for {sid}")
+        
+        try:
+            await sio.emit('mic_gain_updated', {
+                'gain': gain
             }, room=sid)
+        except Exception as e:
+            print(f"[Socket.IO] emit mic_gain_updated error: {e}")
     
     @sio.event
     async def audio_chunk(sid, data):
-        """Receive audio chunk from client and transcribe with realtime.py"""
+        """Receive audio chunk from client and transcribe with realtime.py (legacy WebM format)"""
         if sid not in active_sessions:
             return
         
         session = active_sessions[sid]
         
-        # Store audio chunk
+        # Store original WebM audio chunk for saving later
         session["audio_chunks"].append(data)
-        session["full_audio"] += data
+        
+        # Convert WebM to PCM for processing (run in thread to avoid blocking)
+        try:
+            pcm_data = await asyncio.to_thread(convert_webm_to_pcm, data)
+        except Exception as e:
+            print(f"[Audio] Conversion error: {e}")
+            pcm_data = b""
+        
+        if not pcm_data:
+            # Skip this chunk if conversion failed
+            return
+        
+        # Process PCM data
+        await _process_pcm_chunk(sid, pcm_data, session)
+    
+    @sio.event
+    async def audio_chunk_pcm(sid, data):
+        """Receive raw PCM audio chunk from client (16-bit mono 16kHz)"""
+        if sid not in active_sessions:
+            return
+        
+        session = active_sessions[sid]
+        
+        # Data is already raw PCM bytes
+        pcm_data = bytes(data) if not isinstance(data, bytes) else data
+        
+        if not pcm_data or len(pcm_data) < 100:
+            return
+        
+        # Process PCM data
+        await _process_pcm_chunk(sid, pcm_data, session)
+    
+    async def _process_pcm_chunk(sid, pcm_data: bytes, session: dict):
+        """Common PCM processing logic for both WebM and raw PCM inputs"""
+        # Apply microphone gain
+        mic_gain = session.get("mic_gain", 1.5)
+        if mic_gain != 1.0:
+            pcm_data = apply_gain(pcm_data, mic_gain)
+        
+        # Store PCM audio for transcription file
+        if "pcm_audio" not in session:
+            session["pcm_audio"] = b""
+        session["pcm_audio"] += pcm_data
         
         # Calculate elapsed time
         elapsed = (datetime.now() - session["start_time"]).total_seconds()
         timestamp = format_timestamp(elapsed)
         
-        # VAD Logic (Hysteresis)
-        rms = calculate_rms(data)
-        voice_thresh = session.get("voice_threshold", 300)
-        silence_thresh = session.get("silence_threshold", 150)
+        # VAD Logic (Hysteresis) - now using PCM data
+        rms = calculate_rms(pcm_data)
+        
+        # Always emit audio level to client for monitoring
+        try:
+            await sio.emit('audio_level', {
+                'rms': round(rms, 1),
+                'gain': mic_gain,
+                'timestamp': timestamp
+            }, room=sid)
+        except:
+            pass
+        
+        # Log RMS every few chunks for debugging
+        print(f"[Audio Level] RMS: {rms:.0f} | Gain: {mic_gain:.1f}x")
+        
+        voice_thresh = session.get("voice_threshold", 120)
+        silence_thresh = session.get("silence_threshold", 80)
         is_speaking = session.get("is_speaking", False)
 
         if not is_speaking:
             if rms > voice_thresh:
                 session["is_speaking"] = True
                 is_speaking = True
-                # print(f"[VAD] Voice started (RMS: {rms:.0f} > {voice_thresh})")
+                print(f"[VAD] Voice started (RMS: {rms:.0f} > {voice_thresh})")
         else:
             if rms < silence_thresh:
                 session["is_speaking"] = False
                 is_speaking = False
-                # print(f"[VAD] Silence detected (RMS: {rms:.0f} < {silence_thresh})")
+                print(f"[VAD] Silence detected (RMS: {rms:.0f} < {silence_thresh})")
 
-        # Transcribe with realtime.py if speaking
+        # Transcribe with realtime.py if speaking - now using PCM data
         if is_speaking:
             # Offload blocking transcription to a thread to avoid blocking the event loop
             try:
-                text = await asyncio.to_thread(transcribe_audio_chunk, data, 0)
+                text = await asyncio.to_thread(transcribe_audio_chunk, pcm_data, 0)
 
                 if text and text.strip():
                     # Add to buffer
@@ -253,6 +443,7 @@ def register_socket_events(sio):
                 print(f"[Socket.IO] Error transcribing chunk: {e}")
                 import traceback
                 traceback.print_exc()
+
     
     @sio.event
     async def stop_recording(sid):
@@ -292,8 +483,8 @@ def register_socket_events(sio):
             audio_path = Path(f"notas/{audio_filename}")
             audio_path.parent.mkdir(exist_ok=True)
 
-            if session["audio_chunks"]:
-                await asyncio.to_thread(save_audio_as_wav, session["audio_chunks"], audio_path)
+            if session.get("pcm_audio"):
+                await asyncio.to_thread(save_audio_as_wav, session["pcm_audio"], audio_path)
 
             # 2. Create markdown transcription (use thread for blocking formatter/write)
             all_transcripts = [
@@ -348,8 +539,8 @@ def register_socket_events(sio):
             print(f"[Socket.IO] _handle_stop_recording cancelled for {sid}, performing minimal cleanup")
             try:
                 # Attempt to persist what we have so far (sync via to_thread)
-                if session and session.get("audio_chunks"):
-                    await asyncio.to_thread(save_audio_as_wav, session["audio_chunks"], Path(f"notas/audio_cancelled_{timestamp}.wav"))
+                if session and session.get("pcm_audio"):
+                    await asyncio.to_thread(save_audio_as_wav, session["pcm_audio"], Path(f"notas/audio_cancelled_{timestamp}.wav"))
 
                 if session and session.get("transcription_buffer"):
                     minimal_content = "\n\n".join(item['text'] for item in session.get("transcription_buffer", []))

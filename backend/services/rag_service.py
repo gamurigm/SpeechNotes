@@ -7,6 +7,9 @@ from src.agent.rag_agent import RagAgent
 
 logger = logging.getLogger(__name__)
 
+# Make sure root logger at least prints debug during local debugging
+logging.getLogger().setLevel(logging.DEBUG)
+
 class RagService:
     """
     Service for RAG (Retrieval Augmented Generation) operations.
@@ -32,6 +35,8 @@ class RagService:
             }
         try:
             logger.debug("RagService.chat called with query: %s", query)
+            # Extra debug: report agent object state
+            logger.debug("RagService.agent is %s", type(self.agent).__name__ if self.agent else "None")
             answer = self.agent.chat(query)
             logger.debug("RagService.chat got answer (len=%d)", len(str(answer)))
 
@@ -48,7 +53,7 @@ class RagService:
                 "sources": []
             }
     
-    async def chat_stream(self, query: str):
+    async def chat_stream(self, query: str, active_file: Optional[str] = None):
         """
         Answer a query using RAG with streaming response.
         """
@@ -56,8 +61,8 @@ class RagService:
             yield "El servicio de chat no está disponible en este momento."
             return
         try:
-            logger.debug("RagService.chat_stream called with query: %s", query)
-            for chunk in self.agent.chat_stream(query):
+            logger.debug("RagService.chat_stream called with query: %s, active_file: %s", query, active_file)
+            for chunk in self.agent.chat_stream(query, active_file=active_file):
                 yield chunk
         except Exception as e:
             logger.exception("Exception in RagService.chat_stream for query: %s", query)

@@ -145,7 +145,7 @@ def main():
         project_root = Path(__file__).parent.parent
 
     data_dir = project_root / "notas"
-    db_dir = project_root / "knowledge_base" / "chroma_db"
+    db_dir = project_root / "knowledge_base" / "chroma_db_new"
     
     print("=" * 60)
     print("KNOWLEDGE BASE INGESTION PIPELINE")

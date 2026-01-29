@@ -1,0 +1,14 @@
+.git/
+.venv/
+node_modules/
+web/node_modules/
+web/.next/
+notas/
+knowledge_base/
+*.wav
+*.mp3
+*.webm
+__pycache__/
+.vscode/
+.gemini/
+.agent/

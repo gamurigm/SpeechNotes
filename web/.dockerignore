@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+build/
+.swc/
+.env
+.env.local
+.env.production
+.git/
+.gitignore
+prisma/dev.db
+prisma/dev.db-journal

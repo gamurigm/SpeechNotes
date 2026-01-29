@@ -60,9 +60,15 @@ async def websocket_transcribe(websocket: WebSocket):
         print("[WebSocket] Client disconnected")
     except Exception as e:
         print(f"[WebSocket] Error: {e}")
-        await websocket.send_json({
-            "type": "error",
-            "message": str(e)
-        })
+        import traceback
+        traceback.print_exc()
+        try:
+            await websocket.send_json({
+                "type": "error",
+                "message": str(e)
+            })
+        except Exception as e2:
+            print(f"[WebSocket] send_json error while reporting exception: {e2}")
+            traceback.print_exc()
     finally:
         await processor.cleanup()

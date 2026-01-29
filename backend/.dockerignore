@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+.env
+.vscode/
+.git/
+.gitignore
+notas/
+knowledge_base/
+*.wav
+*.mp3
+*.webm

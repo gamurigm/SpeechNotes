@@ -1,5 +1,4 @@
 'use client';
-'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, Card, CardBody, Spinner, Slider, Button } from "@heroui/react";
@@ -8,10 +7,11 @@ import LogoutButton from './components/LogoutButton';
 import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
+import { ChatSidebar } from './components/ChatSidebar';
 import { apiClient } from '@/utils/api-client';
 import { useRecording } from '@/hooks/useRecording';
 import { getSocket } from '@/utils/socket';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Beaker, Rocket, Check, X } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Beaker, Rocket, Check, X, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 type ToolbarIconProps = {
     icon: React.ReactNode;
@@ -46,52 +46,45 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
 export default function DashboardPage() {
     const [latestContent, setLatestContent] = useState('');
     const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
-    const [transcriptions, setTranscriptions] = useState<Array<{id:string|null, filename?:string|null, date?:any}>>([]);
+    const [transcriptions, setTranscriptions] = useState<Array<{ id: string | null, filename?: string | null, date?: any }>>([]);
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
-    // mdZoom -> zoom applied only to MarkdownViewer (keyboard + Ctrl+Scroll)
     const [mdZoom, setMdZoom] = useState(100);
-    // appZoom -> zoom applied to the whole app (controlled by toolbar slider)
     const [appZoom, setAppZoom] = useState(100);
     const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
     const [activeTool, setActiveTool] = useState<string | null>(null);
+    const [showChat, setShowChat] = useState(false);
+    const [isChatExpanded, setIsChatExpanded] = useState(false);
+    const [showSidebar, setShowSidebar] = useState(true);
 
     const toggleTool = (tool: string) => {
         setActiveTool(current => current === tool ? null : tool);
     };
 
     const clampZoom = (v: number) => Math.max(50, Math.min(145, v));
-
     const handleMdZoom = (level: number) => setMdZoom(clampZoom(level));
     const handleMdZoomIn = () => handleMdZoom(mdZoom + 10);
     const handleMdZoomOut = () => handleMdZoom(mdZoom - 10);
-
     const handleAppZoom = (level: number) => setAppZoom(clampZoom(level));
 
-    // Keyboard shortcuts: Ctrl/Cmd + +, -, 0, and wheel scroll
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
-                e.preventDefault();
-                handleMdZoomIn();
+                e.preventDefault(); handleMdZoomIn();
             } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
-                e.preventDefault();
-                handleMdZoomOut();
+                e.preventDefault(); handleMdZoomOut();
             } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
-                e.preventDefault();
-                handleMdZoom(100);
+                e.preventDefault(); handleMdZoom(100);
             }
         };
-
         const handleWheel = (e: WheelEvent) => {
             if ((e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 if (e.deltaY < 0) handleMdZoomIn(); else handleMdZoomOut();
             }
         };
-
         window.addEventListener('keydown', handleKeyPress);
         window.addEventListener('wheel', handleWheel, { passive: false });
         return () => {
@@ -101,34 +94,18 @@ export default function DashboardPage() {
     }, [mdZoom]);
 
     useEffect(() => {
-        // load list + latest selected transcription
-        (async () => {
-            await loadTranscriptionsList();
-        })();
-
-        // Listen for recording stopped event
+        loadTranscriptionsList();
         const socket = getSocket();
         socket.on('recording_stopped', (data) => {
-            console.log('[Dashboard] Recording stopped:', data);
-
-            // Show raw transcription immediately
-            const rawContent = messages.map(msg =>
-                `**${msg.timestamp}**\n${msg.text}`
-            ).join('\n\n');
-
+            const rawContent = messages.map(msg => `**${msg.timestamp}**\n${msg.text}`).join('\n\n');
             setLatestContent(rawContent || '[Procesando transcripción...]');
             setIsProcessing(true);
-
-            // Wait a bit for processing, then reload list and selected transcription
             setTimeout(async () => {
                 await loadTranscriptionsList();
                 setIsProcessing(false);
             }, 3000);
         });
-
-        return () => {
-            socket.off('recording_stopped');
-        };
+        return () => { socket.off('recording_stopped'); };
     }, [messages]);
 
     const loadTranscriptionsList = async () => {
@@ -137,14 +114,11 @@ export default function DashboardPage() {
             const res = await apiClient.getTranscriptions();
             const items = res.items || [];
             setTranscriptions(items);
-
             if (items.length > 0) {
-                // default to first (most recent)
                 setSelectedIndex(0);
                 const firstId = items[0].id;
                 if (firstId) await loadTranscriptionById(firstId);
             } else {
-                // fallback to latest endpoint
                 const latest = await apiClient.getLatestTranscription();
                 setLatestContent(latest.content);
                 setTranscriptionId(latest.id);
@@ -172,11 +146,7 @@ export default function DashboardPage() {
     };
 
     const handleSave = async (content: string) => {
-        if (!transcriptionId) {
-            alert('No hay transcripción para guardar');
-            return;
-        }
-
+        if (!transcriptionId) return;
         await apiClient.updateTranscription(transcriptionId, content);
         setLatestContent(content);
     };
@@ -201,43 +171,31 @@ export default function DashboardPage() {
 
     const extractTitleFromMarkdown = (md: string) => {
         if (!md) return 'Última Clase';
-        // Try to find the first markdown heading (#, ##, ###)
         const headingMatch = md.match(/^#{1,3}\s*(.+)$/m);
-        if (headingMatch && headingMatch[1]) {
-            return headingMatch[1].trim();
-        }
-        // Fallback: look for "Transcripción: YYYY-MM-DD"
+        if (headingMatch && headingMatch[1]) return headingMatch[1].trim();
         const transMatch = md.match(/Transcripci[oó]n:\s*(\d{4}-\d{2}-\d{2})/i);
         if (transMatch && transMatch[1]) return `Transcripción: ${transMatch[1]}`;
         return 'Última Clase';
     };
 
-    // Zoom control ref for click-outside
     const zoomRef = useRef<HTMLDivElement | null>(null);
     const uploadInputRef = useRef<HTMLInputElement | null>(null);
     const [uploadFileName, setUploadFileName] = useState<string | null>(null);
-
     const currentTitle = extractTitleFromMarkdown(latestContent);
 
-    // Inline ZoomControl: icon on left, panel on right (doesn't overlay)
     const ZoomControl = () => (
         <div ref={zoomRef} className="flex items-start gap-2">
             <button
                 onClick={(e) => { e.stopPropagation(); setShowAppZoomMenu((s) => !s); }}
                 className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50 shadow-sm'}`}
-                title="Zoom de la app"
             >
                 <ZoomIn size={18} />
             </button>
-
             {showAppZoomMenu && (
-                <div onMouseDown={(e) => e.stopPropagation()} className="bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-2 min-w-[160px] max-w-[260px]">
+                <div onMouseDown={(e) => e.stopPropagation()} className="bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-2 min-w-[160px]">
                     <div className="flex items-center gap-2 px-1">
                         <input
-                            type="range"
-                            min={50}
-                            max={145}
-                            step={1}
+                            type="range" min={50} max={145} step={1}
                             value={appZoom}
                             onChange={(e) => handleAppZoom(parseInt(e.target.value))}
                             className="w-36 h-2 appearance-none cursor-pointer"
@@ -245,13 +203,11 @@ export default function DashboardPage() {
                         />
                         <div className="text-sm font-semibold text-blue-600 w-10 text-right">{appZoom}%</div>
                     </div>
-                    <div className="text-xs text-slate-500 px-1">Este slider escala toda la aplicación. Ctrl+Scroll controla solo el visor Markdown.</div>
                 </div>
             )}
         </div>
     );
 
-    // close AppZoom menu on click outside / Esc
     useEffect(() => {
         const onDocClick = (ev: MouseEvent) => {
             if (!showAppZoomMenu) return;
@@ -267,302 +223,189 @@ export default function DashboardPage() {
     }, [showAppZoomMenu]);
 
     return (
-        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden" style={{ transform: `scale(${appZoom/100})`, transformOrigin: 'top left', width: `${100*(100/appZoom)}%`, height: `${100*(100/appZoom)}%` }}>
-            <div className="px-4 pt-4 pb-2 flex justify-center">
-                <div className="max-w-7xl w-full flex items-center justify-center gap-6">
-                    {/* Left Toolbar - Ultra Minimal */}
-                    <div className="flex flex-col gap-2 items-start">
-                        <div className="flex items-center gap-2">
-                            {/* Zoom - Beautiful Icon */}
-                            <div className="flex items-center gap-2">
-                                {activeTool === null ? (
-                                    <>
+        <div className="bg-[#08080a] min-h-screen overflow-hidden relative selection:bg-violet-500/30">
+            {/* Soft Ambient Background */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-violet-600/[0.03] rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/[0.03] rounded-full blur-[120px]" />
+            </div>
+
+            <main className={`flex h-screen relative z-10 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showChat ? 'p-4 gap-4' : 'p-0'}`}>
+
+                {/* Editor Container - Resizes to make room for chat */}
+                <div
+                    className={`flex-1 flex flex-col bg-slate-50 border border-slate-200 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'
+                        }`}
+                >
+                    {/* Inner scaled content */}
+                    <div
+                        className="h-full w-full flex flex-col"
+                        style={{ transform: `scale(${appZoom / 100})`, transformOrigin: 'top left', width: `${100 * (100 / appZoom)}%`, height: `${100 * (100 / appZoom)}%` }}
+                    >
+                        <div className="px-6 pt-6 pb-2 flex justify-center">
+                            <div className="max-w-7xl w-full flex items-center justify-center gap-6">
+                                <div className="flex flex-col gap-2 items-start">
+                                    <div className="flex items-center gap-2">
                                         <ZoomControl />
-                                        <ToolbarIcon 
-                                            icon={<Wand2 size={18} />} 
-                                            tooltip="Format Markdown" 
-                                            onClick={() => toggleTool('format')}
-                                            isActive={activeTool === 'format'}
-                                        />
-                                        <ToolbarIcon 
-                                            icon={<FileAudio2 size={18} />} 
-                                            tooltip="Transcribe Audio File" 
-                                            onClick={() => toggleTool('upload')}
-                                            isActive={activeTool === 'upload'}
-                                        />
-                                        <ToolbarIcon
-                                            icon={<SlidersHorizontal size={18} />}
-                                            tooltip="Calibrate Audio"
-                                            onClick={() => toggleTool('calibrate')}
-                                            isActive={activeTool === 'calibrate'}
-                                        />
-                                    </>
-                                ) : (
-                                    <>
-                                        {activeTool === 'format' && (
-                                            <ToolbarIcon
-                                                icon={<Wand2 size={18} />}
-                                                tooltip="Formato Markdown"
-                                                onClick={() => toggleTool('format')}
-                                                isActive={true}
-                                            />
+                                        {activeTool === null ? (
+                                            <>
+                                                <ToolbarIcon icon={<Wand2 size={18} />} tooltip="Format" onClick={() => toggleTool('format')} isActive={activeTool === 'format'} />
+                                                <ToolbarIcon icon={<FileAudio2 size={18} />} tooltip="Upload" onClick={() => toggleTool('upload')} isActive={activeTool === 'upload'} />
+                                                <ToolbarIcon icon={<SlidersHorizontal size={18} />} tooltip="VAD" onClick={() => toggleTool('calibrate')} isActive={activeTool === 'calibrate'} />
+                                            </>
+                                        ) : (
+                                            <ToolbarIcon icon={<X size={18} />} tooltip="Close Tool" onClick={() => setActiveTool(null)} />
                                         )}
-                                        {activeTool === 'upload' && (
-                                            <ToolbarIcon
-                                                icon={<FileAudio2 size={18} />}
-                                                tooltip="Transcribir Archivo"
-                                                onClick={() => toggleTool('upload')}
-                                                isActive={true}
-                                            />
-                                        )}
-                                        {activeTool === 'calibrate' && (
-                                            <ToolbarIcon
-                                                icon={<SlidersHorizontal size={18} />}
-                                                tooltip="Calibración"
-                                                onClick={() => toggleTool('calibrate')}
-                                                isActive={true}
-                                            />
-                                        )}
-                                    </>
-                                )}
+                                    </div>
+                                    {activeTool === 'calibrate' && (
+                                        <Card className="w-80 shadow-xl border-none"><CardBody className="p-4">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Audio Setup</h4>
+                                                <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
+                                                    await fetch('/api/config/vad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold }) });
+                                                    setActiveTool(null);
+                                                }}><Check size={16} /></Button>
+                                            </div>
+                                            <Slider label="Voice Start" size="sm" step={50} minValue={100} maxValue={2000} value={voiceThreshold} onChange={(v) => setVoiceThreshold(v as number)} color="success" />
+                                            <Slider label="Silence Stop" size="sm" step={50} minValue={50} maxValue={1000} value={silenceThreshold} onChange={(v) => setSilenceThreshold(v as number)} color="danger" />
+                                        </CardBody></Card>
+                                    )}
+                                    {activeTool === 'format' && (
+                                        <Card className="w-64 shadow-xl border-none"><CardBody className="p-4">
+                                            <h5 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Refinement</h5>
+                                            <div className="flex gap-2">
+                                                <Button size="sm" color="primary" className="flex-1 rounded-xl">Auto-Format</Button>
+                                                <Button size="sm" variant="bordered" className="rounded-xl" onClick={() => setActiveTool(null)}>Close</Button>
+                                            </div>
+                                        </CardBody></Card>
+                                    )}
+                                    {activeTool === 'upload' && (
+                                        <Card className="w-64 shadow-xl border-none"><CardBody className="p-4">
+                                            <input ref={uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => setUploadFileName(e.target.files?.[0]?.name || null)} />
+                                            <Button size="sm" variant="flat" className="w-full mb-3 rounded-xl" onClick={() => uploadInputRef.current?.click()}>Choose File</Button>
+                                            <p className="text-[10px] text-slate-500 mb-3 truncate font-medium">{uploadFileName || 'No file selected'}</p>
+                                            <Button size="sm" color="primary" className="w-full rounded-xl" onClick={async () => {
+                                                const file = uploadInputRef.current?.files?.[0]; if (!file) return;
+                                                const fd = new FormData(); fd.append('file', file);
+                                                setIsProcessing(true); await fetch('/api/transcribe-file', { method: 'POST', body: fd });
+                                                setIsProcessing(false); setActiveTool(null);
+                                            }}>Start Transcription</Button>
+                                        </CardBody></Card>
+                                    )}
+                                </div>
+                                <RecordingPanel />
                             </div>
                         </div>
 
-                        {activeTool === 'calibrate' && (
-                            <Card className="w-80 shadow-md border-none">
-                                <CardBody className="p-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-base font-semibold text-gray-800">Calibración de Audio</h4>
-                                        <div className="flex items-center gap-1">
-                                            <Button 
-                                                isIconOnly 
-                                                size="sm" 
-                                                variant="light" 
-                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                onClick={async () => {
-                                                    const payload = { voice_threshold: voiceThreshold, silence_threshold: silenceThreshold };
-                                                    const endpoints = ['/api/config/vad', 'http://localhost:8001/api/config/vad'];
-                                                    let lastError: any = null;
-                                                    let success = false;
+                        <div className="flex-1 flex overflow-hidden w-full px-4 relative">
+                            {/* Toggleable tools panel */}
+                            <button
+                                onClick={() => setShowSidebar(!showSidebar)}
+                                className="absolute left-6 top-6 z-[60] p-2.5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-400 hover:text-indigo-600 transition-all duration-300 hover:shadow-md"
+                            >
+                                {showSidebar ? <PanelRightClose size={18} className="rotate-180" /> : <PanelRightOpen size={18} />}
+                            </button>
 
-                                                    for (const ep of endpoints) {
-                                                        try {
-                                                            const res = await fetch(ep, {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify(payload)
-                                                            });
-                                                            if (res.ok) {
-                                                                success = true;
-                                                                break;
-                                                            } else {
-                                                                lastError = `HTTP ${res.status} (${ep})`;
-                                                            }
-                                                        } catch (e) {
-                                                            lastError = e;
-                                                        }
-                                                    }
-
-                                                    if (!success) {
-                                                        console.error('[Calibrator] Failed to save VAD config:', lastError);
-                                                        alert('Error al guardar configuración de calibración: ' + String(lastError));
-                                                        return;
-                                                    }
-
-                                                    setActiveTool(null);
-                                                    alert('Umbrales guardados correctamente');
-                                                }}
-                                            >
-                                                <Check size={18} />
-                                            </Button>
-                                            <Button 
-                                                isIconOnly 
-                                                size="sm" 
-                                                variant="light" 
-                                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                onClick={() => setActiveTool(null)}
-                                            >
-                                                <X size={18} />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-4">
-                                        <div className="space-y-1">
-                                            <Slider
-                                                label="Umbral Voz (Inicio)"
-                                                size="sm"
-                                                step={50}
-                                                minValue={100}
-                                                maxValue={2000}
-                                                value={voiceThreshold}
-                                                onChange={(v) => setVoiceThreshold(v as number)}
-                                                color="success"
-                                                showTooltip={true}
-                                            />
-                                            <p className="text-xs text-slate-500">RMS para INICIAR grabación — {voiceThreshold} RMS</p>
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <Slider
-                                                label="Umbral Silencio (Fin)"
-                                                size="sm"
-                                                step={50}
-                                                minValue={50}
-                                                maxValue={1000}
-                                                value={silenceThreshold}
-                                                onChange={(v) => setSilenceThreshold(v as number)}
-                                                color="secondary"
-                                                showTooltip={true}
-                                            />
-                                            <p className="text-xs text-slate-500">RMS para DETENER grabación — {silenceThreshold} RMS</p>
-                                        </div>
-                                    </div>
-                                </CardBody>
-                            </Card>
-                        )}
-                        {activeTool === 'format' && (
-                            <Card className="w-72 bg-white border border-slate-100 shadow-sm">
-                                <CardBody className="p-3">
-                                    <div className="flex items-center justify-between">
-                                        <h5 className="text-sm font-semibold text-slate-800">Formato</h5>
-                                    </div>
-
-                                    <p className="mt-2 text-xs text-slate-500">Mejora legibilidad: títulos, puntuación y limpieza básica.</p>
-
-                                    <div className="mt-3 flex flex-col gap-2">
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="solid" className="flex-1" onClick={() => { /* TODO: apply formatting */ }}>Aplicar</Button>
-                                            <Button size="sm" variant="outline" onClick={() => { /* TODO: cleanup */ }}>Limpiar</Button>
-                                        </div>
-                                        <div className="flex justify-end">
-                                            <Button size="sm" variant="ghost" onClick={() => setActiveTool(null)}>Cerrar</Button>
-                                        </div>
-                                    </div>
-                                </CardBody>
-                            </Card>
-                        )}
-
-                        {activeTool === 'upload' && (
-                            <Card className="w-72 bg-white border border-slate-100 shadow-sm">
-                                <CardBody className="p-3">
-                                    <div className="flex items-center justify-between">
-                                        <h5 className="text-sm font-semibold text-slate-800">Transcribir</h5>
-                                    </div>
-
-                                    <p className="mt-2 text-xs text-slate-500">Sube un archivo de audio para generar la transcripción.</p>
-
-                                    <div className="mt-3 space-y-2">
-                                        <input
-                                            ref={uploadInputRef}
-                                            id="upload-audio-input"
-                                            type="file"
-                                            accept="audio/*"
-                                            className="hidden"
-                                            onChange={(e) => {
-                                                const f = e.target.files && e.target.files[0];
-                                                setUploadFileName(f ? f.name : null);
-                                            }}
-                                        />
-
-                                        <div className="flex items-center gap-2">
-                                            <label htmlFor="upload-audio-input" className="inline-flex items-center px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-sm text-slate-700 hover:bg-slate-100 cursor-pointer">Seleccionar</label>
-                                            <div className="text-xs text-slate-600 truncate">{uploadFileName ?? 'Ningún archivo seleccionado'}</div>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="solid" className="flex-1" onClick={async () => {
-                                                const input = uploadInputRef.current;
-                                                if (!input || !input.files || input.files.length === 0) { alert('Selecciona un archivo de audio'); return; }
-                                                const file = input.files[0];
-                                                const fd = new FormData();
-                                                fd.append('file', file);
-                                                try {
-                                                    setIsProcessing(true);
-                                                    const resp = await fetch('/api/transcribe-file', { method: 'POST', body: fd });
-                                                    if (!resp.ok) throw new Error('Upload failed');
-                                                    setActiveTool(null);
-                                                    setUploadFileName(null);
-                                                    if (uploadInputRef.current) uploadInputRef.current.value = '';
-                                                    await loadTranscriptionsList();
-                                                } catch (err) {
-                                                    console.error('Upload error', err);
-                                                    alert('Error subiendo archivo');
-                                                } finally { setIsProcessing(false); }
-                                            }}>Transcribir</Button>
-                                            <Button size="sm" variant="ghost" onClick={() => { setActiveTool(null); setUploadFileName(null); if (uploadInputRef.current) uploadInputRef.current.value = ''; }}>Cancelar</Button>
-                                        </div>
-                                    </div>
-                                </CardBody>
-                            </Card>
-                        )}
-                    </div>
-
-                    <div className="flex-none">
-                        <RecordingPanel />
-                    </div>
-
-                    {activeTool === null && (
-                        <div className="bg-white border border-slate-200 rounded-md p-1.5 flex gap-1.5 shadow-sm transition-opacity duration-200">
-                            <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Ideas" />
-                            <ToolbarIcon icon={<Beaker size={18} />} tooltip="Labs" />
-                            <ToolbarIcon icon={<Rocket size={18} />} tooltip="Launch" />
-                            <ToolbarIcon icon={<Sparkles size={18} />} tooltip="Placeholder" />
-                        </div>
-                    )}
-                </div>
-            </div>
-            
-            <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
-                {/* Sidebar izquierda */}
-                <aside className="w-80 p-4 space-y-4 overflow-y-auto">
-                    <MicTest />
-                    <LiveTranscription />
-                </aside>
-
-                {/* Panel principal */}
-                <main className="flex-1 p-4 flex flex-col overflow-y-auto">
-                    {isLoading ? (
-                        <Card className="h-full shadow-lg">
-                            <CardBody className="flex items-center justify-center">
-                                <div className="text-center space-y-4">
-                                    <Spinner size="lg" color="primary" />
-                                    <p className="text-gray-500 font-medium">Cargando transcripción...</p>
+                            <aside className={`flex-shrink-0 space-y-4 overflow-y-auto overflow-x-hidden transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] p-4 opacity-100' : 'w-0 p-0 opacity-0 pointer-events-none'}`}>
+                                <div className="w-[388px]"> {/* 420px - p-4(32px) = 388px to avoid overflow */}
+                                    <MicTest />
+                                    <div className="h-4" />
+                                    <LiveTranscription />
                                 </div>
-                            </CardBody>
-                        </Card>
-                    ) : (
-                        <div className="h-full flex flex-col">
-                            {isProcessing && (
-                                <Card className="mb-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 shadow-md">
-                                    <CardBody className="py-3">
-                                        <div className="flex items-center gap-3">
-                                            <Spinner size="sm" color="warning" />
-                                            <span className="text-sm text-yellow-900 font-medium">
-                                                Procesando con DeepSeek... Se actualizará automáticamente
-                                            </span>
-                                        </div>
-                                    </CardBody>
-                                </Card>
-                            )}
-                            <MarkdownViewer
-                                title={currentTitle}
-                                content={latestContent}
-                                onSave={handleSave}
-                                zoomLevel={mdZoom}
-                                nav={{
-                                    onPrev: handlePrev,
-                                    onNext: handleNext,
-                                    hasPrev: selectedIndex > 0,
-                                    hasNext: selectedIndex < transcriptions.length - 1,
-                                    index: selectedIndex,
-                                    total: transcriptions.length
-                                }}
-                            />
+                            </aside>
+
+                            <main className="flex-1 p-4 flex flex-col overflow-y-auto">
+                                {isLoading ? (
+                                    <Card className="h-full flex items-center justify-center border-none bg-transparent shadow-none"><Spinner size="lg" color="primary" /></Card>
+                                ) : (
+                                    <div className="h-full flex flex-col">
+                                        {isProcessing && <Card className="mb-4 bg-indigo-50/50 border-none backdrop-blur-md shadow-sm animate-pulse"><CardBody className="py-2 text-[11px] font-bold text-indigo-600 uppercase tracking-widest text-center">Processing with DeepSeek Intel...</CardBody></Card>}
+                                        <MarkdownViewer title={currentTitle} content={latestContent} onSave={handleSave} zoomLevel={mdZoom} nav={{ onPrev: handlePrev, onNext: handleNext, hasPrev: selectedIndex > 0, hasNext: selectedIndex < transcriptions.length - 1, index: selectedIndex, total: transcriptions.length }} />
+                                    </div>
+                                )}
+                            </main>
                         </div>
-                    )}
-                </main>
-            </div>
+                    </div>
+                </div>
+
+                {/* Sidebar Chat - Slides in and pushes content */}
+                <div
+                    className={`h-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex-shrink-0 relative ${showChat ? (isChatExpanded ? 'w-[850px] opacity-100' : 'w-[480px] opacity-100') : 'w-0 opacity-0 pointer-events-none'
+                        }`}
+                >
+                    <ChatSidebar
+                        activeDocId={transcriptions[selectedIndex]?.id || undefined}
+                        activeDocName={transcriptions[selectedIndex]?.filename || undefined}
+                        isExpanded={isChatExpanded}
+                        onToggleExpand={() => setIsChatExpanded(!isChatExpanded)}
+                        onClose={() => setShowChat(false)}
+                    />
+                </div>
+            </main>
+
+            {/* Minimal High-Contrast Floating Toggle */}
+            <button
+                onClick={() => setShowChat(!showChat)}
+                className={`fixed top-10 right-10 z-[100] transition-all duration-500 hover:rotate-12 active:scale-90 group ${showChat ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 rotate-0 scale-100'}`}
+            >
+                <div className="relative">
+                    <div className="absolute -inset-4 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all" />
+                    <div className="relative w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all group-hover:bg-slate-900">
+                        <MessageCircle size={26} className="text-violet-400 group-hover:text-white" />
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] border-black" />
+                    </div>
+                </div>
+            </button>
+
+            {/* Global Modern Styles */}
+            <style jsx global>{`
+                /* Prevent horizontal scroll app-wide */
+                html, body {
+                    max-width: 100vw;
+                    overflow-x: hidden;
+                }
+
+                /* Modern Scrollbar System */
+                * {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+                }
+
+                *::-webkit-scrollbar {
+                    width: 5px;
+                    height: 5px;
+                }
+
+                *::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+
+                *::-webkit-scrollbar-thumb {
+                    background: rgba(0, 0, 0, 0.05);
+                    border-radius: 20px;
+                    transition: all 0.3s;
+                }
+
+                *:hover::-webkit-scrollbar-thumb {
+                    background: rgba(0, 0, 0, 0.12);
+                }
+
+                *::-webkit-scrollbar-thumb:hover {
+                    background: rgba(139, 92, 246, 0.5) !important;
+                }
+
+                /* Dark context scrollbars */
+                .bg-\[\#08080a\] *::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.03);
+                }
+                .bg-\[\#08080a\] *::-webkit-scrollbar-thumb:hover {
+                    background: rgba(139, 92, 246, 0.4) !important;
+                }
+
+                .modern-scrollbar {
+                    scrollbar-gutter: stable;
+                }
+            `}</style>
         </div>
     );
 }

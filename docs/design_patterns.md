@@ -85,7 +85,7 @@ classDiagram
 Proporcionar una interfaz para crear familias de objetos relacionados o dependientes sin especificar sus clases concretas.
 
 ### Implementación: `TranscriptionEnvironmentFactory`
-Ubicación: `src/core/factory.py`
+Ubicación: `src/core/enviroment_factory.py`
 
 El sistema opera en "entornos" completos que requieren componentes compatibles entre sí. Por ejemplo, un entorno "Riva Live" necesita un transcriptor Riva y un grabador de micrófono. Un entorno "Local Batch" necesita un transcriptor Whisper local y un lector de archivos.
 

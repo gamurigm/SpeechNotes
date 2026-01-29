@@ -11,6 +11,8 @@ Propuesta V1.2.52 — Aplicación para captura, transcripción, edición y búsq
 - [Requisitos](#requisitos)
 - [Variables de entorno](#variables-de-entorno)
 - [Inicio rápido](#inicio-rápido)
+  - [Docker (Recomendado)](#docker-recomendado)
+  - [Scripts de inicio (Windows)](#scripts-de-inicio-windows)
   - [Frontend (Next.js)](#frontend-nextjs)
   - [Demos / Scripts Python](#demos--scripts-python)
 - [Flujo de datos (alto nivel)](#flujo-de-datos-alto-nivel)
@@ -83,13 +85,29 @@ python agent_rag_demo.py --query "¿Cómo exporto una transcripción?" --topk 5
 
 ## 🚀 Inicio rápido
 
+### Docker (Recomendado)
+Para levantar todo el entorno (MongoDB, Backend y Frontend) automáticamente:
+```bash
+docker-compose up --build
+```
+- **Frontend**: http://localhost:3006
+- **Backend**: http://localhost:8001
+
+### Scripts de inicio (Windows)
+Si prefieres correrlo localmente sin Docker, usa el script unificado:
+1. Haz doble clic en `run_all.bat` o ejecuta:
+```powershell
+.\run_all.bat
+```
+Este script abrirá dos ventanas separadas para el Backend y el Frontend con las configuraciones correctas.
+
 ### Frontend (Next.js)
 1. Entrar a `web/`:
 ```bash
 pnpm install
 pnpm dev
 ```
-2. Abrir: http://localhost:3000
+2. Abrir: http://localhost:3006
 
 Notas:
 - Frontend usa Tailwind + HeroUI (config en `web/hero.ts`).
@@ -139,6 +157,9 @@ python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
 ---
 
 ## 🛠️ Notas de desarrollo / fixes recientes
+- **Dockerización completa**: Añadidos Dockerfiles y Docker Compose para despliegue simplificado.
+- **Pydantic AI & Logfire**: Integración de agentes inteligentes con observabilidad avanzada.
+- **Correcion de Puertos**: Backend ahora corre en `8001` y Frontend en `3006` para evitar conflictos.
 - Integración inicial con HeroUI y ajustes de Tailwind.
 - Migración parcial a React 18.
 - Fix: renderizado de chat adaptado a `message.content`.

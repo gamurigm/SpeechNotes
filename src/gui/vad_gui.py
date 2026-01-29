@@ -36,6 +36,8 @@ def save_values(voice_val, silence_val):
         'voice_threshold': int(voice_val),
         'silence_threshold': int(silence_val)
     }
+    # Ensure directory exists before writing
+    VAD_FILE.parent.mkdir(parents=True, exist_ok=True)
     VAD_FILE.write_text(json.dumps(payload, indent=2))
 
 

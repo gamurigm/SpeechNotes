@@ -110,6 +110,16 @@ Icon
 
 # Node
 node_modules/
+.next/
+out/
+build/
+.swc/
+.pnpm-debug.log*
+pnpm-lock.yaml
+
+# Prisma
+web/prisma/dev.db
+web/prisma/dev.db-journal
 
 # Keep whisper/wisper-related files and audio; if you want to keep only those,
 # uncomment the following block and adjust the patterns. Leaving commented is
@@ -177,3 +187,19 @@ scripts/asr/mock_streaming_demo.py
 scripts/asr/simple_streaming_demo.py
 scripts/asr/test_mic_with_mock.py
 scripts/asr/transcribe_mic_to_markdown.py
+
+# Next.js and Node artifacts
+.next/
+web/.next/
+out/
+build/
+.swc/
+.pnpm-debug.log*
+
+# Database
+web/prisma/dev.db
+web/prisma/dev.db-journal
+
+# Assets/Large files
+SN-promo*.png
+SP-promo*.png
