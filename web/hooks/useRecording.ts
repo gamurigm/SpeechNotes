@@ -20,9 +20,9 @@ export function useRecording() {
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
     const [gainNode, setGainNode] = useState<GainNode | null>(null);
     const [gainValue, setGainValue] = useState(1.0);
-    const [voiceThreshold, setVoiceThreshold] = useState(300);
-    const [silenceThreshold, setSilenceThreshold] = useState(150);
-    
+    const [voiceThreshold, setVoiceThreshold] = useState(150);
+    const [silenceThreshold, setSilenceThreshold] = useState(80);
+
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -86,27 +86,27 @@ export function useRecording() {
             connectSocket();
             const socket = getSocket();
 
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     sampleRate: 16000,
                     channelCount: 1,
                     echoCancellation: true,
                     noiseSuppression: true
-                } 
+                }
             });
             streamRef.current = stream;
 
             // Setup Audio Context at 16kHz for Riva compatibility
             const audioContext = new AudioContext({ sampleRate: 16000 });
             audioContextRef.current = audioContext;
-            
+
             const source = audioContext.createMediaStreamSource(stream);
             const gain = audioContext.createGain();
             const analyserNode = audioContext.createAnalyser();
 
             // Configure Analyser
             analyserNode.fftSize = 256;
-            
+
             // Configure Gain
             gain.gain.value = gainValue;
 
@@ -121,7 +121,7 @@ export function useRecording() {
             // Buffer size of 4096 at 16kHz = ~256ms per chunk
             const bufferSize = 4096;
             const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-            
+
             // Accumulator to send ~1 second of audio at a time
             let pcmAccumulator: Int16Array[] = [];
             let samplesAccumulated = 0;
@@ -129,19 +129,19 @@ export function useRecording() {
 
             scriptProcessor.onaudioprocess = (event) => {
                 if (!socket.connected) return;
-                
+
                 const inputData = event.inputBuffer.getChannelData(0);
-                
+
                 // Convert Float32 to Int16 PCM
                 const pcmData = new Int16Array(inputData.length);
                 for (let i = 0; i < inputData.length; i++) {
                     const s = Math.max(-1, Math.min(1, inputData[i]));
                     pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
                 }
-                
+
                 pcmAccumulator.push(pcmData);
                 samplesAccumulated += pcmData.length;
-                
+
                 // Send approximately every second of audio
                 if (samplesAccumulated >= samplesPerSecond) {
                     // Combine all accumulated chunks
@@ -152,26 +152,26 @@ export function useRecording() {
                         combined.set(chunk, offset);
                         offset += chunk.length;
                     }
-                    
+
                     // Send as ArrayBuffer
                     socket.emit('audio_chunk_pcm', combined.buffer);
-                    
+
                     // Reset accumulator
                     pcmAccumulator = [];
                     samplesAccumulated = 0;
                 }
-                
+
                 // Pass through audio (required for ScriptProcessor to work)
                 const outputData = event.outputBuffer.getChannelData(0);
                 for (let i = 0; i < inputData.length; i++) {
                     outputData[i] = 0; // Mute output to avoid feedback
                 }
             };
-            
+
             // Connect script processor
             analyserNode.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
-            
+
             // Store reference for cleanup
             (audioContextRef.current as any)._scriptProcessor = scriptProcessor;
 
@@ -199,16 +199,23 @@ export function useRecording() {
     const stopRecording = useCallback(() => {
         const socket = getSocket();
 
-        if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
-        }
+        socket.emit('stop_recording');
 
+        // Immediate Cleanup
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+        }
+        if (audioContextRef.current) {
+            audioContextRef.current.close();
+            audioContextRef.current = null;
+        }
 
-        socket.emit('stop_recording');
+        setIsRecording(false);
         setDuration(0);
+        setAnalyser(null);
     }, []);
 
     return {

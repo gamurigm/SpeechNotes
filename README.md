@@ -1,192 +1,42 @@
-# 🎙️ SpeechNotes
+# 🎙️ SpeechNotes: Tu Superpoder para Clases y Reuniones 🚀
 
-Propuesta V1.2.52 — Aplicación para captura, transcripción, edición y búsqueda semántica de notas de audio.
+¡Bienvenido a la revolución de la productividad! **SpeechNotes** no es solo una app de grabación; es tu asistente personal de inteligencia artificial que escucha, entiende y organiza todo lo que se dice por ti. 
 
----
-
-## 📚 Índice
-- [Resumen](#resumen)
-- [Estado y alcance](#estado-y-alcance)
-- [Estructura del repositorio](#estructura-del-repositorio)
-- [Requisitos](#requisitos)
-- [Variables de entorno](#variables-de-entorno)
-- [Inicio rápido](#inicio-rápido)
-  - [Docker (Recomendado)](#docker-recomendado)
-  - [Scripts de inicio (Windows)](#scripts-de-inicio-windows)
-  - [Frontend (Next.js)](#frontend-nextjs)
-  - [Demos / Scripts Python](#demos--scripts-python)
-- [Flujo de datos (alto nivel)](#flujo-de-datos-alto-nivel)
-- [Componentes principales](#componentes-principales)
-- [Operaciones comunes](#operaciones-comunes)
-- [Notas de desarrollo / fixes recientes](#notas-de-desarrollo--fixes-recientes)
-- [Tareas (TAREAS.md)](#tareas-tareasmd)
-- [Contribución](#contribución)
-- [Licencia y contacto](#licencia-y-contacto)
+![Vista Previa de la App](./appCap-dfg6ks6.png)
 
 ---
 
-## ✨ Resumen
-SpeechNotes convierte grabaciones en notas útiles: captura audio, genera transcripciones en Markdown enriquecido, permite edición y exportación, y habilita búsqueda semántica y RAG (recuperación + generación). Soporta integraciones ASR (Riva) y generación/embeddings (NVIDIA NIM, OpenAI opcional).
+## 🌟 ¿Qué puedes hacer con SpeechNotes?
+
+Diseñado para estudiantes y profesionales que quieren enfocarse en el contenido, no en las notas. 🎯
+
+### 🔊 1. Captura Inteligente (NVIDIA Riva)
+*   **Transcripción ASR en Vivo:** Precisión de grado profesional con **NVIDIA Riva**. Capturamos cada detalle con latencia mínima.
+*   **Silencio Inteligente (VAD):** Detección automática de voz para ignorar ruidos de fondo y optimizar el almacenamiento.
+*   **Control Maestro de Audio:** Ajuste de sensibilidad inteligente y ganancia digital para capturas nítidas en cualquier entorno.
+
+### 📝 2. El Editor de Notas del Futuro
+*   **Markdown Enriquecido:** Tus clases se guardan automáticamente con títulos, listas y formato profesional.
+*   **Vista Previa Instantánea:** Edita y refina tus notas mientras visualizas el resultado final de forma elegante.
+*   **Historial Visual:** Navega entre tus "Clases Pasadas" con un sistema de tarjetas dinámico. ¡Nunca pierdas un tema!
+
+### 🧠 3. Cerebro Multimodelo (Kimi, Minimax & Llama)
+*   **Kimi Intelligence (Kimi K2):** Tu asistente principal para análisis profundo de documentos y chat contextual inteligente.
+*   **Minimax M2:** Especialista en dar formato profesional, estructurar resúmenes y organizar tus notas académicas.
+*   **Búsqueda Semántica (Llama 3.2):** Usamos embeddings de **Llama 3.2 Nemoretriever** para encontrar conceptos exactos en milisegundos, no solo palabras.
+
+### 💬 Modos de Chat
+1.  **Modo Fast (Rápido):** Más especulativo y fluido. Presta mayor detalle a las entonaciones e inferencias del contexto para respuestas ágiles.
+2.  **Análisis Profundo (Thinking):** Más formal y preciso. Evita la especulación para ofrecer detalles rigurosos y razonamientos exactos sobre tus notas.
+3.  **Experiencia Inmersiva:** Usa el botón **"Expandir"** para un enfoque total en la conversación.
 
 ---
 
-## 📈 Estado y alcance
-**Versión:** V1.2.52 — en desarrollo.
-
-Incluye:
-- Frontend (Next.js) con panel de grabación, editor Markdown y UI de transcripción.
-- Herramientas Python para indexación (FAISS), generación RAG y demos.
-- Integraciones experimentales con Riva y NVIDIA.
+## 🔐 Lo que necesitas para brillar
+Para que el motor de IA funcione al 100%, asegúrate de tener tus llaves en el archivo `.env`:
+*   `NVIDIA_API_KEY`: El combustible para la transcripción. ⛽
+*   `MONGO_URI`: Tu bodega segura de conocimientos. 📦
 
 ---
 
-## 🗂️ Estructura del repositorio
-- `web/` — Frontend Next.js (React, Tailwind, HeroUI).
-- `src/` — Lógica Python (agent, indexer, loaders, wrappers LLM).
-- `python-clients/` — clientes y scripts ASR (Riva).
-- `server/` — demos ejecutables (RAG demo, agent demo).
-- `notas/` — transcripciones (.md).
-- `docs/` — diseño y documentación.
-
----
-
-## 🛠️ Requisitos
-- Node.js 18+ (recomendado)
-- Python 3.10+
-- Ejemplo de paquetes Python:
-```bash
-pip install sentence-transformers faiss-cpu transformers openai python-dotenv
-```
-
----
-
-## 🔐 Variables de entorno importantes
-- `NVIDIA_EMBEDDING_API_KEY`
-- `NVIDIA_API_KEY`
-- `OPENAI_API_KEY` (opcional)
-
-Ejemplo (PowerShell):
-```powershell
-$env:NVIDIA_EMBEDDING_API_KEY = 'tu_key'
-$env:NVIDIA_API_KEY = 'tu_key'
-$env:OPENAI_API_KEY = 'tu_key'
-```
-
-> Nota rápida (PowerShell): para evitar `ModuleNotFoundError: No module named 'src'` al correr scripts desde `server/`, exporta `PYTHONPATH` antes de ejecutar.
-
-```powershell
-cd server
-$env:PYTHONPATH = '..'
-python agent_rag_demo.py --index-new-only
-python agent_rag_demo.py --query "¿Cómo exporto una transcripción?" --topk 5
-```
-
----
-
-## 🚀 Inicio rápido
-
-### Docker (Recomendado)
-Para levantar todo el entorno (MongoDB, Backend y Frontend) automáticamente:
-```bash
-docker-compose up --build
-```
-- **Frontend**: http://localhost:3006
-- **Backend**: http://localhost:8001
-
-### Scripts de inicio (Windows)
-Si prefieres correrlo localmente sin Docker, usa el script unificado:
-1. Haz doble clic en `run_all.bat` o ejecuta:
-```powershell
-.\run_all.bat
-```
-Este script abrirá dos ventanas separadas para el Backend y el Frontend con las configuraciones correctas.
-
-### Frontend (Next.js)
-1. Entrar a `web/`:
-```bash
-pnpm install
-pnpm dev
-```
-2. Abrir: http://localhost:3006
-
-Notas:
-- Frontend usa Tailwind + HeroUI (config en `web/hero.ts`).
-- Si aparece warning ESM: añade `"type": "module"` en `web/package.json`.
-
-### Demos / Scripts Python
-- Demo RAG:
-```bash
-python server/rag_demo.py --query "¿Cómo exporto una transcripción?"
-```
-- Indexar todas las transcripciones:
-```bash
-python server/agent_rag_demo.py --index-all
-```
-
----
-
-## 🔁 Flujo de datos (alto nivel)
-1. Usuario graba/sube audio → ASR genera `.md` en `notas/`.
-2. Indexer crea chunks → solicita embeddings.
-3. Embeddings guardados en FAISS.
-4. Consultas recuperan fragmentos; LLM opcional para respuestas/sumarizados.
-
----
-
-## 🧩 Componentes principales
-- Captura/ASR: `python-clients/`
-- Formateo/ingestión: `src/agent/transcription_loader.py`
-- Indexación/embeddings: `src/agent/transcription_indexer.py`
-- Vector store: `src/agent/vector_store.py` (FAISS)
-- Generación: `src/llm/nvidia_client.py`
-- Frontend: `web/app/` — grabador, Markdown viewer/editor
-
----
-
-## ⚙️ Operaciones comunes
-- Ejecutar frontend:
-```bash
-cd web
-pnpm dev
-```
-- Ejecutar demo RAG:
-```bash
-python server/rag_demo.py --query "¿Dónde está el capítulo sobre X?"
-```
-
----
-
-## 🛠️ Notas de desarrollo / fixes recientes
-- **Dockerización completa**: Añadidos Dockerfiles y Docker Compose para despliegue simplificado.
-- **Pydantic AI & Logfire**: Integración de agentes inteligentes con observabilidad avanzada.
-- **Correcion de Puertos**: Backend ahora corre en `8001` y Frontend en `3006` para evitar conflictos.
-- Integración inicial con HeroUI y ajustes de Tailwind.
-- Migración parcial a React 18.
-- Fix: renderizado de chat adaptado a `message.content`.
-- Fix: corrección de un parse error en JSX.
-- Mejora de MarkdownViewer (clases `prose`) para headings, listas y código.
-- Añadido `"type": "module"` en `web/package.json` para resolver warnings ESM.
-- Chat/UI depende de que el índice FAISS esté cargado en la sesión; reindexa tras reiniciar backend (`python agent_rag_demo.py --index-new-only`).
-
----
-
-## ✅ Tareas (revisar `TAREAS.md`)
-- [x] actualizar la ui para usar componentes de HeroUI (Next.js) — estudiada e integrada.
-  - Detalles: configuración `hero.ts`, `providers.tsx`, uso de componentes HeroUI en Navbar, Buttons, Cards.
-- (Ver `TAREAS.md` para historial completo y nuevas tareas.)
-
----
-
-## 🤝 Contribución
-1. Leer `TAREAS.md` antes de trabajar.
-2. Abrir PR con descripción y pasos para reproducir.
-3. Commits atómicos; mensajes claros (ej. `chore/ui: ...`, `fix(chat): ...`).
-
----
-
-## 📄 Licencia y contacto
-- Proyecto interno / académico. Añadir licencia si se publica.
-- Para dudas: abrir un issue en el repositorio.
-
----
-
+**SpeechNotes** 

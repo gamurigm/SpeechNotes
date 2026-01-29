@@ -54,7 +54,13 @@ def calculate_rms(audio_data: bytes) -> float:
         # Unpack 16-bit integers (ensure exact buffer size)
         shorts = struct.unpack(f"{count}h", audio_data[:count*2])
         sum_squares = sum(s**2 for s in shorts)
-        return math.sqrt(sum_squares / count)
+        rms = math.sqrt(sum_squares / count)
+        
+        # Log to file for hidden debugging
+        with open("vad_debug.log", "a") as f:
+            f.write(f"{datetime.now().isoformat()} - RMS: {rms:.2f}\n")
+        
+        return rms
     except Exception as e:
         print(f"[RMS] Error: {e}")
         return 0
@@ -245,10 +251,11 @@ def register_socket_events(sio):
             "start_time": datetime.now(),
             "audio_chunks": [],      # Original WebM chunks
             "pcm_audio": b"",        # Converted PCM audio
-            "voice_threshold": 120,    # Default start threshold (lowered for sensitivity)
-            "silence_threshold": 80,   # Default stop threshold (lowered for sensitivity)
+            "voice_threshold": 80,     # Lowered for more sensitivity (was 120)
+            "silence_threshold": 40,   # Lowered for more sensitivity (was 80)
             "is_speaking": False,      # VAD state
-            "mic_gain": 1.5            # Microphone gain (1.0 = no change, >1 = amplify)
+            "mic_gain": 1.5,           # Microphone gain
+            "active": False            # Recording state
         }
         
         # Initialize transcriber on first connection
@@ -284,6 +291,7 @@ def register_socket_events(sio):
             active_sessions[sid]["audio_chunks"] = []
             active_sessions[sid]["pcm_audio"] = b""
             active_sessions[sid]["is_speaking"] = False
+            active_sessions[sid]["active"] = True
             
             # Update settings if provided
             if data and isinstance(data, dict):
@@ -331,7 +339,7 @@ def register_socket_events(sio):
     @logfire.instrument
     async def audio_chunk(sid, data):
         """Receive audio chunk from client and transcribe with realtime.py (legacy WebM format)"""
-        if sid not in active_sessions:
+        if sid not in active_sessions or not active_sessions[sid].get("active"):
             return
         
         session = active_sessions[sid]
@@ -357,7 +365,7 @@ def register_socket_events(sio):
     @logfire.instrument
     async def audio_chunk_pcm(sid, data):
         """Receive raw PCM audio chunk from client (16-bit mono 16kHz)"""
-        if sid not in active_sessions:
+        if sid not in active_sessions or not active_sessions[sid].get("active"):
             return
         
         session = active_sessions[sid]
@@ -441,6 +449,8 @@ def register_socket_events(sio):
                         print(f"[Socket.IO] emit error: {e_emit}")
 
                     print(f"[Socket.IO] Transcribed for {sid}: {text[:50]}...")
+                    with open("vad_debug.log", "a") as f:
+                        f.write(f"{datetime.now().isoformat()} - TRANSCRIPTION: {text}\n")
 
             except Exception as e:
                 print(f"[Socket.IO] Error transcribing chunk: {e}")
@@ -457,6 +467,9 @@ def register_socket_events(sio):
         if sid not in active_sessions:
             await sio.emit('error', {'message': 'No active session'}, room=sid)
             return
+
+        # Mark as inactive immediately
+        active_sessions[sid]["active"] = False
 
         # Schedule the heavy work in background so we don't block the Socket.IO event loop
         asyncio.create_task(_handle_stop_recording(sid))

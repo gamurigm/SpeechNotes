@@ -5,7 +5,8 @@ import { Mic, Square, Settings2 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { useState } from 'react';
 import { useBackground } from '../../providers';
-import { Card, CardBody, Button, Slider } from '@heroui/react';
+import { Card, CardBody, Button, Slider, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react';
+import { AlertTriangle } from 'lucide-react';
 
 function formatDuration(seconds: number): string {
     const mins = Math.floor(seconds / 60);
@@ -32,6 +33,16 @@ export function RecordingPanel() {
 
     const [showSettings, setShowSettings] = useState(false);
     const [visualThreshold, setVisualThreshold] = useState(20); // Visual threshold
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+    const handleStopPress = () => {
+        onOpen();
+    };
+
+    const confirmStop = () => {
+        stopRecording();
+        onOpenChange();
+    };
 
     return (
         <div className="flex flex-col gap-2">
@@ -39,16 +50,16 @@ export function RecordingPanel() {
                 <CardBody className="px-3 py-2">
                     <div className="flex items-center gap-2">
                         <Button
-                            onPress={isRecording ? stopRecording : startRecording}
+                            onPress={isRecording ? handleStopPress : startRecording}
                             isIconOnly
                             size="lg"
                             radius="full"
-                            className={`min-w-14 h-14 font-bold shadow-lg transition-all duration-300 transform hover:scale-110 ${isRecording
-                                ? 'bg-gradient-to-br from-red-500 to-red-700 text-white animate-pulse shadow-red-400/50 hover:shadow-red-500/70'
-                                : 'bg-gradient-to-br from-blue-500 via-blue-600 to-purple-700 text-white hover:shadow-blue-500/50 hover:from-blue-600 hover:to-purple-800'
+                            className={`min-w-14 h-14 font-bold shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-90 ${isRecording
+                                ? 'bg-gradient-to-br from-rose-500 to-red-700 text-white shadow-red-500/40'
+                                : 'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 text-white hover:shadow-blue-500/50 hover:from-blue-600 hover:to-indigo-800'
                                 }`}
                         >
-                            {isRecording ? <Square size={24} /> : <Mic size={24} />}
+                            {isRecording ? <div className="relative flex items-center justify-center"><div className="absolute inset-0 bg-white/20 rounded-full animate-ping" /><Square size={24} className="relative z-10" /></div> : <Mic size={24} />}
                         </Button>
 
                         <div className="flex flex-col">
@@ -135,6 +146,53 @@ export function RecordingPanel() {
                     </CardBody>
                 </Card>
             )}
+
+            {/* Confirmation Modal */}
+            <Modal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                backdrop="blur"
+                classNames={{
+                    base: "bg-slate-900/95 border border-white/10 backdrop-blur-xl",
+                    header: "border-b border-white/5",
+                    footer: "border-t border-white/5",
+                    closeButton: "hover:bg-white/10 active:bg-white/20",
+                }}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2 text-rose-400">
+                                    <AlertTriangle size={20} />
+                                    <span>¿Finalizar Grabación?</span>
+                                </div>
+                            </ModalHeader>
+                            <ModalBody>
+                                <p className="text-slate-300 text-sm">
+                                    ¿Estás seguro de que deseas detener la grabación actual?
+                                    La transcripción se guardará y procesará automáticamente.
+                                </p>
+                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duración acumulada:</span>
+                                    <span className="text-lg font-mono font-bold text-indigo-400">{formatDuration(duration)}</span>
+                                </div>
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button variant="light" color="default" onPress={onClose} className="font-semibold">
+                                    Continuar grabacion
+                                </Button>
+                                <Button
+                                    className="bg-gradient-to-r from-rose-600 to-red-700 text-white font-bold shadow-lg shadow-rose-500/30"
+                                    onPress={confirmStop}
+                                >
+                                    ¡Sí, detener ahora!
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         </div>
     );
 }
