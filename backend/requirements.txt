@@ -18,3 +18,4 @@ langchain-chroma
 sentence-transformers
 tf-keras
 pydub
+logfire[fastapi,pymongo]

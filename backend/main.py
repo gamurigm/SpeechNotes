@@ -11,6 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import socketio
 
 # Initialize tracing as early as possible
+from dotenv import load_dotenv
+load_dotenv()
+
 try:
     from backend.tracing import init_tracing, instrument_fastapi
     init_tracing()
@@ -25,6 +28,7 @@ from routers import formatter
 from routers import chat
 from routers import vad_config
 from routers import documents
+from routers import transcribe
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -61,6 +65,7 @@ app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
+app.include_router(transcribe.router, prefix="/api", tags=["transcribe"])
 
 # Instrument FastAPI app for tracing (if available)
 try:

@@ -16,6 +16,7 @@ import asyncio
 import traceback
 import tempfile
 import io
+import logfire
 from typing import Any
 
 from pydub import AudioSegment
@@ -327,6 +328,7 @@ def register_socket_events(sio):
             print(f"[Socket.IO] emit mic_gain_updated error: {e}")
     
     @sio.event
+    @logfire.instrument
     async def audio_chunk(sid, data):
         """Receive audio chunk from client and transcribe with realtime.py (legacy WebM format)"""
         if sid not in active_sessions:
@@ -352,6 +354,7 @@ def register_socket_events(sio):
         await _process_pcm_chunk(sid, pcm_data, session)
     
     @sio.event
+    @logfire.instrument
     async def audio_chunk_pcm(sid, data):
         """Receive raw PCM audio chunk from client (16-bit mono 16kHz)"""
         if sid not in active_sessions:
@@ -446,6 +449,7 @@ def register_socket_events(sio):
 
     
     @sio.event
+    @logfire.instrument
     async def stop_recording(sid):
         """Stop recording: schedule post-processing in background to avoid blocking."""
         print(f"[Socket.IO] Stop recording: {sid}")
@@ -469,6 +473,7 @@ def register_socket_events(sio):
             print(f"[Socket.IO] emit ack error: {e}")
 
 
+    @logfire.instrument
     async def _handle_stop_recording(sid: str):
         """Background worker to perform blocking post-processing steps."""
         session = active_sessions.get(sid)

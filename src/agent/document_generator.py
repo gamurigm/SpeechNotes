@@ -6,6 +6,7 @@ Generates professional markdown documents from structured MongoDB data.
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
+import logfire
 from bson import ObjectId
 import os
 from openai import OpenAI
@@ -35,6 +36,7 @@ class DocumentGenerator:
         else:
             self.client = None
         
+    @logfire.instrument
     def generate_all(self) -> int:
         """
         Generate markdown for all processed transcriptions.
@@ -54,6 +56,7 @@ class DocumentGenerator:
                 
         return count
     
+    @logfire.instrument
     def _generate_document(self, transcription: Dict[str, Any]):
         """
         Generate a single markdown document.

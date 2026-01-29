@@ -16,27 +16,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 
-# Configure Logfire BEFORE importing pydantic_ai instrumentation
-load_dotenv()
-
+import logfire
 logger = logging.getLogger(__name__)
-
-# Initialize Logfire if token is available
-LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
-if LOGFIRE_TOKEN:
-    try:
-        import logfire
-        logfire.configure(
-            token=LOGFIRE_TOKEN,
-            service_name="speechnotes-chat",
-            send_to_logfire=True
-        )
-        logfire.instrument_pydantic_ai()
-        logger.info("Logfire configured successfully for Pydantic AI")
-    except Exception as e:
-        logger.warning(f"Failed to configure Logfire: {e}")
-else:
-    logger.info("Logfire token not found, running without observability")
 
 
 # --- Models ---

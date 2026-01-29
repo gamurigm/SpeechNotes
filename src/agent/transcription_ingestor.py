@@ -4,6 +4,7 @@ Loads raw markdown transcriptions into MongoDB.
 """
 
 import re
+import logfire
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Tuple
@@ -21,6 +22,7 @@ class TranscriptionIngestor:
         self.source_dir = Path(source_dir)
         self.db = MongoManager()
         
+    @logfire.instrument
     def ingest_all(self) -> Dict[str, int]:
         """
         Ingest all files from source directory.
@@ -50,6 +52,7 @@ class TranscriptionIngestor:
                 
         return stats
     
+    @logfire.instrument
     def _ingest_file(self, file_path: Path) -> bool:
         """
         Ingest a single file.

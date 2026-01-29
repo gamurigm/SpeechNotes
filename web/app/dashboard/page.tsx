@@ -287,8 +287,19 @@ export default function DashboardPage() {
                                             <Button size="sm" color="primary" className="w-full rounded-xl" onClick={async () => {
                                                 const file = uploadInputRef.current?.files?.[0]; if (!file) return;
                                                 const fd = new FormData(); fd.append('file', file);
-                                                setIsProcessing(true); await fetch('/api/transcribe-file', { method: 'POST', body: fd });
-                                                setIsProcessing(false); setActiveTool(null);
+                                                setIsProcessing(true);
+                                                try {
+                                                    await fetch('/api/transcribe-file', { method: 'POST', body: fd });
+                                                    // Give it a small delay for background processing to start
+                                                    setTimeout(async () => {
+                                                        await loadTranscriptionsList();
+                                                        setIsProcessing(false);
+                                                        setActiveTool(null);
+                                                    }, 2000);
+                                                } catch (e) {
+                                                    console.error("Upload failed", e);
+                                                    setIsProcessing(false);
+                                                }
                                             }}>Start Transcription</Button>
                                         </CardBody></Card>
                                     )}

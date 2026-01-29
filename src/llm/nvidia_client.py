@@ -7,6 +7,7 @@ import os
 from typing import Optional, List, Dict, Any, Iterator
 from openai import OpenAI
 from dotenv import load_dotenv
+import logfire
 
 # Load environment variables, overriding system vars to ensure .env is used
 load_dotenv(override=True)
@@ -62,6 +63,7 @@ class NvidiaInferenceClient:
             
             NvidiaInferenceClient._initialized = True
     
+    @logfire.instrument
     def generate(
         self,
         prompt: str,
@@ -112,6 +114,7 @@ class NvidiaInferenceClient:
         except Exception as e:
             raise RuntimeError(f"Error generating response from NVIDIA NIM: {str(e)}")
     
+    @logfire.instrument
     def stream_generate(
         self,
         prompt: str,
@@ -164,6 +167,7 @@ class NvidiaInferenceClient:
         except Exception as e:
             raise RuntimeError(f"Error streaming response from NVIDIA NIM: {str(e)}")
     
+    @logfire.instrument
     def chat(
         self,
         messages: List[Dict[str, str]],
