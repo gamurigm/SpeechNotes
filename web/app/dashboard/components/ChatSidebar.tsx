@@ -207,15 +207,15 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
 
                 {/* Context Badge */}
                 <div className="mt-4 flex items-center gap-3 py-2 px-4 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-md">
-                    <FileText size={12} className={activeDocId ? "text-violet-400" : "text-slate-600"} />
+                    <FileText size={16} className={activeDocId ? "text-violet-400" : "text-slate-600"} />
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-[10px] font-medium text-slate-500 truncate">
+                        <p className="text-[14px] font-bold text-slate-500 truncate">
                             {displayName || 'Selecciona un documento'}
                         </p>
                     </div>
                     {activeDocId && (
                         <div className="px-1.5 py-0.5 rounded-md bg-emerald-500/5 border border-emerald-500/10">
-                            <span className="text-[7px] font-black text-emerald-500/80 uppercase tracking-tighter">Verified</span>
+                            <span className="text-[11px] font-black text-emerald-500/80 uppercase tracking-tighter">Verified</span>
                         </div>
                     )}
                 </div>
