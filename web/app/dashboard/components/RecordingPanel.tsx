@@ -32,7 +32,7 @@ export function RecordingPanel() {
 
     return (
         <div className="flex flex-col gap-2">
-            <Card className="shadow-sm border-none glass">
+            <Card className="shadow-lg border-none bg-content-glass backdrop-blur-xl">
                 <CardBody className="px-3 py-2">
                     <div className="flex items-center gap-2">
                         <Button
@@ -49,10 +49,10 @@ export function RecordingPanel() {
                         </Button>
 
                         <div className="flex flex-col">
-                            <span className="text-xs text-gray-500">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-theme-secondary/80">
                                 {isRecording ? '🔴 Grabando' : 'Listo para grabar'}
                             </span>
-                            <span className="text-lg font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            <span className="text-xl font-mono font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
                                 {formatDuration(duration)}
                             </span>
                         </div>
@@ -69,12 +69,16 @@ export function RecordingPanel() {
                         <Button
                             onPress={() => setShowSettings(!showSettings)}
                             isIconOnly
-                            size="sm"
+                            size="md"
                             variant="light"
-                            color={showSettings ? "primary" : "default"}
+                            className={`transition-all duration-300 ${showSettings
+                                ? 'bg-indigo-500/20 text-indigo-400 scale-110'
+                                : 'text-theme-primary hover:bg-white/10 hover:text-indigo-400'
+                                }`}
                             title="Configuración de Audio"
                         >
-                            <Settings2 size={14} />
+                            <Settings2 size={20} className={showSettings ? 'animate-spin-slow' : ''} />
+                            {!showSettings && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-soft-pulse" />}
                         </Button>
                     </div>
                 </CardBody>

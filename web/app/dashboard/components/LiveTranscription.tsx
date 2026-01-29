@@ -80,7 +80,7 @@ export function LiveTranscription() {
                     </div>
 
                     <div>
-                        <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-theme-primary tracking-tight flex items-center gap-2">
                             Transcripción en Vivo
                             {isRecording && <Zap size={14} className="text-yellow-400 animate-pulse" />}
                         </h3>
@@ -153,10 +153,10 @@ export function LiveTranscription() {
                     <div className="flex flex-col items-center justify-center h-full text-center gap-6 py-12">
                         {/* Animated empty state */}
                         <div className="relative">
-                            <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/40 shadow-2xl">
-                                <Sparkles size={48} className="text-slate-500" />
+                            <div className="p-6 rounded-3xl bg-content-glass border border-white/10 shadow-2xl backdrop-blur-md">
+                                <Sparkles size={48} className="text-theme-secondary/80" />
                             </div>
-                            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 blur-xl -z-10 animate-pulse" />
+                            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-xl -z-10 animate-pulse" />
                         </div>
                         <div className="space-y-2">
                             <p className="text-theme-primary text-lg font-semibold">

@@ -1,106 +1,38 @@
-1.
-stall SDK
-uv
-pip
-uv add logfire
-Copy
-2. Authenticate your local environment
-uv run logfire auth
-Copy
-Upon successful authentication, user credentials are stored in ~/.logfire/default.toml
+# 📝 TAREAS SpeechNotes
 
-3. Set your Logfire project
-From the working directory where you will run your application, use the CLI to set the Logfire project:
+Este documento centraliza el progreso y las tareas pendientes del proyecto.
 
-uv run logfire projects use speechnotes
-Copy
-Creates a .logfire/ directory and stores your token locally—no environment variable needed.
+---
 
-4. Instrument your code
-Try these examples to see data appear in the Live view. See the 
-onboarding checklist
- to continue instrumenting your code.
+## ✅ Completado
 
-Hello World
-Pydantic AI
-FastAPI
+### 🛠️ Infraestructura y Monitoreo
+- [x] **Integración de Logfire** (Instrumentación de Pydantic AI y FastAPI) - **Hecho [2026-01-28]**
+- [x] **Configuración de Entorno de Trazado** (SDK, Auth and Initialization) - **Hecho [2026-01-28]**
 
-Show write token in code
-uv
-pip
-uv add logfire 'pydantic_ai_slim[openai]'
-Copy
-from pydantic_ai import Agent
-import logfire
+### 🎙️ Reconocimiento de Voz (ASR)
+- [x] **Investigación de Riva / Canary-1b-asr** - **Hecho [2026-01-28]**
+- [x] **Instalación y Prueba de NVIDIA Riva Client** - **Hecho [2026-01-28]**
+- [x] **Clonación y Configuración de Clientes Python (NVIDIA)** - **Hecho [2026-01-28]**
 
-logfire.configure()
-logfire.instrument_pydantic_ai()
+### 🎨 UI / UX (Mejoras Visuales)
+- [x] **Corrección de Contraste en Temas Claros** (Pure Light) - **Hecho [2026-01-28]**
+- [x] **Mejora de Glassmorphism** (Bordes dinámicos y sombras) - **Hecho [2026-01-28]**
+- [x] **Eliminación de Degradados Oscuros Forzados** - **Hecho [2026-01-28]**
+- [x] **Refinamiento de Layout del Dashboard** (Contenedores flotantes) - **Hecho [2026-01-28]**
+- [x] **Rediseño de Sidebar Toggle** (Efecto fantasma y hover) - **Hecho [2026-01-28]**
+- [x] **Rediseño de Herramienta de Tipografía** (Ubicación en header e indicador pulsante) - **Hecho [2026-01-28]**
 
-agent = Agent('openai:gpt-4o')
+---
 
-result = await agent.run(
-    'How does pyodide let you run Python in the browser? (short answer please)'
-)
+## 📋 Notas de Referencia (ASR Offline)
 
-print(f'output: {result.output}')
-
-
-logfiretoken
-pylf_v1_us_tkhT4ngKdxtQMQx8k0cR5GkR0Y4bpMkzTpDr47y6g0kv
-***
-
-
-
-2.
-
-quiero usar cancary pero no quitar wisper sino tener los dos 
-
-vamos primero aprobar quien es mejor reconociendo el lenguaje y sobre todo la salida de texto de la api usa esto:
-Getting Started
-Riva uses gRPC APIs. Instructions below demonstrate usage of canary-1b-asr model using Python gRPC client.
-
-Prerequisites
-You will need a system with Git and Python 3+ installed.
-
-Install Riva Python Client
-Bash
-
-Copy
-pip install nvidia-riva-client
-Download Python Client
-Download Python client code by cloning Python Client Repository.
-
-Bash
-
-Copy
-git clone https://github.com/nvidia-riva/python-clients.git
-Run Python Client
-Make sure you have a speech file in Mono, 16-bit audio in WAV, OPUS and FLAC formats. If you have generated the API key, it will be auto-populated in the command. Open a command terminal and execute below command to transcribe audio. If you know the source language, it is recommended to pass source_language in custom configuration parameter.
-
-Below command demonstrates transcription of English audio file.
-
-Bash
-
-Copy
+### Comando para Transcripción (Riva)
+```bash
 python python-clients/scripts/asr/transcribe_file_offline.py \
     --server grpc.nvcf.nvidia.com:443 --use-ssl \
     --metadata function-id "b0e8b4a5-217c-40b7-9b96-17d84e666317" \
-    --metadata "authorization" "Bearer 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" \
+    --metadata "authorization" "Bearer [API_KEY]" \
     --language-code en-US \
-    --input-file <path_to_audio_file>
-Below command demonstrates translation from English audio to Hindi.
-
-Bash
-
-Copy
-python python-clients/scripts/asr/transcribe_file_offline.py \
-    --server grpc.nvcf.nvidia.com:443 --use-ssl \
-    --metadata function-id "b0e8b4a5-217c-40b7-9b96-17d84e666317" \
-    --metadata "authorization" "Bearer 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" \
-    --language-code en-US \
-    --custom-configuration "target_language:hi-IN,task:translate" \
-    --input-file <path_to_audio_file>
-One can transcribe and translate supported languages by changing the source language via --language-code and target language via target_language parameter.
-
-Support for gRPC clients in other programming languages
-Riva uses gRPC APIs. Proto files can be downloaded from Riva gRPC Proto files and compiled to target language using Protoc compiler. Example Riva clients in C++ and Python languages are provided below.
+    --input-file <audio_file>
+```
