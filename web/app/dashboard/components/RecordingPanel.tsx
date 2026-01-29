@@ -4,6 +4,7 @@ import { useRecording } from '@/hooks/useRecording';
 import { Mic, Square, Settings2 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { useState } from 'react';
+import { useBackground } from '../../providers';
 import { Card, CardBody, Button, Slider } from '@heroui/react';
 
 function formatDuration(seconds: number): string {
@@ -26,6 +27,8 @@ export function RecordingPanel() {
         silenceThreshold,
         setSilenceThreshold
     } = useRecording();
+    const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
 
     const [showSettings, setShowSettings] = useState(false);
     const [visualThreshold, setVisualThreshold] = useState(20); // Visual threshold
@@ -73,7 +76,7 @@ export function RecordingPanel() {
                             variant="light"
                             className={`transition-all duration-300 ${showSettings
                                 ? 'bg-indigo-500/20 text-indigo-400 scale-110'
-                                : 'text-theme-primary hover:bg-white/10 hover:text-indigo-400'
+                                : isLight ? 'text-slate-600 hover:bg-slate-200/50 hover:text-indigo-600' : 'text-theme-primary hover:bg-white/10 hover:text-indigo-400'
                                 }`}
                             title="Configuración de Audio"
                         >

@@ -12,6 +12,7 @@ import { apiClient } from '@/utils/api-client';
 import { useRecording } from '@/hooks/useRecording';
 import { getSocket } from '@/utils/socket';
 import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Beaker, Rocket, Check, X, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { useBackground } from '../providers';
 
 type ToolbarIconProps = {
     icon: React.ReactNode;
@@ -23,20 +24,28 @@ type ToolbarIconProps = {
 
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
     const [showTooltip, setShowTooltip] = useState(false);
+    const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
+
     return (
         <div className="relative group">
             <button
                 onClick={onClick}
-                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg' : 'text-slate-500 hover:text-slate-700 hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md'} ${className}`}
+                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive
+                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
+                        : isLight
+                            ? 'text-slate-900 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
+                            : 'text-slate-200 hover:text-white hover:bg-white/10 shadow-sm hover:shadow-md'
+                    } ${className}`}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
                 {icon}
             </button>
             {showTooltip && (
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg animate-in fade-in slide-in-from-bottom-1 duration-200">
+                <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 ${isLight ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'} text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-lg animate-in fade-in slide-in-from-bottom-1 duration-200`}>
                     {tooltip}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800"></div>
+                    <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent ${isLight ? 'border-t-slate-800' : 'border-t-white'}`}></div>
                 </div>
             )}
         </div>
@@ -53,6 +62,7 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
+    const { theme } = useBackground();
     const [mdZoom, setMdZoom] = useState(100);
     const [appZoom, setAppZoom] = useState(100);
     const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
@@ -314,31 +324,29 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="flex-1 flex overflow-hidden w-full px-4 relative">
-                            {/* Neon Edge Sidebar Toggle (Left) - Central Edge Interactor */}
-                            <div className="fixed left-0 top-0 bottom-0 w-8 z-[100] group flex items-center justify-center transition-all duration-300">
+                            {/* Neon Edge Sidebar Toggle (Left) - Middle-Edge Interactor */}
+                            <div className="fixed left-0 top-1/2 -translate-y-1/2 w-6 z-[100] group flex items-center justify-center">
                                 <button
                                     onClick={() => setShowSidebar(!showSidebar)}
-                                    className={`relative flex items-center justify-center w-2 hover:w-12 h-44 rounded-r-3xl transition-all duration-500 transform ${'bg-cyan-500/10 border-r border-y border-cyan-500/30 backdrop-blur-xl'
+                                    className={`relative flex items-center justify-center w-2 hover:w-10 h-48 rounded-r-[2rem] transition-all duration-700 ${'bg-cyan-500/10 border-r border-y border-cyan-500/30 backdrop-blur-xl'
                                         } ${showSidebar
-                                            ? 'opacity-30 group-hover:opacity-100 -translate-x-1 hover:translate-x-0'
-                                            : 'opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0'
-                                        } group-hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] shadow-cyan-500/20 shadow-[15px_0_30px_-5px_rgba(34,211,238,0.3)]`}
+                                            ? 'opacity-40 group-hover:opacity-100 hover:scale-x-110 shadow-[5px_0_20px_rgba(34,211,238,0.15)]'
+                                            : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-2'
+                                        } group-hover:shadow-[0_0_45px_rgba(34,211,238,0.5)] shadow-cyan-500/20 shadow-[15px_0_35px_-5px_rgba(34,211,238,0.4)]`}
+                                    title={showSidebar ? "Contraer barra" : "Expandir barra"}
                                 >
-                                    {/* Inner Neon Line */}
-                                    <div className={`absolute right-[3px] inset-y-8 w-[3px] bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_rgba(34,211,238,0.9)] transition-opacity duration-500 ${showSidebar ? 'opacity-50 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                                    {/* Central Neon Core */}
+                                    <div className={`absolute right-[3px] inset-y-4 w-[4px] bg-gradient-to-b from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_rgba(34,211,238,1)] transition-all duration-500 ${showSidebar ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'}`} />
 
-                                    {/* Icon */}
-                                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-700 delay-100 scale-50 group-hover:scale-110">
-                                        {showSidebar ? (
-                                            <PanelRightClose size={20} className="text-cyan-400 rotate-180 mr-1" />
-                                        ) : (
-                                            <PanelRightOpen size={20} className="text-cyan-400 rotate-90 mr-1" />
-                                        )}
+                                    {/* Abstract Neon "Arrow" Lines */}
+                                    <div className={`absolute right-4 flex flex-col gap-1 transition-all duration-700 ${showSidebar ? 'rotate-0' : 'rotate-180'} opacity-0 group-hover:opacity-100`}>
+                                        <div className="w-1.5 h-1.5 border-t-2 border-l-2 border-cyan-400 -rotate-45" />
+                                        <div className="w-1.5 h-1.5 border-t-2 border-l-2 border-cyan-400/50 -rotate-45" />
                                     </div>
 
-                                    {/* Discovery Pulse */}
+                                    {/* Sensory Beacon */}
                                     {!showSidebar && (
-                                        <div className="absolute top-8 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,1)] animate-pulse" />
+                                        <div className="absolute top-1/2 -translate-y-1/2 right-1 w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(34,211,238,1)] animate-ping" />
                                     )}
                                 </button>
                             </div>
@@ -403,10 +411,13 @@ export default function DashboardPage() {
                 className={`fixed top-10 right-10 z-[100] transition-all duration-500 hover:rotate-12 active:scale-90 group ${showChat ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 rotate-0 scale-100'}`}
             >
                 <div className="relative">
-                    <div className="absolute -inset-4 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all" />
-                    <div className="relative w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all group-hover:bg-slate-900">
-                        <MessageCircle size={26} className="text-violet-400 group-hover:text-white" />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] border-black" />
+                    <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-2xl group-hover:bg-violet-500/30 transition-all" />
+                    <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${theme === 'pure-light'
+                            ? 'bg-white border border-slate-300 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-slate-50'
+                            : 'bg-black/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:bg-slate-900'
+                        }`}>
+                        <MessageCircle size={26} className={theme === 'pure-light' ? 'text-black group-hover:text-violet-900' : 'text-white group-hover:text-violet-200'} />
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] ${theme === 'pure-light' ? 'border-white' : 'border-black'}`} />
                     </div>
                 </div>
             </button>

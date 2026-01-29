@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText, Type } from 'lucide-react';
+import { useBackground } from '../../providers';
 import dynamic from 'next/dynamic';
 
 const MDEditor = dynamic(
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }: Props) {
+    const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
@@ -229,14 +232,14 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                                 <div className="relative group">
                                     <button
                                         onClick={() => setShowStyleMenu(!showStyleMenu)}
-                                        className={`p-2 rounded-lg transition-all relative ${showStyleMenu ? 'bg-indigo-500 text-white' : 'text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10'}`}
+                                        className={`p-2 rounded-lg transition-all relative ${showStyleMenu ? 'bg-indigo-600 text-white shadow-lg' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
                                     >
                                         <Type size={18} />
-                                        {!showStyleMenu && <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[var(--background)] animate-soft-pulse" />}
+                                        {!showStyleMenu && <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 ${isLight ? 'border-white' : 'border-slate-800'} animate-soft-pulse`} />}
                                     </button>
                                 </div>
-                                <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Edit size={18} /></button>
-                                <button onClick={handleExportPdf} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Download size={18} /></button>
+                                <button onClick={() => setIsEditing(true)} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Edit size={18} /></button>
+                                <button onClick={handleExportPdf} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Download size={18} /></button>
                             </>
                         )}
                     </div>

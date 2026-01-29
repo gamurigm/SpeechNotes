@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRecording } from '@/hooks/useRecording';
 import { Mic, Waves, Sparkles, Volume2, Zap } from 'lucide-react';
+import { useBackground } from '../../providers';
 
 export function LiveTranscription() {
     const { messages, isRecording } = useRecording();
+    const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
     const scrollRef = useRef<HTMLDivElement>(null);
     const [animatedCount, setAnimatedCount] = useState(0);
     const [showWave, setShowWave] = useState(false);
@@ -96,12 +99,12 @@ export function LiveTranscription() {
 
                     {/* Segment counter with animation */}
                     <div className="flex items-center gap-3">
-                        <div className={`relative px-4 py-1.5 rounded-xl ${messages.length > 0 ? 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/5'} border backdrop-blur-md transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
+                        <div className={`relative px-4 py-1.5 rounded-xl ${messages.length > 0 ? (isLight ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]') : 'bg-white/5 border-white/5'} border backdrop-blur-md transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
                             <div className="flex items-baseline gap-1.5">
-                                <span className={`text-lg font-black tabular-nums tracking-tighter ${messages.length > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                <span className={`text-lg font-black tabular-nums tracking-tighter ${messages.length > 0 ? (isLight ? 'text-emerald-800' : 'text-emerald-400') : (isLight ? 'text-slate-700' : 'text-slate-500')}`}>
                                     {animatedCount}
                                 </span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500/80">segmentos</span>
+                                <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-800' : 'text-slate-500/80'}`}>segmentos</span>
                             </div>
 
                             {/* Glow effect on new message */}
