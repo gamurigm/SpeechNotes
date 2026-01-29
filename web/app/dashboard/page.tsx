@@ -316,9 +316,9 @@ export default function DashboardPage() {
                             {/* Toggleable tools panel */}
                             <button
                                 onClick={() => setShowSidebar(!showSidebar)}
-                                className="absolute left-6 top-6 z-[60] p-2.5 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-400 hover:text-indigo-600 transition-all duration-300 hover:shadow-md"
+                                className="absolute left-2 top-2 z-[60] p-1.5 rounded-xl bg-transparent hover:bg-white/10 backdrop-blur-sm border border-white/5 text-theme-secondary opacity-20 hover:opacity-100 transition-all duration-500 hover:scale-110 active:scale-95 shadow-sm"
                             >
-                                {showSidebar ? <PanelRightClose size={18} className="rotate-180" /> : <PanelRightOpen size={18} />}
+                                {showSidebar ? <PanelRightClose size={14} className="rotate-180" /> : <PanelRightOpen size={14} />}
                             </button>
 
                             <aside className={`flex-shrink-0 space-y-4 overflow-y-auto overflow-x-hidden transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] p-4 opacity-100' : 'w-0 p-0 opacity-0 pointer-events-none'}`}>

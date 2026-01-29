@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText, Type } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const MDEditor = dynamic(
@@ -163,15 +163,8 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
 
     return (
         <div className="h-full flex flex-col glass backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
-            <div
-                className="absolute top-3 left-3 z-[60] w-1.5 h-1.5 rounded-full bg-slate-200/50 hover:bg-indigo-500 hover:scale-[3] transition-all cursor-pointer shadow-sm group"
-                onClick={() => setShowStyleMenu((s) => !s)}
-            >
-                <div className="absolute inset-0 rounded-full bg-indigo-400 animate-ping opacity-0 group-hover:opacity-20" />
-            </div>
-
             {showStyleMenu && (
-                <div ref={menuRef} className="fixed top-12 left-6 z-[70] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl p-4 min-w-[220px] animate-in fade-in zoom-in duration-200">
+                <div ref={menuRef} className="fixed top-14 right-10 z-[70] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl p-4 min-w-[220px] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center justify-between mb-3">
                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tipografía</div>
                         <button onClick={() => setShowStyleMenu(false)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"><X size={14} /></button>
@@ -233,6 +226,15 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                             </>
                         ) : (
                             <>
+                                <div className="relative group">
+                                    <button
+                                        onClick={() => setShowStyleMenu(!showStyleMenu)}
+                                        className={`p-2 rounded-lg transition-all relative ${showStyleMenu ? 'bg-indigo-500 text-white' : 'text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10'}`}
+                                    >
+                                        <Type size={18} />
+                                        {!showStyleMenu && <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[var(--background)] animate-soft-pulse" />}
+                                    </button>
+                                </div>
                                 <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Edit size={18} /></button>
                                 <button onClick={handleExportPdf} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Download size={18} /></button>
                             </>
