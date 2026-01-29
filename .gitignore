@@ -200,6 +200,11 @@ build/
 web/prisma/dev.db
 web/prisma/dev.db-journal
 
-# Assets/Large files
-SN-promo*.png
-SP-promo*.png
+# Assets/Large files/Promos
+SN-*.png
+SN-*.jpg
+SN-*.jpeg
+SP-*.png
+SP-*.jpg
+SP-*.jpeg
+promos/
