@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, AlertCircle, CheckCircle, Volume2, Radio } from 'lucide-react';
+import { Mic, AlertCircle, CheckCircle, Volume2, Radio, X } from 'lucide-react';
+import { Button } from "@heroui/react";
 
-export function MicTest() {
+export function MicTest({ onClose }: { onClose?: () => void }) {
     const [isTesting, setIsTesting] = useState(false);
     const [rmsLevel, setRmsLevel] = useState(0);
     const [status, setStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -146,12 +147,25 @@ export function MicTest() {
                     </div>
                 </div>
 
-                {isTesting && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                        <Radio size={10} className="text-violet-400 animate-pulse" />
-                        <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wide">Live</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    {isTesting && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                            <Radio size={10} className="text-violet-400 animate-pulse" />
+                            <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wide">Live</span>
+                        </div>
+                    )}
+                    {onClose && (
+                        <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500 transition-colors"
+                            onClick={onClose}
+                        >
+                            <X size={14} />
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Body */}

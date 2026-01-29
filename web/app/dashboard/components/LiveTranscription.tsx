@@ -35,7 +35,7 @@ export function LiveTranscription() {
     const particles = Array.from({ length: 8 }, (_, i) => i);
 
     return (
-        <div className="w-full h-full min-h-[500px] relative overflow-hidden rounded-3xl glass transition-all duration-500">
+        <div className="w-full h-full relative overflow-hidden rounded-3xl glass transition-all duration-500">
 
             {/* Animated mesh gradient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -63,7 +63,7 @@ export function LiveTranscription() {
             </div>
 
             {/* Header */}
-            <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/5 backdrop-blur-xl bg-white/[0.02]">
+            <div className="relative z-10 flex items-center justify-between px-6 py-5 border-b border-white/5">
                 <div className="flex items-center gap-4">
                     {/* Animated icon container */}
                     <div className="relative">
@@ -102,7 +102,7 @@ export function LiveTranscription() {
                         </div>
                     )}
 
-                    <div className={`relative px-4 py-2 rounded-2xl bg-gradient-to-r ${messages.length > 0 ? 'from-emerald-500/15 via-teal-500/15 to-cyan-500/15 border-emerald-500/25' : 'bg-content-glass border-white/5'} border backdrop-blur-sm transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
+                    <div className={`relative px-4 py-2 rounded-2xl bg-gradient-to-r ${messages.length > 0 ? 'from-emerald-500/15 via-teal-500/15 to-cyan-500/15 border-emerald-500/25' : 'bg-white/5 border-white/10'} border backdrop-blur-sm transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
                         <span className={`text-xl font-bold tabular-nums ${messages.length > 0 ? 'text-emerald-400' : 'text-theme-secondary'}`}>
                             {animatedCount}
                         </span>
@@ -176,7 +176,7 @@ export function LiveTranscription() {
                     messages.map((msg, i) => (
                         <div
                             key={i}
-                            className="group relative flex items-start gap-4 p-4 rounded-2xl bg-content-glass hover:bg-white/5 border border-white/5 transition-all duration-300 backdrop-blur-sm animate-in slide-in-from-bottom-3 fade-in"
+                            className="group relative flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] hover:bg-white/5 border border-white/5 transition-all duration-300 backdrop-blur-sm animate-in slide-in-from-bottom-3 fade-in"
                             style={{
                                 animationDelay: `${Math.min(i * 30, 300)}ms`,
                                 animationDuration: '400ms'

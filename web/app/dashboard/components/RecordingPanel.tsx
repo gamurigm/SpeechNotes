@@ -32,7 +32,7 @@ export function RecordingPanel() {
 
     return (
         <div className="flex flex-col gap-2">
-            <Card className="shadow-lg border-none bg-content-glass backdrop-blur-xl">
+            <Card className="shadow-lg border-none glass backdrop-blur-xl">
                 <CardBody className="px-3 py-2">
                     <div className="flex items-center gap-2">
                         <Button

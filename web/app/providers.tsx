@@ -104,7 +104,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--theme-glass-bg', `rgba(255, 255, 255, ${glassOpacity / 100})`);
       root.style.setProperty('--theme-glass-border', 'rgba(0, 0, 0, 0.05)');
     } else {
-      root.style.setProperty('--theme-glass-bg', `rgba(15, 23, 42, ${Math.min(0.8, (glassOpacity / 100) * 2)})`);
+      root.style.setProperty('--theme-glass-bg', `rgba(0, 0, 0, ${glassOpacity / 100})`);
       root.style.setProperty('--theme-glass-border', 'rgba(255, 255, 255, 0.1)');
     }
 
@@ -116,7 +116,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
 
     localStorage.setItem('sn-bg-theme', theme);
-  }, [theme]);
+  }, [theme, glassOpacity]);
 
   // Apply glass opacity to root
   useEffect(() => {

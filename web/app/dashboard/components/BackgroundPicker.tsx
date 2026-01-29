@@ -44,7 +44,7 @@ export function BackgroundPicker() {
                     <Palette size={20} />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className={`p-3 backdrop-blur-2xl border rounded-2xl shadow-2xl ${isLight ? 'bg-white/90 border-slate-200' : 'bg-slate-900/90 border-white/10'
+            <PopoverContent className={`p-3 backdrop-blur-2xl border rounded-2xl shadow-2xl ${isLight ? 'glass' : 'glass-dark'
                 }`}>
                 <div className="space-y-3 w-56">
                     <div className="px-2 pt-1">

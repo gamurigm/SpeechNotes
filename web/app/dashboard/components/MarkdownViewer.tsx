@@ -191,7 +191,7 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                 </div>
             )}
 
-            <div className="flex justify-between items-center p-4 border-b border-white/10 bg-black/5 dark:bg-white/[0.03] backdrop-blur-md sticky top-0 z-10">
+            <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 z-10">
                 <div className="flex flex-col min-w-0">
                     <h2
                         className="text-lg font-bold text-[var(--foreground)] leading-tight text-glow-contrast"
@@ -243,9 +243,26 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 bg-content-glass">
+            <div className="flex-1 overflow-y-auto p-6">
                 {isEditing ? (
-                    <div data-color-mode="light" style={{ fontFamily }}>
+                    <div data-color-mode="light" style={{ fontFamily }} className="h-full">
+                        <style jsx global>{`
+                            .w-md-editor {
+                                background-color: transparent !important;
+                                border: none !important;
+                            }
+                            .w-md-editor-toolbar {
+                                background-color: rgba(0, 0, 0, 0.1) !important;
+                                border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+                            }
+                            .w-md-editor-content {
+                                background-color: transparent !important;
+                            }
+                            .w-md-editor-area {
+                                background-color: transparent !important;
+                                color: var(--foreground) !important;
+                            }
+                        `}</style>
                         <MDEditor value={editedContent} onChange={(val) => setEditedContent(val || '')} height="100%" preview="edit" style={{ fontFamily, fontSize: `${fontSize}px` }} />
                     </div>
                 ) : (

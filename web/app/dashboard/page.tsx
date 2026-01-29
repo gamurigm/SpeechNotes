@@ -60,6 +60,7 @@ export default function DashboardPage() {
     const [showChat, setShowChat] = useState(false);
     const [isChatExpanded, setIsChatExpanded] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
+    const [showMicTest, setShowMicTest] = useState(true);
 
     const toggleTool = (tool: string) => {
         setActiveTool(current => current === tool ? null : tool);
@@ -236,7 +237,7 @@ export default function DashboardPage() {
 
                 {/* Editor Container - Resizes to make room for chat */}
                 <div
-                    className={`flex-1 flex flex-col glass backdrop-blur-xl border border-white/10 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'
+                    className={`flex-1 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'
                         }`}
                 >
                     {/* Inner scaled content */}
@@ -262,7 +263,7 @@ export default function DashboardPage() {
                                         )}
                                     </div>
                                     {activeTool === 'calibrate' && (
-                                        <Card className="w-80 shadow-xl border-none"><CardBody className="p-4">
+                                        <Card className="w-80 shadow-xl border-none glass"><CardBody className="p-4">
                                             <div className="flex items-center justify-between mb-4">
                                                 <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Audio Setup</h4>
                                                 <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
@@ -275,7 +276,7 @@ export default function DashboardPage() {
                                         </CardBody></Card>
                                     )}
                                     {activeTool === 'format' && (
-                                        <Card className="w-64 shadow-xl border-none"><CardBody className="p-4">
+                                        <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
                                             <h5 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Refinement</h5>
                                             <div className="flex gap-2">
                                                 <Button size="sm" color="primary" className="flex-1 rounded-xl">Auto-Format</Button>
@@ -284,7 +285,7 @@ export default function DashboardPage() {
                                         </CardBody></Card>
                                     )}
                                     {activeTool === 'upload' && (
-                                        <Card className="w-64 shadow-xl border-none"><CardBody className="p-4">
+                                        <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
                                             <input ref={uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => setUploadFileName(e.target.files?.[0]?.name || null)} />
                                             <Button size="sm" variant="flat" className="w-full mb-3 rounded-xl" onClick={() => uploadInputRef.current?.click()}>Choose File</Button>
                                             <p className="text-[10px] text-slate-500 mb-3 truncate font-medium">{uploadFileName || 'No file selected'}</p>
@@ -321,11 +322,28 @@ export default function DashboardPage() {
                                 {showSidebar ? <PanelRightClose size={14} className="rotate-180" /> : <PanelRightOpen size={14} />}
                             </button>
 
-                            <aside className={`flex-shrink-0 space-y-4 overflow-y-auto overflow-x-hidden transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] p-4 opacity-100' : 'w-0 p-0 opacity-0 pointer-events-none'}`}>
-                                <div className="w-[388px]"> {/* 420px - p-4(32px) = 388px to avoid overflow */}
-                                    <MicTest />
-                                    <div className="h-4" />
-                                    <LiveTranscription />
+                            <aside className={`flex-shrink-0 transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] opacity-100' : 'w-0 opacity-0 pointer-events-none overflow-hidden'}`}>
+                                <div className="h-full flex flex-col p-4 gap-4">
+                                    {showMicTest ? (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <MicTest onClose={() => setShowMicTest(false)} />
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-start px-2">
+                                            <Button
+                                                size="sm"
+                                                variant="light"
+                                                className="text-[10px] font-bold uppercase tracking-widest text-slate-500/50 hover:text-slate-400 h-6 px-2 min-w-0"
+                                                onClick={() => setShowMicTest(true)}
+                                            >
+                                                Mostrar Mic Test
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 min-h-0">
+                                        <LiveTranscription />
+                                    </div>
                                 </div>
                             </aside>
 
