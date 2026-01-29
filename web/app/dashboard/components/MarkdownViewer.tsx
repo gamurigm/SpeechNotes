@@ -162,7 +162,7 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
     const displayTitle = title || 'Última Clase';
 
     return (
-        <div className="h-full flex flex-col bg-white rounded-lg shadow relative overflow-hidden" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
+        <div className="h-full flex flex-col glass backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
             <div
                 className="absolute top-3 left-3 z-[60] w-1.5 h-1.5 rounded-full bg-slate-200/50 hover:bg-indigo-500 hover:scale-[3] transition-all cursor-pointer shadow-sm group"
                 onClick={() => setShowStyleMenu((s) => !s)}
@@ -198,15 +198,15 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                 </div>
             )}
 
-            <div className="flex justify-between items-center p-4 border-b bg-white sticky top-0 z-10">
+            <div className="flex justify-between items-center p-4 border-b border-white/10 bg-black/5 dark:bg-white/[0.03] backdrop-blur-md sticky top-0 z-10">
                 <div className="flex flex-col min-w-0">
                     <h2
-                        className="text-lg font-bold text-slate-900 leading-tight"
+                        className="text-lg font-bold text-[var(--foreground)] leading-tight text-glow-contrast"
                         style={{ fontFamily, letterSpacing: '-0.02em', fontSize: `${Math.round(fontSize * 1.2)}px` }}
                     >
                         {displayTitle}
                     </h2>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-1">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--foreground)]/60 mt-1">
                         {extractedDate ? `Fecha: ${extractedDate}` : 'Transcripción reciente'}
                     </span>
                 </div>
@@ -214,34 +214,34 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                 <div className="flex items-center gap-2">
                     {nav && (
                         <div className="flex items-center gap-1.5 mr-2">
-                            <button onClick={nav.onPrev} disabled={!nav.hasPrev} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-all">
+                            <button onClick={nav.onPrev} disabled={!nav.hasPrev} className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 disabled:opacity-30 transition-all text-[var(--foreground)]">
                                 <ChevronLeft size={16} />
                             </button>
-                            <button onClick={nav.onNext} disabled={!nav.hasNext} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-all">
+                            <button onClick={nav.onNext} disabled={!nav.hasNext} className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 disabled:opacity-30 transition-all text-[var(--foreground)]">
                                 <ChevronRight size={16} />
                             </button>
                             {typeof nav.index === 'number' && (
-                                <span className="text-[10px] font-bold text-slate-500 ml-1">{nav.index + 1}/{nav.total}</span>
+                                <span className="text-[10px] font-bold text-[var(--foreground)]/60 ml-1">{nav.index + 1}/{nav.total}</span>
                             )}
                         </div>
                     )}
                     <div className="flex gap-1.5">
                         {isEditing ? (
                             <>
-                                <button onClick={handleCancel} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><X size={18} /></button>
+                                <button onClick={handleCancel} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
                                 <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-sm">{isSaving ? '...' : 'Guardar'}</button>
                             </>
                         ) : (
                             <>
-                                <button onClick={() => setIsEditing(true)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><Edit size={18} /></button>
-                                <button onClick={handleExportPdf} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"><Download size={18} /></button>
+                                <button onClick={() => setIsEditing(true)} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Edit size={18} /></button>
+                                <button onClick={handleExportPdf} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><Download size={18} /></button>
                             </>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 bg-content-glass">
                 {isEditing ? (
                     <div data-color-mode="light" style={{ fontFamily }}>
                         <MDEditor value={editedContent} onChange={(val) => setEditedContent(val || '')} height="100%" preview="edit" style={{ fontFamily, fontSize: `${fontSize}px` }} />
@@ -251,15 +251,15 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                                h1: (p) => <h1 style={{ fontSize: `${Math.round(fontSize * 1.5)}px` }} className="font-bold mt-4 mb-2 text-slate-900" {...p} />,
-                                h2: (p) => <h2 style={{ fontSize: `${Math.round(fontSize * 1.3)}px` }} className="font-bold mt-3 mb-2 text-slate-900" {...p} />,
-                                h3: (p) => <h3 style={{ fontSize: `${Math.round(fontSize * 1.15)}px` }} className="font-bold mt-2 mb-1 text-slate-800" {...p} />,
-                                p: (p) => <p style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }} className="text-slate-600 mb-3" {...p} />,
-                                ul: (p) => <ul className="list-disc list-inside space-y-1 mb-3 text-slate-600" {...p} />,
-                                ol: (p) => <ol className="list-decimal list-inside space-y-1 mb-3 text-slate-600" {...p} />,
+                                h1: (p) => <h1 style={{ fontSize: `${Math.round(fontSize * 1.5)}px` }} className="font-bold mt-4 mb-2 text-[var(--foreground)]" {...p} />,
+                                h2: (p) => <h2 style={{ fontSize: `${Math.round(fontSize * 1.3)}px` }} className="font-bold mt-3 mb-2 text-[var(--foreground)]" {...p} />,
+                                h3: (p) => <h3 style={{ fontSize: `${Math.round(fontSize * 1.15)}px` }} className="font-bold mt-2 mb-1 text-[var(--foreground)]/90" {...p} />,
+                                p: (p) => <p style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }} className="text-[var(--foreground)]/70 mb-3" {...p} />,
+                                ul: (p) => <ul className="list-disc list-inside space-y-1 mb-3 text-[var(--foreground)]/70" {...p} />,
+                                ol: (p) => <ol className="list-decimal list-inside space-y-1 mb-3 text-[var(--foreground)]/70" {...p} />,
                                 li: (p) => <li className="ml-1" {...p} />,
-                                strong: (p) => <strong className="font-bold text-slate-900" {...p} />,
-                                blockquote: (p) => <blockquote className="border-l-4 border-slate-200 pl-4 italic text-slate-500 my-4" {...p} />,
+                                strong: (p) => <strong className="font-bold text-[var(--foreground)]" {...p} />,
+                                blockquote: (p) => <blockquote className="border-l-4 border-white/10 pl-4 italic text-[var(--foreground)]/50 my-4" {...p} />,
                             }}
                         >
                             {content}

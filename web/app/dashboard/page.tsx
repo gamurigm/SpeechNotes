@@ -43,6 +43,8 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
     );
 };
 
+import { BackgroundPicker } from "./components/BackgroundPicker";
+
 export default function DashboardPage() {
     const [latestContent, setLatestContent] = useState('');
     const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
@@ -223,7 +225,7 @@ export default function DashboardPage() {
     }, [showAppZoomMenu]);
 
     return (
-        <div className="bg-[#08080a] min-h-screen overflow-hidden relative selection:bg-violet-500/30">
+        <div className="bg-transparent min-h-screen overflow-hidden relative selection:bg-violet-500/30">
             {/* Soft Ambient Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-violet-600/[0.03] rounded-full blur-[120px]" />
@@ -234,7 +236,7 @@ export default function DashboardPage() {
 
                 {/* Editor Container - Resizes to make room for chat */}
                 <div
-                    className={`flex-1 flex flex-col bg-slate-50 border border-slate-200 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'
+                    className={`flex-1 flex flex-col glass backdrop-blur-xl border border-white/10 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'
                         }`}
                 >
                     {/* Inner scaled content */}
@@ -246,6 +248,8 @@ export default function DashboardPage() {
                             <div className="max-w-7xl w-full flex items-center justify-center gap-6">
                                 <div className="flex flex-col gap-2 items-start">
                                     <div className="flex items-center gap-2">
+                                        <BackgroundPicker />
+                                        <div className="w-px h-6 bg-slate-200/50 mx-1" />
                                         <ZoomControl />
                                         {activeTool === null ? (
                                             <>

@@ -126,7 +126,7 @@ export function MicTest() {
     };
 
     return (
-        <div className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-700/40 shadow-xl">
+        <div className="w-full relative overflow-hidden rounded-2xl glass transition-all duration-500">
 
             {/* Subtle ambient glow */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -137,12 +137,12 @@ export function MicTest() {
             {/* Header */}
             <div className="relative z-10 flex items-center justify-between px-5 py-4 border-b border-slate-700/30">
                 <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${isTesting ? 'from-violet-500 to-indigo-600' : 'from-slate-700 to-slate-800'} shadow-lg transition-all duration-500`}>
+                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${isTesting ? 'from-violet-500 to-indigo-600' : 'bg-white/5'} shadow-lg transition-all duration-500`}>
                         <Mic size={18} className={`text-white ${isTesting ? 'animate-pulse' : ''}`} />
                     </div>
                     <div>
-                        <h3 className="text-sm font-semibold text-white">Prueba de Micrófono</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">Verifica tu entrada de audio</p>
+                        <h3 className="text-sm font-semibold text-theme-primary">Prueba de Micrófono</h3>
+                        <p className="text-[10px] text-theme-secondary font-medium">Verifica tu entrada de audio</p>
                     </div>
                 </div>
 
@@ -159,14 +159,14 @@ export function MicTest() {
 
                 {/* Status Message */}
                 {message && (
-                    <div className={`flex items-center gap-2.5 p-3 rounded-xl border backdrop-blur-sm ${status === 'success' ? 'bg-emerald-500/10 border-emerald-500/20' :
-                            status === 'error' ? 'bg-rose-500/10 border-rose-500/20' :
-                                'bg-slate-800/50 border-slate-700/30'
+                    <div className={`flex items-center gap-2.5 p-3 rounded-xl border backdrop-blur-sm ${status === 'success' ? 'bg-emerald-500/15 border-emerald-500/30' :
+                        status === 'error' ? 'bg-rose-500/15 border-rose-500/30' :
+                            'bg-content-glass border-white/5'
                         }`}>
                         {status === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
                         {status === 'error' && <AlertCircle size={16} className="text-rose-400" />}
                         {status === 'testing' && <Mic size={16} className="text-violet-400 animate-pulse" />}
-                        <span className="text-xs text-slate-300 font-medium">{message}</span>
+                        <span className="text-xs text-theme-primary font-medium">{message}</span>
                     </div>
                 )}
 
@@ -176,10 +176,10 @@ export function MicTest() {
                         {/* Current Level */}
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-medium text-slate-400">Nivel Actual</span>
+                                <span className="text-xs font-medium text-theme-secondary">Nivel Actual</span>
                                 <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${rmsLevel > 300 ? 'bg-emerald-500/20 text-emerald-400' :
-                                        rmsLevel > 150 ? 'bg-amber-500/20 text-amber-400' :
-                                            'bg-slate-700/50 text-slate-500'
+                                    rmsLevel > 150 ? 'bg-amber-500/20 text-amber-400' :
+                                        'bg-theme-secondary/20 text-theme-secondary'
                                     }`}>
                                     {rmsLevel}
                                 </span>
@@ -196,7 +196,7 @@ export function MicTest() {
                         {/* Peak Level */}
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-medium text-slate-400">Pico Detectado</span>
+                                <span className="text-xs font-medium text-theme-secondary">Pico Detectado</span>
                                 <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-400">
                                     {peakLevel}
                                 </span>
@@ -210,14 +210,14 @@ export function MicTest() {
                         </div>
 
                         {/* Threshold Info Card */}
-                        <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/30 space-y-1.5">
+                        <div className="p-3 rounded-xl bg-content-glass border border-white/5 space-y-1.5">
                             <div className="flex items-center gap-1.5">
-                                <Volume2 size={12} className="text-slate-500" />
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Umbrales de Referencia</span>
+                                <Volume2 size={12} className="text-theme-secondary" />
+                                <span className="text-[10px] font-bold text-theme-secondary uppercase tracking-wide">Umbrales de Referencia</span>
                             </div>
-                            <div className="text-[11px] text-slate-400 space-y-0.5">
-                                <p>🎙 <span className="text-slate-300">Voz:</span> &gt; 300 (inicio)</p>
-                                <p>🔇 <span className="text-slate-300">Silencio:</span> &lt; 150 (detener)</p>
+                            <div className="text-[11px] text-theme-secondary space-y-0.5">
+                                <p>🎙 <span className="text-theme-primary">Voz:</span> &gt; 300 (inicio)</p>
+                                <p>🔇 <span className="text-theme-primary">Silencio:</span> &lt; 150 (detener)</p>
                             </div>
                         </div>
                     </div>
@@ -227,8 +227,8 @@ export function MicTest() {
                 <button
                     onClick={isTesting ? stopMicTest : startMicTest}
                     className={`w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${isTesting
-                            ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-lg shadow-rose-500/25'
-                            : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25'
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-lg shadow-rose-500/25'
+                        : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-500/25'
                         }`}
                 >
                     <Mic size={16} />

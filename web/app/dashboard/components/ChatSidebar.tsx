@@ -135,7 +135,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
     };
 
     return (
-        <div className="h-full flex flex-col relative overflow-hidden rounded-[2.5rem] bg-slate-950/80 backdrop-blur-3xl shadow-[0_30px_100px_-20px_rgba(0,0,0,0.8)] border border-white/5 group transition-all duration-700">
+        <div className="h-full flex flex-col relative overflow-hidden rounded-[2.5rem] glass-dark shadow-[0_30px_100px_-20px_rgba(0,0,0,0.4)] transition-all duration-700">
 
             {/* Premium background effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -251,9 +251,9 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
 
                             <div className={`max-w-[90%] relative ${msg.role === 'user' ? 'text-right' : ''}`}>
                                 <div className={`px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed ${msg.role === 'user'
-                                    ? 'bg-violet-600/10 border border-violet-500/20 text-violet-50'
-                                    : 'bg-white/[0.03] border border-white/[0.05] text-slate-300'
-                                    } shadow-sm backdrop-blur-md chat-markdown`}>
+                                    ? 'bg-violet-600/30 border border-violet-400/30 text-white'
+                                    : 'glass text-[var(--foreground)]'
+                                    } shadow-sm chat-markdown text-glow-contrast font-medium`}>
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {msg.content}
                                     </ReactMarkdown>
@@ -290,7 +290,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             onChange={(e) => setInput(e.target.value)}
                             disabled={isLoading}
                             placeholder={activeDocId ? "Analizar documentos..." : "Esperando documento..."}
-                            className="w-full h-14 pl-6 pr-14 bg-white/[0.03] border border-white/[0.07] rounded-[1.25rem] text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all disabled:opacity-30 backdrop-blur-xl shadow-inner shadow-black/20"
+                            className="w-full h-14 pl-6 pr-14 glass rounded-[1.25rem] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground)]/40 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all disabled:opacity-30 shadow-inner shadow-black/20"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                             <Sparkles size={14} className={input ? "text-violet-400 animate-pulse" : "text-slate-700"} />
