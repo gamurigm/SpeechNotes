@@ -26,7 +26,8 @@ class SegmentDocumentStrategy:
 class RawContentStrategy:
     """Fallback strategy for raw text"""
     def render(self, doc: Dict, segments: List[Dict]) -> str:
-        return doc.get("raw_content") or doc.get("edited_content") or ""
+        # Priority: Edited > Formatted (as fallback) > Raw
+        return doc.get("edited_content") or doc.get("formatted_content") or doc.get("raw_content") or ""
 
 class ContentRenderer:
     """
@@ -40,8 +41,8 @@ class ContentRenderer:
         self.raw_strategy = RawContentStrategy()
 
     def render_transcription(self, doc: Dict, segments: List[Dict]) -> str:
-        # 1. Try Professional Format
-        if doc.get("is_formatted") and doc.get("formatted_content"):
+        # 1. Try Professional Format (if explicit flag or if content exists)
+        if doc.get("formatted_content") and (doc.get("is_formatted") or not doc.get("raw_content")):
             return self.formatted_strategy.render(doc, segments)
             
         # 2. Try Segment Reconstruction

@@ -34,12 +34,16 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
         <div className="relative group">
             <button
                 onClick={onClick}
-                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive
+                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 backdrop-blur-md ${isActive
                     ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
                     : isLight
-                        ? 'text-slate-600 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
-                        : 'text-slate-200 hover:text-white hover:bg-white/20 shadow-sm hover:shadow-md'
+                        ? 'text-slate-600 hover:text-black shadow-sm hover:shadow-md'
+                        : 'text-slate-200 hover:text-white shadow-sm hover:shadow-md'
                     } ${className}`}
+                style={{
+                    background: isActive ? undefined : 'var(--theme-glass-bg)',
+                    border: '1px solid var(--theme-glass-border)'
+                }}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
@@ -230,8 +234,19 @@ export default function DashboardPage() {
                         <div className="flex-1 flex overflow-hidden w-full px-4 relative">
                             {/* Panel Toggle Sidebar */}
                             <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] flex items-center group/nav">
-                                <button onClick={() => setShowSidebar(!showSidebar)} className={`relative flex items-center justify-center w-6 h-28 group/btn transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]`}>
-                                    <div className={`absolute inset-0 rounded-r-2xl border-y border-r transition-all duration-500 backdrop-blur-xl ${showSidebar ? 'bg-white/5 border-white/5 opacity-40 translate-x-[-12px]' : 'bg-white/10 border-indigo-500/30 opacity-100'}`} />
+                                <button
+                                    onClick={() => setShowSidebar(!showSidebar)}
+                                    className="relative flex items-center justify-center w-6 h-28 group/btn transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                                >
+                                    <div
+                                        className="absolute inset-0 rounded-r-2xl border-y border-r transition-all duration-500 backdrop-blur-xl"
+                                        style={{
+                                            background: showSidebar ? 'var(--theme-glass-bg)' : 'var(--theme-glass-bg)',
+                                            borderColor: showSidebar ? 'var(--theme-glass-border)' : 'rgba(99, 102, 241, 0.3)',
+                                            opacity: showSidebar ? '0.4' : '1',
+                                            transform: showSidebar ? 'translateX(-12px)' : 'translateX(0)'
+                                        }}
+                                    />
                                     <div className={`absolute left-0 w-[4px] h-14 rounded-full transition-all duration-500 ${showSidebar ? 'bg-white/5' : 'bg-gradient-to-b from-blue-400 via-indigo-500 to-violet-600 shadow-[2px_0_20px_rgba(99,102,241,1)]'}`} />
                                     <div className={`relative z-10 transition-all duration-700 transform flex items-center justify-center ${showSidebar ? 'opacity-0' : 'rotate-180 opacity-100 font-bold'}`}><ChevronLeft size={16} className="text-white" /></div>
                                 </button>
@@ -585,9 +600,19 @@ export default function DashboardPage() {
             >
                 <div className="relative">
                     <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-2xl group-hover:bg-violet-500/30 transition-all" />
-                    <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isLight ? 'bg-white border-slate-300 shadow-xl' : 'bg-black/90 border-white/20 shadow-2xl'}`}>
+                    <div
+                        className="relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-md"
+                        style={{
+                            background: 'var(--theme-glass-bg)',
+                            border: '1px solid var(--theme-glass-border)',
+                            boxShadow: isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                        }}
+                    >
                         <MessageCircle size={26} className={isLight ? 'text-black' : 'text-white'} />
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] border-black" />
+                        <div
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px]"
+                            style={{ borderColor: 'var(--background)' }}
+                        />
                     </div>
                 </div>
             </button>

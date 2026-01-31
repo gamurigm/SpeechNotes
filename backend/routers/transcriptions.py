@@ -48,7 +48,7 @@ async def list_transcriptions(limit: int = 50):
             "id": str(doc["_id"]),
             "filename": doc.get("filename"),
             "date": doc.get("date"),
-            "is_formatted": doc.get("is_formatted", False)
+            "is_formatted": doc.get("is_formatted", False) or bool(doc.get("formatted_content"))
         } for doc in items_raw]
         return {"items": items}
     except Exception as e:
@@ -57,25 +57,36 @@ async def list_transcriptions(limit: int = 50):
 @router.get("/search")
 async def search_transcriptions(q: str):
     """Global search using Repository logic"""
+    q = q.strip().strip("'").strip('"')
     if not q or len(q) < 2:
         return {"items": []}
     
     try:
+        print(f"[SEARCH] Query: '{q}'")
         res = repo.search(q)
         results = []
         
         # Format Document results
         for doc in res["documents"]:
-            content = doc.get("formatted_content", "") or ""
+            # Priority: Edited > Formatted > Raw
+            content = doc.get("edited_content") or doc.get("formatted_content") or doc.get("raw_content") or ""
             idx = content.lower().find(q.lower())
-            snippet = (content[max(0, idx-40):idx+60].replace("\n", " ") + "...") if idx != -1 else ""
+            
+            # Fallback to filename if not in content
+            display_text = content
+            if idx == -1:
+                display_text = doc.get("filename", "")
+                idx = display_text.lower().find(q.lower())
+            
+            snippet = (display_text[max(0, idx-40):idx+60].replace("\n", " ") + "...") if idx != -1 else ""
             
             results.append({
                 "id": str(doc["_id"]),
                 "filename": doc.get("filename"),
                 "date": doc.get("date"),
                 "snippet": snippet,
-                "type": "document"
+                "type": "document",
+                "is_formatted": doc.get("is_formatted", False) or bool(doc.get("formatted_content"))
             })
             
         # Format Segment results
@@ -114,7 +125,7 @@ async def get_transcription_by_id(transcription_id: str):
             "filename": doc.get("filename"),
             "date": doc.get("date"),
             "content": content,
-            "is_formatted": doc.get("is_formatted", False)
+            "is_formatted": doc.get("is_formatted", False) or bool(doc.get("formatted_content"))
         }
     except HTTPException:
         raise

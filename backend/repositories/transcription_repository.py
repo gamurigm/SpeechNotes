@@ -95,6 +95,8 @@ class TranscriptionRepository:
             "processed": True,
             "$or": [
                 {"formatted_content": regex_query},
+                {"raw_content": regex_query},
+                {"edited_content": regex_query},
                 {"filename": regex_query}
             ]
         }).limit(limit_docs)

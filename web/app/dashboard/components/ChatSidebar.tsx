@@ -193,7 +193,11 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         {/* Expand Toggle */}
                         <button
                             onClick={onToggleExpand}
-                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all duration-300 border border-white/5"
+                            className="p-2.5 rounded-xl hover:brightness-125 text-slate-400 hover:text-white transition-all duration-300 backdrop-blur-md"
+                            style={{
+                                background: 'var(--theme-glass-bg)',
+                                border: '1px solid var(--theme-glass-border)'
+                            }}
                             title={isExpanded ? "Contraer" : "Expandir"}
                         >
                             {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -202,10 +206,14 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         {/* Subtle Close Button */}
                         <button
                             onClick={onClose}
-                            className={`p-2.5 rounded-xl transition-all duration-300 border ${isLight
-                                ? 'bg-black/5 hover:bg-black/10 text-slate-600 hover:text-rose-600 border-black/5'
-                                : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-rose-400 border-white/5'
+                            className={`p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md ${isLight
+                                ? 'text-slate-600 hover:text-rose-600'
+                                : 'text-slate-300 hover:text-rose-400'
                                 }`}
+                            style={{
+                                background: 'var(--theme-glass-bg)',
+                                border: '1px solid var(--theme-glass-border)'
+                            }}
                         >
                             <X size={16} />
                         </button>
