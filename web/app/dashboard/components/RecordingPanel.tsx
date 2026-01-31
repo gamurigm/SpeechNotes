@@ -179,8 +179,8 @@ export function RecordingPanel() {
                                 </div>
                             </ModalBody>
                             <ModalFooter>
-                                <Button variant="light" color="default" onPress={onClose} className="font-semibold">
-                                    Continuar grabacion
+                                <Button variant="light" onPress={onClose} className="font-semibold text-slate-300 hover:text-white transition-colors">
+                                    Continuar grabación
                                 </Button>
                                 <Button
                                     className="bg-gradient-to-r from-rose-600 to-red-700 text-white font-bold shadow-lg shadow-rose-500/30"

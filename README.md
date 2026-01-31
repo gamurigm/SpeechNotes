@@ -2,7 +2,7 @@
 
 ¡Bienvenido a la revolución de la productividad! **SpeechNotes** no es solo una app de grabación; es tu asistente personal de inteligencia artificial que escucha, entiende y organiza todo lo que se dice por ti. 
 
-![Vista Previa de la App](./appCap-dfg6ks6.png)
+![Vista Previa de la App](./docs/assets/screenshots/app_preview.png)
 
 ---
 

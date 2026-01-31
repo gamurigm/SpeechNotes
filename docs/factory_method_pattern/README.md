@@ -62,7 +62,7 @@ AudioRecorder (Abstract)
 
 ## 📊 Diagrama UML
 
-![Factory Method Pattern - UML Diagram](factory_method_uml.png)
+![Factory Method Pattern - UML Diagram](../assets/screenshots/factory_method_uml.png)
 
 ### Componentes del Diagrama
 

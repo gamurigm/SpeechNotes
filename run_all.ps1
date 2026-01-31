@@ -1,5 +1,14 @@
 # Script to run both Backend and Frontend for SpeechNotes
 
+# Pre-check: MongoDB status
+$MongoService = Get-Service MongoDB -ErrorAction SilentlyContinue
+if ($MongoService -and $MongoService.Status -ne 'Running') {
+    Write-Host "⚠️ ADVERTENCIA: El servicio MongoDB no está iniciado." -ForegroundColor Red
+    Write-Host "Por favor, abre PowerShell como ADMINISTRADOR y corre: Start-Service MongoDB" -ForegroundColor Yellow
+} elseif (-not $MongoService) {
+    Write-Host "⚠️ ADVERTENCIA: No se encontró el servicio MongoDB instalado." -ForegroundColor Red
+}
+
 # 1. Kill potentially hanging processes (Optional, uncomment if needed)
 # Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\backend*" } | Stop-Process -Force
 # Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\web*" } | Stop-Process -Force

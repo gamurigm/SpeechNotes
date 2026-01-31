@@ -114,7 +114,6 @@ class NvidiaInferenceClient:
         except Exception as e:
             raise RuntimeError(f"Error generating response from NVIDIA NIM: {str(e)}")
     
-    @logfire.instrument
     def stream_generate(
         self,
         prompt: str,
@@ -150,19 +149,20 @@ class NvidiaInferenceClient:
         max_tok = max_tokens if max_tokens is not None else self.max_tokens
         
         try:
-            stream = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=messages,
-                temperature=temp,
-                top_p=tp,
-                max_tokens=max_tok,
-                stream=True,
-                **kwargs
-            )
-            
-            for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
+            with logfire.span("nvidia_stream_generate", prompt_preview=prompt[:50]):
+                stream = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=messages,
+                    temperature=temp,
+                    top_p=tp,
+                    max_tokens=max_tok,
+                    stream=True,
+                    **kwargs
+                )
+                
+                for chunk in stream:
+                    if chunk.choices[0].delta.content is not None:
+                        yield chunk.choices[0].delta.content
         
         except Exception as e:
             raise RuntimeError(f"Error streaming response from NVIDIA NIM: {str(e)}")

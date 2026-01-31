@@ -2,7 +2,7 @@
 
 ## 🎯 Diagrama del Flujo
 
-![LangGraph Workflow](../../../.gemini/antigravity/brain/e779b260-5999-4ff2-b2f3-3ad0bcb421a4/langgraph_workflow_diagram_1764422171514.png)
+![LangGraph Workflow](./assets/screenshots/langgraph_workflow.png)
 
 ## 📊 Estructura del Grafo
 

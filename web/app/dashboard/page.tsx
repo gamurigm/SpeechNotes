@@ -32,10 +32,10 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
             <button
                 onClick={onClick}
                 className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive
-                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
-                        : isLight
-                            ? 'text-slate-900 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
-                            : 'text-slate-200 hover:text-white hover:bg-white/10 shadow-sm hover:shadow-md'
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
+                    : isLight
+                        ? 'text-slate-900 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
+                        : 'text-slate-200 hover:text-white hover:bg-white/10 shadow-sm hover:shadow-md'
                     } ${className}`}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -63,6 +63,7 @@ export default function DashboardPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
     const { theme } = useBackground();
+    const isLight = theme === 'pure-light';
     const [mdZoom, setMdZoom] = useState(100);
     const [appZoom, setAppZoom] = useState(100);
     const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
@@ -106,20 +107,33 @@ export default function DashboardPage() {
         };
     }, [mdZoom]);
 
+    const messagesRef = useRef(messages);
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
+    // Initial load - Mount only
     useEffect(() => {
         loadTranscriptionsList();
+    }, []);
+
+    // Socket events - Mount only
+    useEffect(() => {
         const socket = getSocket();
-        socket.on('recording_stopped', (data) => {
-            const rawContent = messages.map(msg => `**${msg.timestamp}**\n${msg.text}`).join('\n\n');
-            setLatestContent(rawContent || '[Procesando transcripción...]');
-            setIsProcessing(true);
-            setTimeout(async () => {
-                await loadTranscriptionsList();
-                setIsProcessing(false);
-            }, 3000);
+        socket.on('recording_stopped', () => {
+            const currentMessages = messagesRef.current;
+            if (currentMessages.length > 0) {
+                const rawContent = currentMessages.map(msg => `**${msg.timestamp}**\n${msg.text}`).join('\n\n');
+                setLatestContent(rawContent);
+                setIsProcessing(true);
+                setTimeout(async () => {
+                    await loadTranscriptionsList();
+                    setIsProcessing(false);
+                }, 3000);
+            }
         });
         return () => { socket.off('recording_stopped'); };
-    }, [messages]);
+    }, []);
 
     const loadTranscriptionsList = async () => {
         setIsLoading(true);
@@ -205,16 +219,21 @@ export default function DashboardPage() {
                 <ZoomIn size={18} />
             </button>
             {showAppZoomMenu && (
-                <div onMouseDown={(e) => e.stopPropagation()} className="bg-white border border-slate-200 rounded-xl shadow-lg p-2 flex flex-col gap-2 min-w-[160px]">
+                <div
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className={`fixed mt-12 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-black/60 border-white/10'} backdrop-blur-xl border rounded-full shadow-2xl p-2 px-3 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200 z-50`}
+                >
                     <div className="flex items-center gap-2 px-1">
                         <input
                             type="range" min={50} max={145} step={1}
                             value={appZoom}
                             onChange={(e) => handleAppZoom(parseInt(e.target.value))}
-                            className="w-36 h-2 appearance-none cursor-pointer"
-                            style={{ background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((appZoom - 50) / 95) * 100}%, #dbeafe ${((appZoom - 50) / 95) * 100}%, #dbeafe 100%)` }}
+                            className="w-32 h-1.5 appearance-none cursor-pointer rounded-full"
+                            style={{
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((appZoom - 50) / 95) * 100}%, ${isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.1)'} ${((appZoom - 50) / 95) * 100}%, ${isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.1)'} 100%)`
+                            }}
                         />
-                        <div className="text-sm font-semibold text-blue-600 w-10 text-right">{appZoom}%</div>
+                        <div className={`text-xs font-black w-10 text-right ${isLight ? 'text-blue-700' : 'text-blue-400'}`}>{appZoom}%</div>
                     </div>
                 </div>
             )}
@@ -413,8 +432,8 @@ export default function DashboardPage() {
                 <div className="relative">
                     <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-2xl group-hover:bg-violet-500/30 transition-all" />
                     <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${theme === 'pure-light'
-                            ? 'bg-white border border-slate-300 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-slate-50'
-                            : 'bg-black/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:bg-slate-900'
+                        ? 'bg-white border border-slate-300 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-slate-50'
+                        : 'bg-black/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:bg-slate-900'
                         }`}>
                         <MessageCircle size={26} className={theme === 'pure-light' ? 'text-black group-hover:text-violet-900' : 'text-white group-hover:text-violet-200'} />
                         <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] ${theme === 'pure-light' ? 'border-white' : 'border-black'}`} />

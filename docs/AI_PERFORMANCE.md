@@ -13,7 +13,7 @@ El test más reciente (11:13:17) evaluó el modelo **Ministral 14B**, diseñado 
 | **DeepSeek V3.2** | **36.0s** | ✅ OK | Consistente, pero Devstral lo superó ligeramente. |
 
 ## 📈 Historial de Tiempos (Logfire)
-![Tiempos de Respuesta](./performance_audit.png)
+![Tiempos de Respuesta](./assets/screenshots/performance_audit.png)
 
 *Análisis de los últimos 5 minutos:*
 1. **11:13:17 (Ministral 14B)**: 34.5s - Un tiempo aceptable pero sorprendente que no fuera el más rápido siendo el más pequeño.

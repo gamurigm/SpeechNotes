@@ -50,6 +50,7 @@ class ChatResponse(BaseModel):
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "moonshotai/kimi-k2-thinking")
+LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
 
 # System prompt that enforces document-focused responses
 SYSTEM_PROMPT = """Eres Kimi, un asistente experto en analizar transcripciones de clases universitarias.
