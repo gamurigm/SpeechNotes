@@ -8,7 +8,9 @@ This module implements a chat agent using Pydantic AI that:
 """
 
 import os
+import asyncio
 import logging
+import time
 from typing import Optional
 from dataclasses import dataclass
 from dotenv import load_dotenv
@@ -44,12 +46,22 @@ class ChatResponse(BaseModel):
     referenced_doc: Optional[str] = None
 
 
+# Load environment variables
+# Look for .env in the current directory and up
+load_dotenv(os.path.join(os.getcwd(), '.env'))
+# Also look in one directory up (if running from backend/services)
+load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
+load_dotenv() # Fallback for any other standard search path
+
 # --- Agent Configuration ---
 
 # Get model configuration from environment
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+NVIDIA_API_KEY_THINKING = os.getenv("NVIDIA_API_KEY_THINKING")
+NVIDIA_API_KEY_FAST = os.getenv("NVIDIA_API_KEY_FAST")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY") # Keep for compatibility
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "moonshotai/kimi-k2-thinking")
+MODEL_NAME = os.getenv("MODEL_NAME", "moonshotai/kimi-k2.5")
+MODEL_NAME_FAST = os.getenv("MODEL_NAME_FAST", "nvidia/nvidia-nemotron-nano-9b-v2")
 LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
 
 # System prompt that enforces document-focused responses
@@ -196,13 +208,17 @@ async def chat_stream_direct(
     Direct streaming using OpenAI-compatible API.
     Fallback if Pydantic AI streaming has issues.
     """
-    if not NVIDIA_API_KEY:
-        yield "Error: NVIDIA_API_KEY not configured"
+    # Select model and key based on mode
+    current_model = MODEL_NAME if thinking else MODEL_NAME_FAST
+    current_key = NVIDIA_API_KEY_THINKING if thinking else NVIDIA_API_KEY_FAST
+    
+    if not current_key:
+        yield f"Error: API Key for {'Thinking' if thinking else 'Fast'} mode not configured"
         return
     
     client = AsyncOpenAI(
         base_url=NVIDIA_BASE_URL,
-        api_key=NVIDIA_API_KEY,
+        api_key=current_key,
     )
     
     # Build the prompt with document context
@@ -217,168 +233,109 @@ CONTENIDO:
 """
     
     try:
-        # Log the chat request with Logfire
-        if _logfire_available and logfire:
-            with logfire.span(
-                "chat_stream_direct",
-                doc_id=document.doc_id,
-                doc_filename=document.filename,
-                query_preview=query[:100],
-                model=MODEL_NAME,
-            ):
-                logfire.info(
-                    "Starting chat stream",
-                    doc_id=document.doc_id,
-                    query=query,
-                    content_length=len(document.content),
-                )
-                
-                # Conditional parameters based on model family
-                is_mistral = "mistral" in MODEL_NAME.lower()
-                is_devstral = "devstral" in MODEL_NAME.lower()
-                is_ministral = "ministral" in MODEL_NAME.lower()
-                is_nemotron_nano = "nemotron-nano" in MODEL_NAME.lower()
-                is_kimi_instruct = "kimi-k2-instruct" in MODEL_NAME.lower()
-                is_qwen = "qwen" in MODEL_NAME.lower()
-                
-                # Default parameters
-                temp = 1.0
-                top_p = 0.9
-                max_tokens = 16384
-                system_prefix = ""
-                
-                # Model-specific overrides
-                if is_qwen:
-                    temp, top_p, max_tokens = 0.6, 0.7, 4096
-                elif is_kimi_instruct:
-                    temp, top_p, max_tokens = 0.6, 0.9, 4096
-                elif is_nemotron_nano:
-                    temp, top_p, max_tokens = 0.6, 0.95, 2048
-                    if thinking: system_prefix = "/think"
-                elif is_devstral:
-                    temp, top_p, max_tokens = 0.15, 0.95, 8192
-                elif is_ministral:
-                    temp, top_p, max_tokens = 0.15, 1.0, 2048
-                elif is_mistral:
-                    temp, top_p, max_tokens = 0.20, 0.70, 512
+        # Default parameters
+        if not thinking:
+            # Nemotron Nano 9B v2 (Fast Mode) - Parametros exactos del snippet
+            temp = 0.6
+            top_p = 0.95
+            max_tokens = 2048
+            system_prefix = "/think"
+            completion_kwargs = {
+                "frequency_penalty": 0,
+                "presence_penalty": 0,
+                "extra_body": {
+                    "min_thinking_tokens": 1024,
+                    "max_thinking_tokens": 2048
+                }
+            }
+        else:
+            # Minimax M2 (Thinking Mode) - Optimized for high-quality reasoning
+            temp = 0.5
+            top_p = 0.9
+            max_tokens = 8192
+            system_prefix = ""
+            completion_kwargs = {}
 
-                completion_kwargs = {
-                    "model": MODEL_NAME,
-                    "messages": [
-                        {"role": "system", "content": f"{system_prefix}\n{system_msg}".strip()},
+        final_system_content = f"{system_prefix}\n{system_msg}".strip()
+        logger.info(f"Starting direct stream: model={current_model}, thinking={thinking}")
+        
+        # We'll use a queue to handle the stream and send heartbeats independently
+        queue = asyncio.Queue()
+        
+        async def stream_producer():
+            try:
+                # Execute chat stream
+                stream = await client.chat.completions.create(
+                    model=current_model,
+                    messages=[
+                        {"role": "system", "content": final_system_content},
                         {"role": "user", "content": query}
                     ],
-                    "temperature": temp,
-                    "top_p": top_p,
-                    "max_tokens": max_tokens,
-                    "stream": True
-                }
-                
-                # Special Extra Body parameters
-                if is_nemotron_nano and thinking:
-                    completion_kwargs["extra_body"] = {
-                        "min_thinking_tokens": 1024,
-                        "max_thinking_tokens": 2048
-                    }
-                elif is_devstral:
-                    completion_kwargs["seed"] = 42
-                elif not is_mistral and not is_kimi_instruct and ("deepseek" in MODEL_NAME.lower() or "kimi" in MODEL_NAME.lower()):
-                    completion_kwargs["extra_body"] = {
-                        "reasoning_budget": 16384 if thinking else 0,
-                        "chat_template_kwargs": {"enable_thinking": thinking, "thinking": thinking}
-                    }
-
-                stream = await client.chat.completions.create(**completion_kwargs)
-                
-                chunk_count = 0
+                    temperature=temp,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                    stream=True,
+                    **completion_kwargs
+                )
                 async for chunk in stream:
-                    if not getattr(chunk, "choices", None):
+                    await queue.put(chunk)
+                await queue.put(None) # End sentinel
+            except Exception as e:
+                logger.error(f"Error in stream producer: {e}")
+                await queue.put(e)
+
+        # Start the producer task
+        producer_task = asyncio.create_task(stream_producer())
+        start_time = time.time()
+        first_token_time = None
+        
+        try:
+            token_count = 0
+            while True:
+                try:
+                    # Wait for a chunk from the producer with a 5s timeout
+                    chunk = await asyncio.wait_for(queue.get(), timeout=5.0)
+                    
+                    if chunk is None:
+                        break # End of stream
+                        
+                    if isinstance(chunk, Exception):
+                        # The router expects content strings which it will wrap in JSON
+                        yield f"\n\n[Error: {str(chunk)}]"
+                        break
+
+                    if not chunk.choices:
                         continue
                         
                     delta = chunk.choices[0].delta
                     
-                    # Stream reasoning if available (DeepSeek/Kimi thinking)
+                    # If skipping reasoning tokens, we yield a periodic space 
+                    # to signal to the proxy that we are still alive.
                     reasoning = getattr(delta, "reasoning_content", None)
-                    if reasoning:
-                        yield reasoning
-                        
+                    if reasoning and not delta.content:
+                        # Heartbeat for reasoning tokens
+                        yield " "
+                        continue
+
                     if delta.content:
-                        chunk_count += 1
+                        if token_count == 0:
+                            first_token_time = time.time() - start_time
+                            logger.info(f"First content chunk received for {current_model} in {first_token_time:.2f}s")
+                            # Inform user about the delay if it's long
+                            if first_token_time > 10:
+                                yield f" [Tiempo de respuesta Kimi: {first_token_time:.1f}s]\n\n"
+                        token_count += 1
                         yield delta.content
-                
-                logfire.info(
-                    "Chat stream completed",
-                    doc_id=document.doc_id,
-                    chunks_sent=chunk_count,
-                )
-        else:
-            # No Logfire, just stream normally
-            # Conditional parameters same as above for the non-logfire branch
-            is_mistral = "mistral" in MODEL_NAME.lower()
-            is_devstral = "devstral" in MODEL_NAME.lower()
-            is_ministral = "ministral" in MODEL_NAME.lower()
-            is_nemotron_nano = "nemotron-nano" in MODEL_NAME.lower()
-            is_kimi_instruct = "kimi-k2-instruct" in MODEL_NAME.lower()
-            is_qwen = "qwen" in MODEL_NAME.lower()
-            
-            temp, top_p, max_tokens = 1.0, 0.9, 16384
-            system_prefix = ""
-            
-            if is_qwen:
-                temp, top_p, max_tokens = 0.6, 0.7, 4096
-            elif is_kimi_instruct:
-                temp, top_p, max_tokens = 0.6, 0.9, 4096
-            elif is_nemotron_nano:
-                temp, top_p, max_tokens = 0.6, 0.95, 2048
-                if thinking: system_prefix = "/think"
-            elif is_devstral:
-                temp, top_p, max_tokens = 0.15, 0.95, 8192
-            elif is_ministral:
-                temp, top_p, max_tokens = 0.15, 1.0, 2048
-            elif is_mistral:
-                temp, top_p, max_tokens = 0.20, 0.70, 512
-
-            completion_kwargs = {
-                "model": MODEL_NAME,
-                "messages": [
-                    {"role": "system", "content": f"{system_prefix}\n{system_msg}".strip()},
-                    {"role": "user", "content": query}
-                ],
-                "temperature": temp,
-                "top_p": top_p,
-                "max_tokens": max_tokens,
-                "stream": True
-            }
-            
-            # Special Extra Body parameters
-            if is_nemotron_nano and thinking:
-                completion_kwargs["extra_body"] = {
-                    "min_thinking_tokens": 1024,
-                    "max_thinking_tokens": 2048
-                }
-            elif is_devstral:
-                completion_kwargs["seed"] = 42
-            elif not is_mistral and not is_kimi_instruct and ("deepseek" in MODEL_NAME.lower() or "kimi" in MODEL_NAME.lower()):
-                completion_kwargs["extra_body"] = {
-                    "reasoning_budget": 16384 if thinking else 0,
-                    "chat_template_kwargs": {"enable_thinking": thinking, "thinking": thinking}
-                }
-
-            stream = await client.chat.completions.create(**completion_kwargs)
-            
-            async for chunk in stream:
-                if not getattr(chunk, "choices", None):
-                    continue
                     
-                delta = chunk.choices[0].delta
-                
-                # Stream reasoning if available
-                reasoning = getattr(delta, "reasoning_content", None)
-                if reasoning:
-                    yield reasoning
+                except asyncio.TimeoutError:
+                    # No chunk received in 5s - send a space to keep the connection alive
+                    logger.debug("Sending keep-alive heartbeat...")
+                    yield " "
                     
-                if delta.content:
-                    yield delta.content
+            logger.info(f"Direct stream finished: {current_model}, total tokens: {token_count}")
+        finally:
+            if not producer_task.done():
+                producer_task.cancel()
                 
     except Exception as e:
         logger.exception(f"Error in direct chat stream: {e}")

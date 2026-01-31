@@ -198,26 +198,21 @@ def save_audio_as_wav(audio_data_in: Any, output_path: Path, sample_rate: int = 
         print(f"[Audio] Error saving WAV: {e}")
         return False
 
-def transcribe_audio_chunk(audio_data: bytes, threshold: int = 50) -> str:
+def transcribe_audio_chunk(audio_data: bytes, threshold: int = 20) -> str:
     """
     Transcribe audio chunk using realtime.py transcriber
     
     Args:
-        audio_data: Raw audio bytes from browser
-        threshold: RMS threshold for silence detection
+        audio_data: Raw audio bytes (PCM)
+        threshold: RMS threshold to skip obvious silence chunks early
     
     Returns:
         Transcribed text
     """
-    # 1. Silence Detection (RMS Threshold)
+    # 1. Early Silence Detection (very low threshold)
     rms = calculate_rms(audio_data)
     
-    # Log RMS occasionally for debugging
-    if rms > 10:
-        # print(f"[Audio] RMS: {rms:.2f} (Threshold: {threshold})")
-        pass
-
-    # If RMS is below threshold, treat as silence
+    # If it's absolute silence, skip API call
     if rms < threshold:
         return ""
         
@@ -251,11 +246,13 @@ def register_socket_events(sio):
             "start_time": datetime.now(),
             "audio_chunks": [],      # Original WebM chunks
             "pcm_audio": b"",        # Converted PCM audio
-            "voice_threshold": 80,     # Lowered for more sensitivity (was 120)
-            "silence_threshold": 40,   # Lowered for more sensitivity (was 80)
-            "is_speaking": False,      # VAD state
-            "mic_gain": 1.5,           # Microphone gain
-            "active": False            # Recording state
+            "speech_buffer": b"",    # BUFFER: Accumulated speech for transcription
+            "silence_counter": 0,    # BUFFER: Count silent chunks to detect end of phrase
+            "voice_threshold": 80,   # Lowered for more sensitivity (was 120)
+            "silence_threshold": 40, # Lowered for more sensitivity (was 80)
+            "is_speaking": False,     # VAD state
+            "mic_gain": 1.5,          # Microphone gain
+            "active": False           # Recording state
         }
         
         # Initialize transcriber on first connection
@@ -290,6 +287,8 @@ def register_socket_events(sio):
             active_sessions[sid]["transcription_buffer"] = []
             active_sessions[sid]["audio_chunks"] = []
             active_sessions[sid]["pcm_audio"] = b""
+            active_sessions[sid]["speech_buffer"] = b""
+            active_sessions[sid]["silence_counter"] = 0
             active_sessions[sid]["is_speaking"] = False
             active_sessions[sid]["active"] = True
             
@@ -419,18 +418,44 @@ def register_socket_events(sio):
             if rms > voice_thresh:
                 session["is_speaking"] = True
                 is_speaking = True
+                session["silence_counter"] = 0
                 print(f"[VAD] Voice started (RMS: {rms:.0f} > {voice_thresh})")
         else:
             if rms < silence_thresh:
-                session["is_speaking"] = False
-                is_speaking = False
-                print(f"[VAD] Silence detected (RMS: {rms:.0f} < {silence_thresh})")
+                session["silence_counter"] += 1
+                # If we detect silence for 1 chunk (4 seconds), end the phrase
+                if session["silence_counter"] >= 1:
+                    session["is_speaking"] = False
+                    is_speaking = False
+                    print(f"[VAD] Phrase ended (Silence detected in 4s chunk)")
+            else:
+                session["silence_counter"] = 0
 
-        # Transcribe with realtime.py if speaking - now using PCM data
-        if is_speaking:
-            # Offload blocking transcription to a thread to avoid blocking the event loop
+        # BUFFER LOGIC: Accumulate data while speaking or during brief silence
+        if is_speaking or (session.get("speech_buffer") and session["silence_counter"] > 0):
+            session["speech_buffer"] += pcm_data
+            
+        # TRIGGER TRANSCRIPTION: 
+        # 1. When phrase just ended
+        # 2. Every 4 seconds (each chunk) if speaking, to give periodic updates
+        buffer_len_sec = len(session.get("speech_buffer", b"")) / (16000 * 2)
+        
+        should_transcribe = False
+        if not is_speaking and session.get("speech_buffer"):
+            should_transcribe = True
+        elif buffer_len_sec >= 4.0:
+            should_transcribe = True
+            # We keep speaking, but we want the update every 4s
+            print(f"[BUFFER] Periodic trigger: 4s reached")
+
+        if should_transcribe:
+            buffer_to_send = session["speech_buffer"]
+            session["speech_buffer"] = b"" # Reset immediately
+            session["silence_counter"] = 0
+            
             try:
-                text = await asyncio.to_thread(transcribe_audio_chunk, pcm_data, 0)
+                # Use offline_transcribe to get full phrase context and punctuation
+                text = await asyncio.to_thread(transcribe_audio_chunk, buffer_to_send, 0)
 
                 if text and text.strip():
                     # Add to buffer
@@ -448,12 +473,12 @@ def register_socket_events(sio):
                     except Exception as e_emit:
                         print(f"[Socket.IO] emit error: {e_emit}")
 
-                    print(f"[Socket.IO] Transcribed for {sid}: {text[:50]}...")
+                    print(f"[Socket.IO] Full Phrase for {sid}: {text[:100]}...")
                     with open("vad_debug.log", "a") as f:
-                        f.write(f"{datetime.now().isoformat()} - TRANSCRIPTION: {text}\n")
+                        f.write(f"{datetime.now().isoformat()} - PHRASE: {text}\n")
 
             except Exception as e:
-                print(f"[Socket.IO] Error transcribing chunk: {e}")
+                print(f"[Socket.IO] Error transcribing buffered segment: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -503,6 +528,19 @@ def register_socket_events(sio):
 
             if session.get("pcm_audio"):
                 await asyncio.to_thread(save_audio_as_wav, session["pcm_audio"], audio_path)
+
+            # 1. Transcribe any remaining speech in buffer
+            if session.get("speech_buffer"):
+                print(f"[Socket.IO] Transcribing remaining buffer for {sid}...")
+                try:
+                    text = await asyncio.to_thread(transcribe_audio_chunk, session["speech_buffer"], 0)
+                    if text and text.strip():
+                        session["transcription_buffer"].append({
+                            "timestamp": format_timestamp((datetime.now() - session["start_time"]).total_seconds()),
+                            "text": text
+                        })
+                except Exception as e:
+                    print(f"[Socket.IO] Error transcribing remaining buffer: {e}")
 
             # 2. Create markdown transcription (use thread for blocking formatter/write)
             all_transcripts = [

@@ -13,6 +13,7 @@ interface BackgroundContextType {
   setCustomBg: (url: string | null) => void;
   glassOpacity: number;
   setGlassOpacity: (opacity: number) => void;
+  themeType: 'light' | 'dark';
 }
 
 const BackgroundContext = createContext<BackgroundContextType | undefined>(undefined);
@@ -31,6 +32,10 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
     '--bg-gradient-spot-1': '#4f46e5',
     '--bg-gradient-spot-2': '#8b5cf6',
     '--bg-gradient-spot-3': '#0ea5e9',
+    '--foreground': '#ededed',
+    '--background': '#020617',
+    '--theme-type': 'dark',
+    '--theme-neon-color': '#0ea5e9'
   },
   midnight: {
     '--bg-color-1': '#08080a',
@@ -39,6 +44,10 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
     '--bg-gradient-spot-1': '#6d28d9',
     '--bg-gradient-spot-2': '#4338ca',
     '--bg-gradient-spot-3': '#312e81',
+    '--foreground': '#ededed',
+    '--background': '#08080a',
+    '--theme-type': 'dark',
+    '--theme-neon-color': '#a855f7'
   },
   emerald: {
     '--bg-color-1': '#022c22',
@@ -47,6 +56,10 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
     '--bg-gradient-spot-1': '#10b981',
     '--bg-gradient-spot-2': '#059669',
     '--bg-gradient-spot-3': '#34d399',
+    '--foreground': '#ededed',
+    '--background': '#022c22',
+    '--theme-type': 'dark',
+    '--theme-neon-color': '#10b981'
   },
   abyss: {
     '--bg-color-1': '#000000',
@@ -55,6 +68,10 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
     '--bg-gradient-spot-1': '#312e81',
     '--bg-gradient-spot-2': '#1e1b4b',
     '--bg-gradient-spot-3': '#0f172a',
+    '--foreground': '#ededed',
+    '--background': '#000000',
+    '--theme-type': 'dark',
+    '--theme-neon-color': '#3b82f6'
   },
   'pure-light': {
     '--bg-color-1': '#f8fafc',
@@ -65,8 +82,15 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
     '--bg-gradient-spot-3': '#c4b5fd',
     '--foreground': '#1e293b',
     '--background': '#ffffff',
+    '--theme-type': 'light',
+    '--theme-neon-color': '#6366f1'
   },
-  'custom': {} // Variables will be set by the custom logic
+  'custom': {
+    '--foreground': '#ededed',
+    '--background': '#08080a',
+    '--theme-type': 'dark',
+    '--theme-neon-color': '#8b5cf6'
+  }
 };
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -74,6 +98,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<BackgroundTheme>('cyberpunk');
   const [customBg, setCustomBgState] = useState<string | null>(null);
   const [glassOpacity, setGlassOpacityState] = useState<number>(10);
+  const [themeType, setThemeType] = useState<'light' | 'dark'>('dark');
 
   // Load theme and custom image from localStorage on mount
   useEffect(() => {
@@ -83,6 +108,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     if (savedTheme && (themeColors[savedTheme] || savedTheme === 'custom')) {
       setThemeState(savedTheme);
+      setThemeType(themeColors[savedTheme]['--theme-type'] as 'light' | 'dark');
     }
     if (savedCustomBg) {
       setCustomBgState(savedCustomBg);
@@ -95,25 +121,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Apply theme variables to root
   useEffect(() => {
     const root = document.documentElement;
+    const currentThemeProps = themeColors[theme];
+    const type = currentThemeProps['--theme-type'] as 'light' | 'dark';
+    setThemeType(type);
 
-    // Reset common variables that might change between light/dark
-    root.style.setProperty('--foreground', theme === 'pure-light' ? '#1e293b' : '#ededed');
-    root.setAttribute('data-theme', theme === 'pure-light' ? 'light' : 'dark');
+    // Apply all variables defined in themeColors
+    Object.entries(currentThemeProps).forEach(([property, value]) => {
+      root.style.setProperty(property, value);
+    });
 
-    if (theme === 'pure-light') {
-      root.style.setProperty('--theme-glass-bg', `rgba(255, 255, 255, ${glassOpacity / 100})`);
-      root.style.setProperty('--theme-glass-border', 'rgba(0, 0, 0, 0.05)');
-    } else {
-      root.style.setProperty('--theme-glass-bg', `rgba(0, 0, 0, ${glassOpacity / 100})`);
-      root.style.setProperty('--theme-glass-border', 'rgba(255, 255, 255, 0.1)');
-    }
+    // Set data-theme for third-party components (like HeroUI)
+    root.setAttribute('data-theme', type);
 
-    if (theme !== 'custom') {
-      const colors = themeColors[theme];
-      Object.entries(colors).forEach(([property, value]) => {
-        root.style.setProperty(property, value);
-      });
-    }
+    // Dynamic Glassmorphism Logic - Theme-Aware Tinting
+    // Using color-mix to blend the theme's specific background color with transparency
+    const presenceMultiplier = type === 'light' ? 1 : 0.7;
+    root.style.setProperty('--theme-glass-bg', `color-mix(in srgb, var(--background) ${glassOpacity * presenceMultiplier}%, transparent)`);
+    root.style.setProperty('--theme-glass-border', type === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.12)');
 
     localStorage.setItem('sn-bg-theme', theme);
   }, [theme, glassOpacity]);
@@ -143,7 +167,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <BackgroundContext.Provider value={{ theme, setTheme, customBg, setCustomBg, glassOpacity, setGlassOpacity }}>
+    <BackgroundContext.Provider value={{ theme, setTheme, customBg, setCustomBg, glassOpacity, setGlassOpacity, themeType }}>
       <HeroUIProvider navigate={router.push}>
         {children}
       </HeroUIProvider>

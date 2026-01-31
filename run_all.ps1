@@ -5,13 +5,23 @@ $MongoService = Get-Service MongoDB -ErrorAction SilentlyContinue
 if ($MongoService -and $MongoService.Status -ne 'Running') {
     Write-Host "⚠️ ADVERTENCIA: El servicio MongoDB no está iniciado." -ForegroundColor Red
     Write-Host "Por favor, abre PowerShell como ADMINISTRADOR y corre: Start-Service MongoDB" -ForegroundColor Yellow
-} elseif (-not $MongoService) {
+}
+elseif (-not $MongoService) {
     Write-Host "⚠️ ADVERTENCIA: No se encontró el servicio MongoDB instalado." -ForegroundColor Red
 }
 
-# 1. Kill potentially hanging processes (Optional, uncomment if needed)
-# Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\backend*" } | Stop-Process -Force
-# Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\web*" } | Stop-Process -Force
+# 1. Kill potentially hanging processes
+Write-Host "🧹 Limpiando procesos anteriores..." -ForegroundColor Gray
+# Kill processes by name/path
+Get-Process python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\backend*" -or $_.CommandLine -like "*backend/main.py*" } | Stop-Process -Force
+Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "*p\web*" } | Stop-Process -Force
+Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# Kill anything listening on backend port 8001
+$portProcess = Get-NetTCPConnection -LocalPort 8001 -ErrorAction SilentlyContinue
+if ($portProcess) {
+    $portProcess | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+}
 
 Write-Host "🚀 Iniciando SpeechNotes..." -ForegroundColor Cyan
 

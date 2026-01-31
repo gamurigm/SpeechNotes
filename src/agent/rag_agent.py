@@ -295,9 +295,7 @@ class RagAgent:
             for chunk in stream:
                 if not chunk.choices: continue
                 delta = chunk.choices[0].delta
-                reasoning = getattr(delta, "reasoning_content", None)
-                if reasoning:
-                    yield reasoning
+                # Skip reasoning_content as it's not needed by the user
                 if delta.content:
                     yield delta.content
                     

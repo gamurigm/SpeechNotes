@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText, Type } from 'lucide-react';
+import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText, Type, Trash2, Sparkles } from 'lucide-react';
 import { useBackground } from '../../providers';
 import dynamic from 'next/dynamic';
 
@@ -15,6 +15,7 @@ const MDEditor = dynamic(
 interface Props {
     content: string;
     onSave: (content: string) => Promise<void>;
+    onDelete?: () => Promise<void>;
     nav?: {
         onPrev?: () => void;
         onNext?: () => void;
@@ -22,18 +23,21 @@ interface Props {
         hasNext?: boolean;
         index?: number;
         total?: number;
+        onJump?: (index: number) => void;
     };
     title?: string;
     zoomLevel?: number;
+    isFormatted?: boolean;
 }
 
-export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }: Props) {
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLevel = 100, isFormatted }: Props) {
+    const { themeType } = useBackground();
+    const isLight = themeType === 'light';
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
     const [showStyleMenu, setShowStyleMenu] = useState(false);
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
 
     // Font style state
@@ -56,6 +60,17 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
     const handleCancel = () => {
         setEditedContent(content);
         setIsEditing(false);
+    };
+
+    const handleDelete = async () => {
+        if (!onDelete) return;
+        if (!isConfirmingDelete) {
+            setIsConfirmingDelete(true);
+            setTimeout(() => setIsConfirmingDelete(false), 3000);
+            return;
+        }
+        await onDelete();
+        setIsConfirmingDelete(false);
     };
 
     const handleExportPdf = () => {
@@ -143,6 +158,24 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
     };
 
     useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (isEditing) return;
+
+            // Ignore if the focus is on an input, textarea or contenteditable
+            const target = e.target as HTMLElement;
+            const isInput = target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable;
+            if (isInput) return;
+
+            if (e.key === 'ArrowLeft' && nav?.onPrev && nav.hasPrev) nav.onPrev();
+            if (e.key === 'ArrowRight' && nav?.onNext && nav.hasNext) nav.hasNext && nav.onNext();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [nav, isEditing]);
+
+    useEffect(() => {
         const onDocClick = (ev: MouseEvent) => {
             if (!showStyleMenu) return;
             if (menuRef.current && !menuRef.current.contains(ev.target as Node)) setShowStyleMenu(false);
@@ -196,14 +229,22 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
 
             <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 z-10">
                 <div className="flex flex-col min-w-0">
-                    <h2
-                        className="text-lg font-bold text-[var(--foreground)] leading-tight text-glow-contrast"
-                        style={{ fontFamily, letterSpacing: '-0.02em', fontSize: `${Math.round(fontSize * 1.2)}px` }}
-                    >
-                        {displayTitle}
-                    </h2>
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--foreground)]/60 mt-1">
-                        {extractedDate ? `Fecha: ${extractedDate}` : 'Transcripción reciente'}
+                    <div className="flex items-center gap-2">
+                        <h2
+                            className="text-lg font-black tracking-tighter leading-tight title-semi-neon"
+                            style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.3)}px` }}
+                        >
+                            {displayTitle}
+                        </h2>
+                        {isFormatted && (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+                                <Sparkles size={11} className="text-violet-400 animate-pulse" />
+                                <span className="text-[10px] font-black text-violet-300 uppercase tracking-widest">AI Formatted</span>
+                            </div>
+                        )}
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--foreground)]/50 mt-1.5 block">
+                        {extractedDate ? `• ${extractedDate} •` : '• Transcripción Reciente •'}
                     </span>
                 </div>
 
@@ -239,6 +280,29 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                                     </button>
                                 </div>
                                 <button onClick={() => setIsEditing(true)} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Edit size={18} /></button>
+                                {onDelete && (
+                                    <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-1 rounded-xl border border-rose-500/20' : 'gap-0'}`}>
+                                        {isConfirmingDelete && (
+                                            <button
+                                                onClick={() => setIsConfirmingDelete(false)}
+                                                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-slate-400 transition-colors"
+                                                title="Cancelar"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={handleDelete}
+                                            className={`p-2 rounded-lg transition-all ${isConfirmingDelete
+                                                ? 'bg-rose-500 text-white shadow-lg'
+                                                : 'text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10'
+                                                }`}
+                                            title={isConfirmingDelete ? "Confirmar eliminación" : "Eliminar clase"}
+                                        >
+                                            <Trash2 size={isConfirmingDelete ? 16 : 18} />
+                                        </button>
+                                    </div>
+                                )}
                                 <button onClick={handleExportPdf} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Download size={18} /></button>
                             </>
                         )}
@@ -289,6 +353,23 @@ export function MarkdownViewer({ content, onSave, nav, title, zoomLevel = 100 }:
                     </div>
                 )}
             </div>
+
+            {/* Premium Minimal Navigator Scrubber */}
+            {!isEditing && nav && nav.total && nav.total > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1.5 glass rounded-full border border-white/10 shadow-lg scale-90 hover:scale-100 transition-all duration-300 opacity-40 hover:opacity-100 group/nav">
+                    {Array.from({ length: nav.total }).map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => nav.onJump?.(i)}
+                            className={`h-1 rounded-full transition-all duration-300 ${i === nav.index
+                                ? 'w-6 bg-[var(--theme-neon-color)] shadow-[0_0_8px_var(--theme-neon-color)]'
+                                : 'w-2 bg-white/20 hover:bg-white/40'
+                                }`}
+                            title={`Clase ${i + 1}`}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

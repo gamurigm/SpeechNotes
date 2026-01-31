@@ -18,13 +18,14 @@ interface ChatSidebarProps {
     activeDocName?: string;  // Display name (filename)
     activeFile?: string;     // DEPRECATED: kept for backwards compat
     isExpanded?: boolean;
+    isFormatted?: boolean;
     onToggleExpand?: () => void;
     onClose?: () => void;
 }
 
-export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded, onToggleExpand, onClose }: ChatSidebarProps) {
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded, isFormatted, onToggleExpand, onClose }: ChatSidebarProps) {
+    const { theme, themeType } = useBackground();
+    const isLight = themeType === 'light';
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -138,8 +139,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
     };
 
     return (
-        <div className={`h-full flex flex-col relative overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_-20px_rgba(0,0,0,0.4)] transition-all duration-700 ${isLight ? 'glass border-slate-200/50' : 'glass-dark border-white/5'
-            } border`}>
+        <div className={`h-full flex flex-col relative overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_-20px_rgba(0,0,0,0.4)] transition-all duration-700 glass border-white/10 border`}>
 
             {/* Premium background effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -159,13 +159,13 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
                         </div>
                         <div>
-                            <h3 className={`text-lg font-bold tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                Kimi Intelligence
-                                <Sparkles size={14} className={isLight ? 'text-violet-600' : 'text-violet-400'} />
+                            <h3 className={`text-[19px] font-bold tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                Intelligence Hub
+                                <Sparkles size={14} className={isLight ? 'text-indigo-600' : 'text-violet-400'} />
                             </h3>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                                <span className={`text-[10px] uppercase tracking-widest font-black ${isLight ? 'text-slate-500' : 'text-slate-400/80'}`}>Active Context</span>
+                                <span className={`text-[11px] uppercase tracking-widest font-black ${isLight ? 'text-slate-500' : 'text-slate-300'}`}>Active Context</span>
                             </div>
                         </div>
                     </div>
@@ -174,14 +174,18 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         {/* Thinking Pill Toggle */}
                         <button
                             onClick={() => setUseThinking(!useThinking)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-500 ${useThinking
-                                ? (isLight ? 'bg-violet-500/10 border-violet-500/20 text-violet-700 shadow-sm' : 'bg-violet-500/10 border-violet-500/20 text-violet-400 shadow-[0_0_20px_rgba(139,92,246,0.1)]')
-                                : (isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white/5 border-white/5 text-slate-500 opacity-50')
-                                } hover:opacity-100`}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-500 ${useThinking
+                                ? (isLight ? 'bg-violet-100 border-violet-200 text-violet-700' : 'bg-[var(--theme-neon-color)]/20 border-[var(--theme-neon-color)]/40 text-[var(--theme-neon-color)]')
+                                : (isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white/5 border-white/10 text-slate-400')
+                                } hover:scale-105 active:scale-95 shadow-sm`}
                             title={useThinking ? "Desactivar análisis profundo (Más rápido)" : "Activar análisis profundo (Más inteligente)"}
                         >
-                            <Sparkles size={10} className={useThinking ? 'animate-pulse' : ''} />
-                            <span className="text-[8px] font-black uppercase tracking-[0.15em]">{useThinking ? 'Thinking' : 'Fast'}</span>
+                            <Sparkles
+                                size={12}
+                                className={useThinking ? 'animate-pulse' : 'text-slate-400'}
+                                style={{ color: useThinking ? 'var(--theme-neon-color)' : undefined }}
+                            />
+                            <span className="text-[11px] font-bold uppercase tracking-wider">{useThinking ? 'Thinking' : 'Fast'}</span>
                         </button>
 
                         <div className="w-px h-4 bg-white/5 mx-1" />
@@ -198,7 +202,10 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         {/* Subtle Close Button */}
                         <button
                             onClick={onClose}
-                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-rose-400 transition-all duration-300 border border-white/5"
+                            className={`p-2.5 rounded-xl transition-all duration-300 border ${isLight
+                                ? 'bg-black/5 hover:bg-black/10 text-slate-600 hover:text-rose-600 border-black/5'
+                                : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-rose-400 border-white/5'
+                                }`}
                         >
                             <X size={16} />
                         </button>
@@ -209,13 +216,15 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                 <div className="mt-4 flex items-center gap-3 py-2 px-4 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-md">
                     <FileText size={16} className={activeDocId ? "text-violet-400" : "text-slate-600"} />
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-[14px] font-bold text-slate-500 truncate">
+                        <p className={`text-[15px] font-bold truncate ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
                             {displayName || 'Selecciona un documento'}
                         </p>
                     </div>
                     {activeDocId && (
-                        <div className="px-1.5 py-0.5 rounded-md bg-emerald-500/5 border border-emerald-500/10">
-                            <span className="text-[11px] font-black text-emerald-500/80 uppercase tracking-tighter">Verified</span>
+                        <div className={`px-1.5 py-0.5 rounded-md ${isFormatted ? 'bg-violet-500/10 border-violet-500/20' : 'bg-emerald-500/5 border-emerald-500/10'}`}>
+                            <span className={`text-[12px] font-black uppercase tracking-tighter ${isFormatted ? 'text-violet-400' : 'text-emerald-500/80'}`}>
+                                {isFormatted ? 'AI Formatted' : 'Verified'}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -232,8 +241,8 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             <Bot size={40} className="text-violet-400/80" />
                             <div className="absolute inset-0 rounded-[2rem] bg-violet-500/10 blur-2xl animate-pulse" />
                         </div>
-                        <h4 className="text-white font-bold text-lg mb-2">Asistente de Clase</h4>
-                        <p className="text-slate-500 text-sm leading-relaxed max-w-[240px]">
+                        <h4 className={`font-bold text-[21px] mb-2 title-semi-neon`}>Asistente de Clase</h4>
+                        <p className={`text-[15px] leading-relaxed max-w-[250px] ${isLight ? 'text-slate-600' : 'text-slate-300'} font-medium text-glow-contrast`}>
                             {activeDocId
                                 ? "Estoy listo para responder preguntas sobre la clase seleccionada."
                                 : "Selecciona una transcripción para comenzar el análisis inteligente."
@@ -254,15 +263,70 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             </div>
 
                             <div className={`max-w-[90%] relative ${msg.role === 'user' ? 'text-right' : ''}`}>
-                                <div className={`px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed ${msg.role === 'user'
+                                <div className={`px-5 py-4 rounded-[1.5rem] text-[15px] leading-relaxed ${msg.role === 'user'
                                     ? 'bg-violet-600/30 border border-violet-400/30 text-white'
                                     : 'glass text-[var(--foreground)]'
-                                    } shadow-sm chat-markdown text-glow-contrast font-medium`}>
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {msg.content}
-                                    </ReactMarkdown>
+                                    } shadow-sm chat-markdown font-medium`}>
+
+                                    {/* Handle [Analizando: ...] prefix */}
+                                    {msg.content.includes('[Analizando:') && msg.role === 'assistant' && (
+                                        <div className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 w-fit">
+                                            <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Analizando Documento</span>
+                                        </div>
+                                    )}
+
+                                    {(() => {
+                                        const content = msg.content.replace(/\[Analizando:.*?\]/, '').trim();
+                                        const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                                        const hasThinking = !!thinkMatch;
+                                        const thinkingContent = thinkMatch ? thinkMatch[1].trim() : '';
+                                        const restContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
+
+                                        return (
+                                            <>
+                                                {hasThinking && (
+                                                    <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-white/10 border-l-4 border-l-violet-500/50 italic text-[13px] text-[var(--foreground)]/60 leading-relaxed">
+                                                        <div className="flex items-center gap-2 mb-2 opacity-60">
+                                                            <Sparkles size={12} className="text-violet-400" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">Razonamiento Interno</span>
+                                                        </div>
+                                                        {thinkingContent}
+                                                        {!content.includes('</think>') && <span className="animate-pulse ml-1 inline-block">...</span>}
+                                                    </div>
+                                                )}
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        h1: ({ node, ...props }) => <h1 className={`text-2xl font-black mb-4 border-b ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 text-white title-semi-neon'} pb-2`} {...props} />,
+                                                        h2: ({ node, ...props }) => <h2 className={`text-xl font-bold mb-3 mt-6 ${isLight ? 'text-slate-900' : 'text-white title-semi-neon'}`} {...props} />,
+                                                        h3: ({ node, ...props }) => <h3 className={`text-lg font-bold mb-3 mt-6 px-3 py-1 rounded-lg border-l-4 border-violet-500 shadow-sm ${isLight ? 'text-violet-950 bg-violet-100' : 'text-violet-200 bg-violet-500/10'}`} {...props} />,
+                                                        p: ({ node, ...props }) => <p className={`mb-4 last:mb-0 leading-[1.8] ${isLight ? 'text-slate-900' : 'text-slate-200'} font-medium`} {...props} />,
+                                                        ul: ({ node, ...props }) => <ul className="space-y-3 mb-4 mt-2" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="space-y-3 mb-4 mt-2 list-decimal list-inside" {...props} />,
+                                                        li: ({ node, ...props }) => (
+                                                            <li className="flex items-start gap-3">
+                                                                <span className={`mt-2.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLight ? 'bg-violet-600 shadow-[0_0_5px_rgba(124,58,237,0.3)]' : 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'}`} />
+                                                                <span className={`flex-1 text-[15px] ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{props.children}</span>
+                                                            </li>
+                                                        ),
+                                                        strong: ({ node, ...props }) => (
+                                                            <strong className={`font-black ${isLight ? 'text-indigo-950 bg-indigo-100 underline decoration-indigo-200 decoration-1 underline-offset-2' : 'text-white text-glow-contrast bg-white/10'} px-1.5 py-0.5 rounded-md`} {...props} />
+                                                        ),
+                                                        blockquote: ({ node, ...props }) => (
+                                                            <blockquote className={`my-6 p-5 rounded-2xl border-l-4 border-l-indigo-500 shadow-sm ${isLight ? 'bg-slate-100 border-slate-200 text-slate-700 italic' : 'bg-indigo-500/5 border-indigo-500/10 text-slate-400 italic shadow-inner'}`} {...props} />
+                                                        ),
+                                                        code: ({ node, ...props }) => <code className={`px-2 py-0.5 rounded-lg font-mono text-[0.85em] border ${isLight ? 'bg-slate-200 text-indigo-700 border-indigo-200' : 'bg-violet-500/10 text-violet-300 border-violet-500/20'}`} {...props} />,
+                                                        hr: () => <hr className={`my-8 border-none h-px ${isLight ? 'bg-slate-300' : 'bg-gradient-to-r from-transparent via-white/10 to-transparent'}`} />,
+                                                    }}
+                                                >
+                                                    {restContent}
+                                                </ReactMarkdown>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
-                                <span className="block mt-1 text-[8px] font-bold uppercase text-slate-700 tracking-widest opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                                <span className="block mt-1 text-[9px] font-bold uppercase text-slate-700 tracking-widest opacity-0 group-hover/msg:opacity-100 transition-opacity">
                                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
@@ -277,7 +341,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         </div>
                         <div className="flex-1 py-4 px-5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3">
                             <Loader2 size={16} className="text-violet-500 animate-spin" />
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Generating context...</span>
+                            <span className={`text-[13px] font-black ${isLight ? 'text-slate-600' : 'text-slate-200'} uppercase tracking-widest text-glow-contrast`}>Generating context...</span>
                         </div>
                     </div>
                 )}
@@ -294,7 +358,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                             onChange={(e) => setInput(e.target.value)}
                             disabled={isLoading}
                             placeholder={activeDocId ? "Analizar documentos..." : "Esperando documento..."}
-                            className="w-full h-14 pl-6 pr-14 glass rounded-[1.25rem] text-sm text-[var(--foreground)] placeholder:text-[var(--foreground)]/40 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all disabled:opacity-30 shadow-inner shadow-black/20"
+                            className="w-full h-14 pl-6 pr-14 glass rounded-[1.25rem] text-[15px] text-[var(--foreground)] placeholder:text-[var(--foreground)]/40 focus:outline-none focus:border-violet-500/50 focus:ring-4 focus:ring-violet-500/5 transition-all disabled:opacity-30 shadow-inner shadow-black/20"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                             <Sparkles size={14} className={input ? "text-violet-400 animate-pulse" : "text-slate-700"} />

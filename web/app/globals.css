@@ -68,11 +68,10 @@
   --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #08080a;
-    --foreground: #ededed;
-  }
+/* Base fallback - will be overridden by Providers.tsx */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -94,7 +93,7 @@ body {
    ───────────────────────────────────────────────────────────── */
 
 ::selection {
-  background: rgba(139, 92, 246, 0.3);
+  background: color-mix(in srgb, var(--theme-neon-color) 30%, transparent);
   color: inherit;
 }
 
@@ -174,8 +173,8 @@ button:active:not(:disabled),
 .mesh-ball {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.4;
+  filter: blur(120px);
+  opacity: 0.6;
   mix-blend-mode: screen;
   pointer-events: none;
   transition: background 1s ease;
@@ -257,17 +256,56 @@ button:active:not(:disabled),
 }
 
 .glass-dark {
-  background: var(--theme-glass-bg, rgba(0, 0, 0, var(--glass-opacity, 0.15)));
+  background: var(--theme-glass-bg, rgba(255, 255, 255, 0.05));
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
+/* Specific refinement for module containers to ensure they aren't "too black" */
+.glass-module {
+  background: var(--theme-glass-bg);
+  backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--theme-glass-border);
+  box-shadow: var(--shadow-elevated);
+}
+
 /* Contrast Utilities */
 .text-glow-contrast {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 255, 255, 0.1);
 }
+
+.label-technical {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--foreground);
+  opacity: 0.9;
+  text-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.label-technical::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--theme-neon-color);
+}
+
+.title-semi-neon {
+  color: var(--foreground);
+  text-shadow: none;
+  opacity: 1;
+  letter-spacing: -0.02em;
+  transition: all 0.3s ease;
+}
+
+
 
 /* Utility Animations */
 @keyframes soft-pulse {
@@ -303,7 +341,7 @@ button:active:not(:disabled),
 }
 
 .bg-content-glass {
-  background: rgba(0, 0, 0, calc(var(--glass-opacity, 0.05) * 0.1));
+  background: var(--theme-glass-bg);
   transition: background 0.3s ease;
 }
 
@@ -312,15 +350,8 @@ button:active:not(:disabled),
 }
 
 .text-theme-secondary {
-  color: var(--slate-500);
-}
-
-[data-theme='dark'] .text-theme-secondary {
-  color: var(--slate-400);
-}
-
-[data-theme='light'] .bg-content-glass {
-  background: rgba(0, 0, 0, calc(var(--glass-opacity, 0.02) * 0.1));
+  color: var(--foreground);
+  opacity: 0.6;
 }
 
 /* ─────────────────────────────────────────────────────────────

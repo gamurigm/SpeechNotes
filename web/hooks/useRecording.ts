@@ -20,8 +20,8 @@ export function useRecording() {
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
     const [gainNode, setGainNode] = useState<GainNode | null>(null);
     const [gainValue, setGainValue] = useState(1.0);
-    const [voiceThreshold, setVoiceThreshold] = useState(150);
-    const [silenceThreshold, setSilenceThreshold] = useState(80);
+    const [voiceThreshold, setVoiceThreshold] = useState(100);
+    const [silenceThreshold, setSilenceThreshold] = useState(60);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -122,10 +122,10 @@ export function useRecording() {
             const bufferSize = 4096;
             const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
-            // Accumulator to send ~1 second of audio at a time
+            // Accumulator to send ~4 seconds of audio at a time
             let pcmAccumulator: Int16Array[] = [];
             let samplesAccumulated = 0;
-            const samplesPerSecond = 16000;
+            const samplesPerSecond = 64000;
 
             scriptProcessor.onaudioprocess = (event) => {
                 if (!socket.connected) return;
@@ -142,7 +142,7 @@ export function useRecording() {
                 pcmAccumulator.push(pcmData);
                 samplesAccumulated += pcmData.length;
 
-                // Send approximately every second of audio
+                // Send approximately every 4 seconds of audio
                 if (samplesAccumulated >= samplesPerSecond) {
                     // Combine all accumulated chunks
                     const totalLength = pcmAccumulator.reduce((acc, arr) => acc + arr.length, 0);
@@ -214,6 +214,7 @@ export function useRecording() {
         }
 
         setIsRecording(false);
+        setMessages([]);
         setDuration(0);
         setAnalyser(null);
     }, []);

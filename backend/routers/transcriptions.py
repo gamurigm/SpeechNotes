@@ -25,7 +25,7 @@ async def get_latest_transcription():
     """Get the latest processed transcription"""
     try:
         doc = db.transcriptions.find_one(
-            {"processed": True},
+            {"processed": True, "is_deleted": {"$ne": True}},
             sort=[("ingested_at", -1)]
         )
         
@@ -64,7 +64,8 @@ async def get_latest_transcription():
             "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
             "filename": doc.get("filename"),
             "date": doc.get("date"),
-            "content": content
+            "content": content,
+            "is_formatted": doc.get("is_formatted", False)
         }
     except Exception as e:
         # Print full traceback to server logs for debugging
@@ -77,13 +78,14 @@ async def get_latest_transcription():
 async def list_transcriptions(limit: int = 50):
     """List recent processed transcriptions (metadata only)"""
     try:
-        cursor = db.transcriptions.find({"processed": True}).sort("ingested_at", -1).limit(limit)
+        cursor = db.transcriptions.find({"processed": True, "is_deleted": {"$ne": True}}).sort("ingested_at", -1).limit(limit)
         items = []
         for doc in cursor:
             items.append({
                 "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
                 "filename": doc.get("filename"),
-                "date": doc.get("date")
+                "date": doc.get("date"),
+                "is_formatted": doc.get("is_formatted", False)
             })
 
         return {"items": items}
@@ -122,7 +124,8 @@ async def get_transcription_by_id(transcription_id: str):
             "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
             "filename": doc.get("filename"),
             "date": doc.get("date"),
-            "content": content
+            "content": content,
+            "is_formatted": doc.get("is_formatted", False)
         }
     except HTTPException:
         raise
@@ -145,4 +148,22 @@ async def update_transcription(transcription_id: str, update: TranscriptionUpdat
         
         return {"status": "updated"}
     except Exception as e:
+        raise HTTPException(500, f"Error: {str(e)}")
+@router.delete("/{transcription_id}")
+async def delete_transcription(transcription_id: str):
+    """Logically delete a transcription"""
+    try:
+        # Cast to ObjectId to match MongoDB _id type
+        oid = ObjectId(transcription_id)
+        result = db.transcriptions.update_one(
+            {"_id": oid},
+            {"$set": {"is_deleted": True}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(404, "Not found")
+        
+        return {"status": "deleted"}
+    except Exception as e:
+        print(f"[ERROR] delete_transcription: {e}")
         raise HTTPException(500, f"Error: {str(e)}")

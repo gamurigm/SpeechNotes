@@ -107,6 +107,20 @@ class RivaTranscriber:
             interim_results=interim_results,
         )
         
+        # Add speech contexts to help real-time quality
+        speech_context = riva.client.SpeechContext(
+            phrases=[
+                "clase", "lección", "universidad", "estudiante", "profesor", 
+                "examen", "tarea", "proyecto", "análisis", "diseño", "software",
+                "ingeniería", "sistemas", "datos", "información", "código",
+                "programación", "desarrollo", "arquitectura", "reunión", "equipo",
+                "objetivos", "metodología", "investigación", "resultados",
+                "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
+            ],
+            boost=20.0
+        )
+        config.config.speech_contexts.append(speech_context)
+        
         responses = self.asr_service.streaming_response_generator(
             audio_chunks=audio_stream,
             streaming_config=config
@@ -153,6 +167,20 @@ class RivaTranscriber:
                     verbatim_transcripts=True,
                     audio_channel_count=1,
                 )
+                
+                # Add speech contexts to boost valid Spanish vocabulary and reduce hallucinations
+                speech_context = riva.client.SpeechContext(
+                    phrases=[
+                        "clase", "lección", "universidad", "estudiante", "profesor", 
+                        "examen", "tarea", "proyecto", "análisis", "diseño", "software",
+                        "ingeniería", "sistemas", "datos", "información", "código",
+                        "programación", "desarrollo", "arquitectura", "reunión", "equipo",
+                        "objetivos", "metodología", "investigación", "resultados",
+                        "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
+                    ],
+                    boost=20.0 # High boost to favor these words over noise
+                )
+                config.speech_contexts.append(speech_context)
                 
                 # Try to detect WAV header
                 try:
@@ -213,8 +241,8 @@ class RivaTranscriber:
             
             # 1. Common hallucination phrases (exact or prefix match)
             hallucinations = [
-                # Spanish common hallucinations (Removed valid greetings/common words)
-                "gracias por ver", "gracias por ver el video",
+                # Spanish common hallucinations
+                "gracias", "gracias por ver", "gracias por ver el video",
                 "gracias por ver el vídeo", "gracias por vernos",
                 "suscríbete", "suscríbete al canal", "dale like",
                 "subtítulos por", "subtítulos realizados por",
@@ -222,45 +250,55 @@ class RivaTranscriber:
                 "traducido por", "traducción por",
                 "esto es un regalo", "es un regalo",
                 "música", "aplausos", "risas",
+                "amara.org", "continuará", "próximamente",
+                "todos los derechos reservados", 
+                "este video ha sido realizado por",
+                "que tengan un buen día", "gracias por escuchar",
+                "hasta la próxima", "nos vemos", "muchas gracias",
+                "gracias.", "muchas gracias.", "gracias por todo.",
+                "gracias a todos.", "gracias por su atención.",
                 # English common hallucinations
                 "thank you", "thank you for watching",
                 "thanks for watching", "subscribe",
                 "subtitles", "translated by",
                 "amara.org", "captions by",
-                # Generic silence fillers (Removed "bien", "ok")
-                "uh", "um", "eh", "ah",
+                "watch more", "next video",
+                "all rights reserved", "thank you very much",
+                # Generic silence fillers / noise
+                "uh", "um", "eh", "ah", "oh", "hm", "mhm", "..."
             ]
             
-            # Check exact match or prefix
+            # Check exact match or prefix for short segments
             for h in hallucinations:
                 h_clean = re.sub(r'[!¡?¿.,;:\-–—]', '', h).strip()
                 if cleaned == h_clean:
                     print(f"[Hallucination Filter] Blocked exact match: '{transcript}'")
                     return ""
-                if cleaned.startswith(h_clean) and len(cleaned) < len(h_clean) + 10:
+                # If transcript consists mostly of a hallucination phrase
+                if cleaned.startswith(h_clean) and len(cleaned) < len(h_clean) + 8:
                     print(f"[Hallucination Filter] Blocked prefix match: '{transcript}'")
                     return ""
             
             # 2. Detect repetitive patterns (e.g., "Sí. Sí. Sí. Sí.")
             words = re.findall(r'\b\w+\b', cleaned)
-            if len(words) >= 4:  # Increased form 3 to 4 to allow "Si si si"
-                # Check if a single word is repeated too many times
+            if len(words) >= 4:
                 from collections import Counter
                 word_counts = Counter(words)
                 most_common_word, most_common_count = word_counts.most_common(1)[0]
                 
-                # If one word makes up more than 80% of all words (relaxed from 60%)
-                if most_common_count / len(words) > 0.8 and len(words) >= 4:
+                # If one word makes up more than 75% of all words
+                if most_common_count / len(words) > 0.75:
                     print(f"[Hallucination Filter] Blocked repetitive pattern: '{transcript}'")
                     return ""
             
-            # 3. Filter very short transcripts (likely noise) - Relaxed
-            if len(cleaned) < 2:  # Allow 2 chars (e.g. "Si", "No", "Ir")
+            # 3. Filter very short transcripts (likely noise) - allow common short words
+            valid_short_words = ["sí", "no", "ir", "yo", "tú", "dé", "sé"]
+            if len(cleaned) < 3 and cleaned not in valid_short_words:
                 print(f"[Hallucination Filter] Blocked too short: '{transcript}'")
                 return ""
             
-            # 4. Filter if only contains single repeated character
-            if len(set(cleaned.replace(' ', ''))) <= 1: # Allow "aba" (a, b) -> 2 chars. Relaxed from 2 to 1
+            # 4. Filter if only contains single repeated character or punctuation
+            if len(set(cleaned.replace(' ', ''))) <= 1 and len(cleaned) > 2:
                 print(f"[Hallucination Filter] Blocked single char repetition: '{transcript}'")
                 return ""
 

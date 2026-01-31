@@ -24,8 +24,8 @@ type ToolbarIconProps = {
 
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
     const [showTooltip, setShowTooltip] = useState(false);
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+    const { themeType } = useBackground();
+    const isLight = themeType === 'light';
 
     return (
         <div className="relative group">
@@ -34,8 +34,8 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
                 className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 ${isActive
                     ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
                     : isLight
-                        ? 'text-slate-900 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
-                        : 'text-slate-200 hover:text-white hover:bg-white/10 shadow-sm hover:shadow-md'
+                        ? 'text-slate-600 hover:text-black hover:bg-slate-200 shadow-sm hover:shadow-md'
+                        : 'text-slate-200 hover:text-white hover:bg-white/20 shadow-sm hover:shadow-md'
                     } ${className}`}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -53,17 +53,18 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
 };
 
 import { BackgroundPicker } from "./components/BackgroundPicker";
+import { Toast, ToastType } from './components/Toast';
 
 export default function DashboardPage() {
     const [latestContent, setLatestContent] = useState('');
     const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
-    const [transcriptions, setTranscriptions] = useState<Array<{ id: string | null, filename?: string | null, date?: any }>>([]);
+    const [transcriptions, setTranscriptions] = useState<Array<{ id: string | null, filename?: string | null, date?: any, is_formatted?: boolean }>>([]);
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const { messages, voiceThreshold, setVoiceThreshold, silenceThreshold, setSilenceThreshold } = useRecording();
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+    const { themeType } = useBackground();
+    const isLight = themeType === 'light';
     const [mdZoom, setMdZoom] = useState(100);
     const [appZoom, setAppZoom] = useState(100);
     const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
@@ -72,6 +73,7 @@ export default function DashboardPage() {
     const [isChatExpanded, setIsChatExpanded] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
     const [showMicTest, setShowMicTest] = useState(true);
+    const [notification, setNotification] = useState<{ message: string, type: ToastType } | null>(null);
 
     const toggleTool = (tool: string) => {
         setActiveTool(current => current === tool ? null : tool);
@@ -117,6 +119,13 @@ export default function DashboardPage() {
         loadTranscriptionsList();
     }, []);
 
+    // Persistence: Save current doc ID to localStorage
+    useEffect(() => {
+        if (transcriptionId) {
+            localStorage.setItem('sn-last-doc-id', transcriptionId);
+        }
+    }, [transcriptionId]);
+
     // Socket events - Mount only
     useEffect(() => {
         const socket = getSocket();
@@ -141,11 +150,18 @@ export default function DashboardPage() {
             const res = await apiClient.getTranscriptions();
             const items = res.items || [];
             setTranscriptions(items);
-            if (items.length > 0) {
-                setSelectedIndex(0);
-                const firstId = items[0].id;
-                if (firstId) await loadTranscriptionById(firstId);
-            } else {
+
+            // Restore last session or load latest
+            const savedId = localStorage.getItem('sn-last-doc-id');
+            const targetId = savedId && items.find((item: any) => item.id === savedId)
+                ? savedId
+                : (items.length > 0 ? items[0].id : null);
+
+            if (targetId) {
+                const index = items.findIndex((item: any) => item.id === targetId);
+                setSelectedIndex(index >= 0 ? index : 0);
+                await loadTranscriptionById(targetId);
+            } else if (items.length === 0) {
                 const latest = await apiClient.getLatestTranscription();
                 setLatestContent(latest.content);
                 setTranscriptionId(latest.id);
@@ -178,6 +194,71 @@ export default function DashboardPage() {
         setLatestContent(content);
     };
 
+    const handleDelete = async () => {
+        if (!transcriptionId) return;
+        try {
+            await apiClient.deleteTranscription(transcriptionId);
+            setTranscriptionId(null);
+            setSelectedIndex(0);
+            await loadTranscriptionsList();
+            setNotification({ message: 'Clase eliminada correctamente', type: 'success' });
+        } catch (e) {
+            console.error('Error deleting transcription', e);
+            setNotification({ message: 'Error al intentar eliminar la clase', type: 'error' });
+        }
+    };
+
+    const handleAutoFormat = async () => {
+        if (!transcriptionId || !transcriptions[selectedIndex]?.filename) return;
+
+        setIsProcessing(true);
+        try {
+            const filename = transcriptions[selectedIndex].filename;
+            // The API expects 'notas/filename.md' because it looks in 'notas/' relatively
+            // But let's check what the API actually expects from the 'files' request.
+            // In formatter.py list_available_files, it returns path: "notas/filename.md"
+
+            const res = await fetch('http://localhost:8001/api/format/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': 'dev-secret-api-key'
+                },
+                body: JSON.stringify({
+                    files: [`notas/${filename}`],
+                    output_dir: 'notas'
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to start formatting');
+
+            const { job_id, ws_url } = await res.json();
+
+            // Connect to WebSocket for progress
+            const ws = new WebSocket(`ws://localhost:8001/api/format${ws_url}`);
+            ws.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+                if (data.status === 'job_completed' || data.status === 'completed') {
+                    setNotification({ message: 'Formateo completado con éxito', type: 'success' });
+                    await loadTranscriptionById(transcriptionId);
+                    await loadTranscriptionsList();
+                    setIsProcessing(false);
+                    setActiveTool(null);
+                    ws.close();
+                } else if (data.status === 'error') {
+                    setNotification({ message: `Error: ${data.error}`, type: 'error' });
+                    setIsProcessing(false);
+                    ws.close();
+                }
+            };
+
+        } catch (e) {
+            console.error('Error in auto-format:', e);
+            setNotification({ message: 'Error al iniciar el formateo', type: 'error' });
+            setIsProcessing(false);
+        }
+    };
+
     const handlePrev = async () => {
         if (selectedIndex > 0) {
             const nextIndex = selectedIndex - 1;
@@ -192,6 +273,14 @@ export default function DashboardPage() {
             const nextIndex = selectedIndex + 1;
             setSelectedIndex(nextIndex);
             const id = transcriptions[nextIndex].id;
+            if (id) await loadTranscriptionById(id);
+        }
+    };
+
+    const handleJump = async (index: number) => {
+        if (index >= 0 && index < transcriptions.length) {
+            setSelectedIndex(index);
+            const id = transcriptions[index].id;
             if (id) await loadTranscriptionById(id);
         }
     };
@@ -214,7 +303,12 @@ export default function DashboardPage() {
         <div ref={zoomRef} className="flex items-start gap-2">
             <button
                 onClick={(e) => { e.stopPropagation(); setShowAppZoomMenu((s) => !s); }}
-                className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50 shadow-sm'}`}
+                className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md'
+                    : isLight
+                        ? 'text-slate-600 hover:text-blue-600 hover:bg-slate-100 shadow-sm'
+                        : 'text-slate-300 hover:text-blue-400 hover:bg-white/10 shadow-sm'
+                    }`}
             >
                 <ZoomIn size={18} />
             </button>
@@ -255,7 +349,7 @@ export default function DashboardPage() {
     }, [showAppZoomMenu]);
 
     return (
-        <div className="bg-transparent min-h-screen overflow-hidden relative selection:bg-violet-500/30">
+        <div className="bg-transparent min-h-screen overflow-hidden relative">
             {/* Soft Ambient Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-violet-600/[0.03] rounded-full blur-[120px]" />
@@ -294,21 +388,29 @@ export default function DashboardPage() {
                                     {activeTool === 'calibrate' && (
                                         <Card className="w-80 shadow-xl border-none glass"><CardBody className="p-4">
                                             <div className="flex items-center justify-between mb-4">
-                                                <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Audio Setup</h4>
+                                                <h4 className="label-technical">Audio Setup</h4>
                                                 <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
                                                     await fetch('/api/config/vad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold }) });
                                                     setActiveTool(null);
                                                 }}><Check size={16} /></Button>
                                             </div>
-                                            <Slider label="Voice Start" size="sm" step={50} minValue={100} maxValue={2000} value={voiceThreshold} onChange={(v) => setVoiceThreshold(v as number)} color="success" />
-                                            <Slider label="Silence Stop" size="sm" step={50} minValue={50} maxValue={1000} value={silenceThreshold} onChange={(v) => setSilenceThreshold(v as number)} color="danger" />
+                                            <Slider label="Voice Start" size="sm" step={5} minValue={20} maxValue={1000} value={voiceThreshold} onChange={(v) => setVoiceThreshold(v as number)} color="success" />
+                                            <Slider label="Silence Stop" size="sm" step={5} minValue={10} maxValue={800} value={silenceThreshold} onChange={(v) => setSilenceThreshold(v as number)} color="danger" />
                                         </CardBody></Card>
                                     )}
                                     {activeTool === 'format' && (
                                         <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
-                                            <h5 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Refinement</h5>
+                                            <h5 className="label-technical mb-3">Refinement</h5>
                                             <div className="flex gap-2">
-                                                <Button size="sm" color="primary" className="flex-1 rounded-xl">Auto-Format</Button>
+                                                <Button
+                                                    size="sm"
+                                                    color="primary"
+                                                    className="flex-1 rounded-xl"
+                                                    onClick={handleAutoFormat}
+                                                    isLoading={isProcessing}
+                                                >
+                                                    Auto-Format
+                                                </Button>
                                                 <Button size="sm" variant="bordered" className="rounded-xl" onClick={() => setActiveTool(null)}>Close</Button>
                                             </div>
                                         </CardBody></Card>
@@ -401,7 +503,23 @@ export default function DashboardPage() {
                                 ) : (
                                     <div className="h-full flex flex-col">
                                         {isProcessing && <Card className="mb-4 bg-indigo-50/50 border-none backdrop-blur-md shadow-sm animate-pulse"><CardBody className="py-2 text-[11px] font-bold text-indigo-600 uppercase tracking-widest text-center">Processing with DeepSeek Intel...</CardBody></Card>}
-                                        <MarkdownViewer title={currentTitle} content={latestContent} onSave={handleSave} zoomLevel={mdZoom} nav={{ onPrev: handlePrev, onNext: handleNext, hasPrev: selectedIndex > 0, hasNext: selectedIndex < transcriptions.length - 1, index: selectedIndex, total: transcriptions.length }} />
+                                        <MarkdownViewer
+                                            title={currentTitle}
+                                            content={latestContent}
+                                            onSave={handleSave}
+                                            onDelete={handleDelete}
+                                            zoomLevel={mdZoom}
+                                            isFormatted={transcriptions[selectedIndex]?.is_formatted}
+                                            nav={{
+                                                onPrev: handlePrev,
+                                                onNext: handleNext,
+                                                onJump: handleJump,
+                                                hasPrev: selectedIndex > 0,
+                                                hasNext: selectedIndex < transcriptions.length - 1,
+                                                index: selectedIndex,
+                                                total: transcriptions.length
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </main>
@@ -417,6 +535,7 @@ export default function DashboardPage() {
                     <ChatSidebar
                         activeDocId={transcriptions[selectedIndex]?.id || undefined}
                         activeDocName={transcriptions[selectedIndex]?.filename || undefined}
+                        isFormatted={transcriptions[selectedIndex]?.is_formatted}
                         isExpanded={isChatExpanded}
                         onToggleExpand={() => setIsChatExpanded(!isChatExpanded)}
                         onClose={() => setShowChat(false)}
@@ -431,12 +550,12 @@ export default function DashboardPage() {
             >
                 <div className="relative">
                     <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-2xl group-hover:bg-violet-500/30 transition-all" />
-                    <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${theme === 'pure-light'
+                    <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${isLight
                         ? 'bg-white border border-slate-300 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.2)] hover:bg-slate-50'
                         : 'bg-black/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:bg-slate-900'
                         }`}>
-                        <MessageCircle size={26} className={theme === 'pure-light' ? 'text-black group-hover:text-violet-900' : 'text-white group-hover:text-violet-200'} />
-                        <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] ${theme === 'pure-light' ? 'border-white' : 'border-black'}`} />
+                        <MessageCircle size={26} className={isLight ? 'text-black group-hover:text-violet-900' : 'text-white group-hover:text-violet-200'} />
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px] ${isLight ? 'border-white' : 'border-black'}`} />
                     </div>
                 </div>
             </button>
@@ -490,6 +609,14 @@ export default function DashboardPage() {
                     scrollbar-gutter: stable;
                 }
             `}</style>
+
+            {notification && (
+                <Toast
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
         </div>
     );
 }

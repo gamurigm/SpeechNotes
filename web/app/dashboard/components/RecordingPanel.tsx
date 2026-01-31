@@ -28,8 +28,8 @@ export function RecordingPanel() {
         silenceThreshold,
         setSilenceThreshold
     } = useRecording();
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+    const { themeType } = useBackground();
+    const isLight = themeType === 'light';
 
     const [showSettings, setShowSettings] = useState(false);
     const [visualThreshold, setVisualThreshold] = useState(20); // Visual threshold
@@ -102,14 +102,14 @@ export function RecordingPanel() {
             {showSettings && (
                 <Card className="shadow-md border-none glass">
                     <CardBody className="p-4">
-                        <h4 className="text-base font-semibold mb-4 text-[var(--foreground)] text-glow-contrast">Configuración de Audio</h4>
+                        <h4 className="text-sm font-black mb-4 uppercase tracking-[0.1em] title-semi-neon">Configuración de Audio</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Slider
                                     label="Ganancia (Volumen)"
                                     classNames={{
-                                        label: "text-xs font-bold text-[var(--foreground)]/60 uppercase tracking-wider",
-                                        value: "text-xs font-mono font-bold text-violet-400"
+                                        label: "label-technical",
+                                        value: "text-[10px] font-black tabular-nums text-violet-400 text-glow-contrast"
                                     }}
                                     size="sm"
                                     step={0.1}
@@ -153,10 +153,10 @@ export function RecordingPanel() {
                 onOpenChange={onOpenChange}
                 backdrop="blur"
                 classNames={{
-                    base: "bg-slate-900/95 border border-white/10 backdrop-blur-xl",
-                    header: "border-b border-white/5",
-                    footer: "border-t border-white/5",
-                    closeButton: "hover:bg-white/10 active:bg-white/20",
+                    base: isLight ? "bg-white/95 border border-slate-200 backdrop-blur-xl shadow-2xl" : "bg-slate-900/95 border border-white/10 backdrop-blur-xl shadow-2xl",
+                    header: isLight ? "border-b border-slate-100" : "border-b border-white/5",
+                    footer: isLight ? "border-t border-slate-100" : "border-t border-white/5",
+                    closeButton: "hover:bg-black/5 dark:hover:bg-white/10 active:bg-black/10 dark:active:bg-white/20",
                 }}
             >
                 <ModalContent>
@@ -169,17 +169,17 @@ export function RecordingPanel() {
                                 </div>
                             </ModalHeader>
                             <ModalBody>
-                                <p className="text-slate-300 text-sm">
+                                <p className={`${isLight ? 'text-slate-600' : 'text-slate-300'} text-sm`}>
                                     ¿Estás seguro de que deseas detener la grabación actual?
                                     La transcripción se guardará y procesará automáticamente.
                                 </p>
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duración acumulada:</span>
+                                <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'} border flex items-center justify-between`}>
+                                    <span className={`text-xs font-bold ${isLight ? 'text-slate-400' : 'text-slate-400'} uppercase tracking-widest`}>Duración acumulada:</span>
                                     <span className="text-lg font-mono font-bold text-indigo-400">{formatDuration(duration)}</span>
                                 </div>
                             </ModalBody>
                             <ModalFooter>
-                                <Button variant="light" onPress={onClose} className="font-semibold text-slate-300 hover:text-white transition-colors">
+                                <Button variant="light" onPress={onClose} className={`font-semibold ${isLight ? 'text-slate-500 hover:text-slate-900' : 'text-slate-300 hover:text-white'} transition-colors`}>
                                     Continuar grabación
                                 </Button>
                                 <Button

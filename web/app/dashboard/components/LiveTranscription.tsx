@@ -7,8 +7,8 @@ import { useBackground } from '../../providers';
 
 export function LiveTranscription() {
     const { messages, isRecording } = useRecording();
-    const { theme } = useBackground();
-    const isLight = theme === 'pure-light';
+    const { themeType } = useBackground();
+    const isLight = themeType === 'light';
     const scrollRef = useRef<HTMLDivElement>(null);
     const [animatedCount, setAnimatedCount] = useState(0);
     const [showWave, setShowWave] = useState(false);
@@ -84,7 +84,7 @@ export function LiveTranscription() {
                         </div>
 
                         <div>
-                            <h3 className="text-base font-bold text-theme-primary tracking-tight flex items-center gap-2">
+                            <h3 className="text-sm font-black uppercase tracking-[0.05em] title-semi-neon flex items-center gap-2">
                                 Transcripción en Vivo
                                 {isRecording && <Zap size={14} className="text-yellow-400 animate-pulse" />}
                             </h3>
@@ -216,27 +216,14 @@ export function LiveTranscription() {
                             </div>
 
                             {/* Text content */}
-                            <p className="flex-1 text-base text-[var(--foreground)] leading-relaxed group-hover:text-[var(--foreground)] transition-colors duration-200 text-glow-contrast">
+                            <p className="flex-1 text-base text-[var(--foreground)] leading-relaxed group-hover:text-[var(--foreground)] transition-colors duration-200">
                                 {msg.text}
                             </p>
 
-                            {/* Latest message indicator */}
-                            {i === messages.length - 1 && (
-                                <div className="flex-shrink-0 flex items-center gap-2">
-                                    <span className="text-xs font-medium text-emerald-400/70">nuevo</span>
-                                    <div className="relative">
-                                        <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
-                                        <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping" />
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ))
                 )}
             </div>
-
-            {/* Bottom gradient fade - Dynamic based on theme */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[var(--bg-color-1)] via-[var(--bg-color-1)]/80 to-transparent pointer-events-none z-20" />
 
             {/* Top subtle shadow for depth */}
             <div className="absolute top-[88px] left-0 right-0 h-4 bg-gradient-to-b from-black/5 to-transparent pointer-events-none z-10" />

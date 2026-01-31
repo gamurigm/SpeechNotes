@@ -411,27 +411,51 @@ modelo: {self.model}
                 formatted_file = output_path / f"{original_path.stem}_formatted.md"
                 formatted_file.write_text(formatted_content, encoding='utf-8')
 
-                # Ingest formatted file into MongoDB so UI reads from DB
+                # Ingest formatted content into original MongoDB document
                 try:
                     db = MongoManager()
-                    # Build document for formatted transcription
-                    formatted_doc = {
-                        "filename": formatted_file.name,
-                        "original_filename": original_path.name,
-                        "formatted_content": formatted_content,
-                        "formatted_at": datetime.now(),
-                        "word_count": len(formatted_content.split()),
-                        "source_path": str(formatted_file),
-                        "processed": True
-                    }
-                    # Insert or upsert by filename
-                    existing = db.transcriptions.find_one({"filename": formatted_file.name})
-                    if existing:
-                        db.transcriptions.replace_one({"_id": existing["_id"]}, formatted_doc)
-                        print(f"[FORMATTER] Updated formatted document in MongoDB: {formatted_file.name}")
+                    # Find the original document
+                    # The original filename is in file_data["file_name"] (e.g., "clase1.md")
+                    original_filename = file_data["file_name"]
+                    
+                    # Also try without extension just in case
+                    filename_stem = Path(original_filename).stem
+                    
+                    doc = db.transcriptions.find_one({
+                        "$or": [
+                            {"filename": original_filename},
+                            {"filename": {"$regex": f"^{filename_stem}", "$options": "i"}}
+                        ]
+                    })
+                    
+                    if doc:
+                        # Update existing document
+                        db.transcriptions.update_one(
+                            {"_id": doc["_id"]},
+                            {
+                                "$set": {
+                                    "formatted_content": formatted_content,
+                                    "formatted_at": datetime.now(),
+                                    "is_formatted": True,
+                                    "formatter_model": self.model
+                                }
+                            }
+                        )
+                        print(f"[FORMATTER] Updated original document in MongoDB: {original_filename}")
                     else:
+                        # If not found, create a new one (as fallback)
+                        formatted_doc = {
+                            "filename": formatted_file.name,
+                            "original_filename": original_filename,
+                            "formatted_content": formatted_content,
+                            "formatted_at": datetime.now(),
+                            "word_count": len(formatted_content.split()),
+                            "source_path": str(formatted_file),
+                            "processed": True,
+                            "is_formatted": True
+                        }
                         db.transcriptions.insert_one(formatted_doc)
-                        print(f"[FORMATTER] Inserted formatted document into MongoDB: {formatted_file.name}")
+                        print(f"[FORMATTER] Original not found. Inserted new formatted document: {formatted_file.name}")
                 except Exception as e:
                     print(f"[FORMATTER] Warning: failed to ingest formatted file into MongoDB: {e}")
 
