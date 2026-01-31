@@ -77,17 +77,18 @@ class FormatterAgent:
         self.project_root = project_root
         self.jobs: Dict[str, FormatterJob] = {}
         
-        # Minimax client
-        api_key = os.getenv("MINIMAX_API_KEY")
-        if api_key:
+        # Initialize client with best available key
+        self.api_key = os.getenv("NVIDIA_API_KEY_THINKING") or os.getenv("MINIMAX_API_KEY")
+        self.base_url = os.getenv("NVIDIA_BASE_URL") or os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
+        self.model = os.getenv("FORMATTER_MODEL", "moonshotai/kimi-k2-thinking")
+        
+        if self.api_key:
             self.client = OpenAI(
-                base_url=os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1"),
-                api_key=api_key
+                base_url=self.base_url,
+                api_key=self.api_key
             )
-            self.model = os.getenv("MINIMAX_MODEL_NAME", "minimaxai/minimax-m2")
         else:
             self.client = None
-            self.model = None
     
     def create_job(self, files: List[str], output_dir: str = "notas") -> str:
         """Create a new formatting job"""
@@ -112,17 +113,6 @@ class FormatterAgent:
         job = self.jobs.get(job_id)
         if not job:
             raise ValueError(f"Job {job_id} not found")
-        
-        if not self.client:
-            yield FormatterProgress(
-                job_id=job_id,
-                current=0,
-                total=len(job.files),
-                file_name="",
-                status="error",
-                error="MINIMAX_API_KEY not configured"
-            )
-            return
         
         job.status = "running"
         
@@ -250,67 +240,72 @@ class FormatterAgent:
                 raise
     
     async def _format_step(self, file_data: Dict, max_retries: int = 3) -> str:
-        """Step: Format content using Minimax M2 with retry logic"""
-        system_prompt = """Actúa como un redactor técnico y académico experto.
+        """Step: Format content using a Thinking Model for professional results"""
+        system_prompt = """Actúa como un asistente de IA de élite especializado en redacción académica y síntesis de alto nivel. 
+Tu tarea es tomar una transcripción bruta y REESCRIBIRLA COMPLETAMENTE como un documento profesional.
 
-Genera un documento profesional en Markdown bien estructurado basado en la transcripción proporcionada.
+ESTRUCURA OBLIGATORIA:
 
-El documento DEBE incluir:
+# [Título Académico Impactante]
 
-1. **Resumen Ejecutivo**: Un párrafo conciso (3-5 líneas) que capture la esencia del contenido
-2. **Puntos Clave**: Lista organizada de los conceptos más importantes discutidos
-3. **Desarrollo Detallado**: Secciones temáticas con:
-   - Encabezados claros y jerárquicos (##, ###)
-   - Explicaciones elaboradas de cada tema
-   - Ejemplos concretos cuando los haya
-   - Conceptos técnicos bien explicados
-4. **Conclusiones**: Síntesis de aprendizajes y próximos pasos si aplica
+## 🎯 Introducción y Contexto
+Un resumen ejecutivo de alto nivel que sitúe al lector en el tema tratado (mínimo 6 líneas).
 
-Formato requerido:
-- Usa negritas para términos clave
-- Usa listas para puntos importantes
-- Usa bloques de código para términos técnicos o comandos
-- Mantén el idioma original (Español)
-- Organiza el contenido de forma lógica y pedagógica
-- Elimina redundancias y muletillas del habla
+## 🧩 Ejes Temáticos Principales
+Identifica y desarrolla los temas clave del contenido. NO uses la estructura de la transcripción original.
+- Cada tema debe tener su propio encabezado (## o ###).
+- Sintetiza la información de forma coherente, eliminando repeticiones.
+- Usa **negritas** para términos técnicos.
 
-NO incluyas timestamps ni marcadores de tiempo.
-Genera un documento que sea útil para estudio y referencia académica."""
+## 📝 Glosario de Conceptos Clave
+Una sección dedicada a definir los términos más importantes mencionados durante la sesión.
 
-        user_content = f"""Fecha original: {file_data['metadata'].get('fecha', 'N/A')}
-Temas: {file_data['metadata'].get('temas', 'Varios')}
-Palabras originales: {file_data['metadata'].get('palabras', 'N/A')}
+## 🏁 Síntesis y Conclusiones
+Un cierre profesional que resuma los aprendizajes y mencione próximos pasos o áreas de estudio relacionadas.
 
-Contenido a formatear:
+REGLAS CRÍTICAS DE FORMATO:
+1. **PROHIBIDO**: No incluyas marcas de tiempo (00:00:00).
+2. **PROHIBIDO**: No menciones "Tema 1", "Segmento X" o etiquetas similares de la transcripción original.
+3. **SÍNTESIS TOTAL**: Tu objetivo no es "limpiar" el texto, sino **RAZONAR** sobre él y generar un documento nuevo y estructurado.
+4. **LIMPIEZA**: Elimina cualquier muletilla, duda o error de habla presente en el audio original.
+5. **MARKDOWN**: Usa Markdown fluido y profesional.
+6. **IDIOMA**: Español."""
 
-{file_data['clean_content'][:15000]}"""  # Limit to avoid token limits
+        user_content = f"""Metadata:
+- Fecha: {file_data['metadata'].get('fecha', 'N/A')}
+- Contexto: {file_data['metadata'].get('temas', 'Varios')}
+
+Contenido base para procesar:
+{file_data['clean_content'][:18000]}"""
         
-        # If no remote client is configured, use a local heuristic formatter
-        if not self.client:
-            formatted_content = self._local_format(file_data)
-            header = f"""---
-original: {file_data['metadata'].get('original', file_data['file_name'])}
-fecha: {file_data['metadata'].get('fecha', 'N/A')}
-palabras_original: {file_data['metadata'].get('palabras', 'N/A')}
-formateado_con: local-fallback
-fecha_formato: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
-modelo: local-fallback
----
+        # Use a thinking model if configured
+        thinking_model = os.getenv("FORMATTER_MODEL", "moonshotai/kimi-k2-thinking")
+        thinking_key = os.getenv("NVIDIA_API_KEY_THINKING") or os.getenv("MINIMAX_API_KEY")
 
-"""
-            return header + formatted_content
+        if not thinking_key:
+             return self._local_format(file_data) # Fallback
+
+        client = OpenAI(
+            base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+            api_key=thinking_key
+        )
 
         for attempt in range(max_retries + 1):
             try:
-                completion = self.client.chat.completions.create(
-                    model=self.model,
+                print(f"[FORMATTER] Using Thinking Model ({thinking_model}) for {file_data['file_name']}...")
+                completion = client.chat.completions.create(
+                    model=thinking_model,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_content}
                     ],
-                    temperature=0.5,
+                    temperature=0.7, # Balanced for creativity and structure
                     top_p=0.9,
-                    max_tokens=8192
+                    max_tokens=16384,
+                    extra_body={
+                        "min_thinking_tokens": 1024,
+                        "max_thinking_tokens": 4096
+                    } if "thinking" in thinking_model or "kimi" in thinking_model else {}
                 )
 
                 formatted_content = completion.choices[0].message.content.strip()
@@ -319,10 +314,9 @@ modelo: local-fallback
                 header = f"""---
 original: {file_data['metadata'].get('original', file_data['file_name'])}
 fecha: {file_data['metadata'].get('fecha', 'N/A')}
-palabras_original: {file_data['metadata'].get('palabras', 'N/A')}
-formateado_con: Minimax M2
+formateado_con: Kimi K2-Thinking
 fecha_formato: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
-modelo: {self.model}
+tipo: Profesional
 ---
 
 """

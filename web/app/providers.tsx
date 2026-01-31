@@ -155,8 +155,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const setCustomBg = (url: string | null) => {
     setCustomBgState(url);
     if (url) {
-      localStorage.setItem('sn-custom-bg', url);
-      setThemeState('custom');
+      try {
+        // Safe check for quota - ~2MB is usually safe for the custom bg 
+        // given other data in localStorage.
+        if (url.length > 2 * 1024 * 1024) {
+          console.warn("La imagen es demasiado grande para guardarse permanentemente.");
+        }
+        localStorage.setItem('sn-custom-bg', url);
+        setThemeState('custom');
+      } catch (e) {
+        console.error("Error saving custom background to localStorage:", e);
+        // If it fails, we still set it in state so it works for the session,
+        // but it won't persist.
+      }
     } else {
       localStorage.removeItem('sn-custom-bg');
     }

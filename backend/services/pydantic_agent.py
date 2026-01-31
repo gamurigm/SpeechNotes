@@ -60,8 +60,8 @@ NVIDIA_API_KEY_THINKING = os.getenv("NVIDIA_API_KEY_THINKING")
 NVIDIA_API_KEY_FAST = os.getenv("NVIDIA_API_KEY_FAST")
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY") # Keep for compatibility
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "moonshotai/kimi-k2.5")
-MODEL_NAME_FAST = os.getenv("MODEL_NAME_FAST", "nvidia/nvidia-nemotron-nano-9b-v2")
+MODEL_NAME = os.getenv("CHAT_MODEL_THINKING", "minimaxai/minimax-m2")
+MODEL_NAME_FAST = os.getenv("CHAT_MODEL_FAST", "nvidia/nvidia-nemotron-nano-9b-v2")
 LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
 
 # System prompt that enforces document-focused responses
@@ -211,14 +211,18 @@ async def chat_stream_direct(
     # Select model and key based on mode
     current_model = MODEL_NAME if thinking else MODEL_NAME_FAST
     current_key = NVIDIA_API_KEY_THINKING if thinking else NVIDIA_API_KEY_FAST
+    # Fallback to MINIMAX_API_KEY if specific thinking key is missing
+    current_key = current_key or os.getenv("MINIMAX_API_KEY")
     
     if not current_key:
         yield f"Error: API Key for {'Thinking' if thinking else 'Fast'} mode not configured"
         return
     
+    # Increase timeout to 120s for thinking models (504 prevention)
     client = AsyncOpenAI(
         base_url=NVIDIA_BASE_URL,
         api_key=current_key,
+        timeout=120.0 
     )
     
     # Build the prompt with document context
@@ -235,26 +239,22 @@ CONTENIDO:
     try:
         # Default parameters
         if not thinking:
-            # Nemotron Nano 9B v2 (Fast Mode) - Parametros exactos del snippet
+            # Nemotron Nano 9B v2 (Fast Mode)
             temp = 0.6
             top_p = 0.95
             max_tokens = 2048
-            system_prefix = "/think"
+            system_prefix = "" 
             completion_kwargs = {
                 "frequency_penalty": 0,
-                "presence_penalty": 0,
-                "extra_body": {
-                    "min_thinking_tokens": 1024,
-                    "max_thinking_tokens": 2048
-                }
+                "presence_penalty": 0
             }
         else:
-            # Minimax M2 (Thinking Mode) - Optimized for high-quality reasoning
-            temp = 0.5
-            top_p = 0.9
+            # Minimax M2 (Thinking Mode) - Optimized for speed as per user snippet
+            temp = 1.0
+            top_p = 0.95
             max_tokens = 8192
             system_prefix = ""
-            completion_kwargs = {}
+            completion_kwargs = {} # Remove extra_body to avoid slowing down generation
 
         final_system_content = f"{system_prefix}\n{system_msg}".strip()
         logger.info(f"Starting direct stream: model={current_model}, thinking={thinking}")

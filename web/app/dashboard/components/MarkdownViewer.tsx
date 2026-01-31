@@ -28,9 +28,11 @@ interface Props {
     title?: string;
     zoomLevel?: number;
     isFormatted?: boolean;
+    onFormatProfessional?: () => Promise<void>;
+    searchQuery?: string;
 }
 
-export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLevel = 100, isFormatted }: Props) {
+export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional, nav, title, zoomLevel = 100, isFormatted, searchQuery }: Props) {
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
     const [isEditing, setIsEditing] = useState(false);
@@ -43,6 +45,20 @@ export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLeve
     // Font style state
     const [fontFamily, setFontFamily] = useState<string>('Inter, system-ui, -apple-system, sans-serif');
     const [fontSize, setFontSize] = useState<number>(14);
+
+    const highlightText = (text: any) => {
+        if (!searchQuery || typeof text !== 'string') return text;
+        const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
+        return (
+            <>
+                {parts.map((part, i) => (
+                    part.toLowerCase() === searchQuery.toLowerCase()
+                        ? <span key={i} className="bg-blue-500/30 text-blue-200 ring-1 ring-blue-400/50 rounded-sm px-0.5 animate-pulse-soft font-black">{part}</span>
+                        : part
+                ))}
+            </>
+        );
+    };
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -198,7 +214,13 @@ export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLeve
     const displayTitle = title || 'Última Clase';
 
     return (
-        <div className="h-full flex flex-col glass backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden" style={{ fontFamily: 'var(--font-geist-sans)', transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', width: `${100 * (100 / zoomLevel)}%`, height: `${100 * (100 / zoomLevel)}%` }}>
+        <div
+            className="h-full flex flex-col glass backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden"
+            style={{
+                fontFamily: 'var(--font-geist-sans)',
+                '--zoom-factor': zoomLevel / 100
+            } as any}
+        >
             {showStyleMenu && (
                 <div ref={menuRef} className="fixed top-14 right-10 z-[70] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl p-4 min-w-[220px] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center justify-between mb-3">
@@ -232,7 +254,7 @@ export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLeve
                     <div className="flex items-center gap-2">
                         <h2
                             className="text-lg font-black tracking-tighter leading-tight title-semi-neon"
-                            style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.3)}px` }}
+                            style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.3 * (zoomLevel / 100))}px` }}
                         >
                             {displayTitle}
                         </h2>
@@ -279,6 +301,16 @@ export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLeve
                                         {!showStyleMenu && <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 ${isLight ? 'border-white' : 'border-slate-800'} animate-soft-pulse`} />}
                                     </button>
                                 </div>
+                                {onFormatProfessional && !isFormatted && (
+                                    <button
+                                        onClick={onFormatProfessional}
+                                        className={`flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-105 active:scale-95 group/prof`}
+                                        title="Formatear Profesionalmente (Thinking Model)"
+                                    >
+                                        <Sparkles size={14} className="group-hover/prof:animate-pulse" />
+                                        <span className="hidden sm:inline">Pro Format</span>
+                                    </button>
+                                )}
                                 <button onClick={() => setIsEditing(true)} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Edit size={18} /></button>
                                 {onDelete && (
                                     <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-1 rounded-xl border border-rose-500/20' : 'gap-0'}`}>
@@ -330,22 +362,22 @@ export function MarkdownViewer({ content, onSave, onDelete, nav, title, zoomLeve
                                 color: var(--foreground) !important;
                             }
                         `}</style>
-                        <MDEditor value={editedContent} onChange={(val) => setEditedContent(val || '')} height="100%" preview="edit" style={{ fontFamily, fontSize: `${fontSize}px` }} />
+                        <MDEditor value={editedContent} onChange={(val) => setEditedContent(val || '')} height="100%" preview="edit" style={{ fontFamily, fontSize: `${fontSize * (zoomLevel / 100)}px` }} />
                     </div>
                 ) : (
-                    <div id="markdown-preview" style={{ fontFamily, fontSize: `${fontSize}px` }}>
+                    <div id="markdown-preview" style={{ fontFamily, fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="max-w-4xl mx-auto">
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                                h1: (p) => <h1 style={{ fontSize: `${Math.round(fontSize * 1.5)}px` }} className="font-bold mt-4 mb-2 text-[var(--foreground)]" {...p} />,
-                                h2: (p) => <h2 style={{ fontSize: `${Math.round(fontSize * 1.3)}px` }} className="font-bold mt-3 mb-2 text-[var(--foreground)]" {...p} />,
-                                h3: (p) => <h3 style={{ fontSize: `${Math.round(fontSize * 1.15)}px` }} className="font-bold mt-2 mb-1 text-[var(--foreground)]/90" {...p} />,
-                                p: (p) => <p style={{ fontSize: `${fontSize}px`, lineHeight: 1.5 }} className="text-[var(--foreground)]/70 mb-3" {...p} />,
-                                ul: (p) => <ul className="list-disc list-inside space-y-1 mb-3 text-[var(--foreground)]/70" {...p} />,
-                                ol: (p) => <ol className="list-decimal list-inside space-y-1 mb-3 text-[var(--foreground)]/70" {...p} />,
-                                li: (p) => <li className="ml-1" {...p} />,
-                                strong: (p) => <strong className="font-bold text-[var(--foreground)]" {...p} />,
-                                blockquote: (p) => <blockquote className="border-l-4 border-white/10 pl-4 italic text-[var(--foreground)]/50 my-4" {...p} />,
+                                h1: ({ children, ...p }) => <h1 style={{ fontSize: `${Math.round(fontSize * 1.5 * (zoomLevel / 100))}px` }} className="font-bold mt-6 mb-4 text-[var(--foreground)]" {...p}>{highlightText(children)}</h1>,
+                                h2: ({ children, ...p }) => <h2 style={{ fontSize: `${Math.round(fontSize * 1.3 * (zoomLevel / 100))}px` }} className="font-bold mt-5 mb-3 text-[var(--foreground)]" {...p}>{highlightText(children)}</h2>,
+                                h3: ({ children, ...p }) => <h3 style={{ fontSize: `${Math.round(fontSize * 1.15 * (zoomLevel / 100))}px` }} className="font-bold mt-4 mb-2 text-[var(--foreground)]/90" {...p}>{highlightText(children)}</h3>,
+                                p: ({ children, ...p }) => <p style={{ fontSize: `${fontSize * (zoomLevel / 100)}px`, lineHeight: 1.6 }} className="text-[var(--foreground)]/70 mb-4 text-justify" {...p}>{highlightText(children)}</p>,
+                                ul: (p) => <ul style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-disc list-inside space-y-2 mb-4 text-[var(--foreground)]/70" {...p} />,
+                                ol: (p) => <ol style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-decimal list-inside space-y-2 mb-4 text-[var(--foreground)]/70" {...p} />,
+                                li: ({ children, ...p }) => <li className="ml-1" {...p}>{highlightText(children)}</li>,
+                                strong: ({ children, ...p }) => <strong className="font-bold text-[var(--foreground)]" {...p}>{highlightText(children)}</strong>,
+                                blockquote: ({ children, ...p }) => <blockquote className="border-l-4 border-indigo-500/30 pl-6 italic text-[var(--foreground)]/60 my-6 bg-indigo-500/5 py-4 rounded-r-xl" {...p}>{highlightText(children)}</blockquote>,
                             }}
                         >
                             {content}

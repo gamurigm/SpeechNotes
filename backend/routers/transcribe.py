@@ -67,6 +67,42 @@ async def run_post_processing(md_path: Path):
         print(f"[Batch Post] Error: {e}")
         traceback.print_exc()
 
+@logfire.instrument
+async def full_transcription_pipeline(file_path: Path, output_name: str, temp_dir: Path):
+    """
+    Background job: Standardize audio -> Transcribe -> Post-process
+    """
+    try:
+        # 1. Standardize with ffmpeg
+        temp_processed = temp_dir / "processed.wav"
+        print(f"[Worker] Processing audio: {file_path.name}")
+        if not process_audio_file(file_path, temp_processed):
+            print(f"[Worker] ❌ Failed to process audio with ffmpeg")
+            return
+
+        # 2. Transcribe
+        env_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
+        transcriber = env_factory.create_transcriber()
+        formatter = FormatterFactory.create('markdown')
+        writer = OutputWriter(Path("notas"))
+        service = TranscriptionService(transcriber, formatter, writer)
+
+        print(f"[Worker] Starting transcription for {output_name}...")
+        md_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
+
+        # 3. Batch Post-processing
+        await run_post_processing(md_path)
+        print(f"[Worker] ✅ All background tasks completed for {output_name}")
+
+    except Exception as e:
+        print(f"[Worker] ❌ Pipeline error: {e}")
+        traceback.print_exc()
+    finally:
+        try:
+            shutil.rmtree(temp_dir)
+        except:
+            pass
+
 @router.post("/transcribe-file")
 @logfire.instrument
 async def transcribe_uploaded_file(
@@ -87,55 +123,24 @@ async def transcribe_uploaded_file(
         
         print(f"[Transcribe File] Received: {file.filename} -> {temp_input}")
         
-        # 2. Process with ffmpeg (Standardize)
-        temp_processed = temp_dir / "processed.wav"
-        if not process_audio_file(temp_input, temp_processed):
-            raise HTTPException(500, "Failed to process audio file with ffmpeg")
+        # 2. Prepare metadata
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_name = f"transcripcion_upload_{timestamp_str}.md"
+        
+        # 3. Schedule the WHOLE pipeline as a background task
+        background_tasks.add_task(full_transcription_pipeline, temp_input, output_name, temp_dir)
+        
+        return {
+            "status": "success",
+            "filename": output_name,
+            "original_filename": file.filename,
+            "message": "Upload successful. Background processing started."
+        }
             
-        # 3. Transcribe
+    except Exception as e:
+        print(f"[Transcribe File] Error: {e}")
         try:
-            # Initialize orchestration components
-            env_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
-            transcriber = env_factory.create_transcriber()
-            formatter = FormatterFactory.create('markdown') # Simple markdown for whole logs
-            writer = OutputWriter(Path("notas"))
-            
-            # Setup service
-            service = TranscriptionService(transcriber, formatter, writer)
-            
-            # Transcription timestamp
-            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_name = f"transcripcion_upload_{timestamp_str}.md"
-            
-            # Execute transcription (offline mode)
-            print(f"[Transcribe File] Starting Riva offline transcription...")
-            # Note: TranscriptionService.transcribe_audio_file returns the Path of created file
-            md_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
-            
-            # 4. Schedule post-processing
-            background_tasks.add_task(run_post_processing, md_path)
-            
-            return {
-                "status": "success",
-                "filename": md_path.name,
-                "original_filename": file.filename,
-                "message": "Transcription started and processing scheduled"
-            }
-            
-        except Exception as e:
-            print(f"[Transcribe File] Riva/Transcription Error: {e}")
-            traceback.print_exc()
-            raise HTTPException(500, f"Transcription failed: {str(e)}")
-            
-    finally:
-        # Cleanup temp directory (ideally after background task if needed, 
-        # but here the background task only needs the MD path which is in 'notas/')
-        # However, if we don't delete temp_dir, it will leak.
-        # Delaying deletion if possible or just deleting the input file.
-        try:
-            # shutil.rmtree(temp_dir) # Be careful if background task needs it.
-            # In our case, the background task only needs md_path (in /notas).
-            # So it's safe to clear temp_dir.
             shutil.rmtree(temp_dir)
         except:
             pass
+        raise HTTPException(500, f"Failed to start background transcription: {str(e)}")

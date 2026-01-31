@@ -94,6 +94,21 @@ class AudioProcessor:
             ingestor = TranscriptionIngestor()
             ingestor._ingest_file(temp_path)
             
+            # 🚀 PARALLEL POST-PROCESSING: Trigger analyzer and generator automatically
+            try:
+                from src.agent.transcription_analyzer import TranscriptionAnalyzer
+                from src.agent.document_generator import DocumentGenerator
+                
+                print(f"[AudioProcessor] Triggering automated background analysis for {filename}...")
+                analyzer = TranscriptionAnalyzer()
+                analyzer.analyze_pending()
+                
+                generator = DocumentGenerator()
+                generator.generate_all()
+                print(f"[AudioProcessor] Automated analysis completed for {filename}")
+            except Exception as pe:
+                print(f"[AudioProcessor] Post-processing background error: {pe}")
+
             print(f"[AudioProcessor] Saved transcription: {filename}")
             
         except Exception as e:
