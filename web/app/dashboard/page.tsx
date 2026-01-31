@@ -214,6 +214,7 @@ export default function DashboardPage() {
                                             tooltip="Format"
                                             onClick={() => {
                                                 setShowAppZoomMenu(false);
+                                                setShowMicTest(false);
                                                 tools.toggleTool('format');
                                             }}
                                             isActive={tools.activeTool === 'format'}
@@ -223,6 +224,7 @@ export default function DashboardPage() {
                                             tooltip="Upload"
                                             onClick={() => {
                                                 setShowAppZoomMenu(false);
+                                                setShowMicTest(false);
                                                 tools.toggleTool('upload');
                                             }}
                                             isActive={tools.activeTool === 'upload'}
@@ -232,6 +234,7 @@ export default function DashboardPage() {
                                             tooltip="VAD"
                                             onClick={() => {
                                                 setShowAppZoomMenu(false);
+                                                setShowMicTest(false);
                                                 tools.toggleTool('calibrate');
                                             }}
                                             isActive={tools.activeTool === 'calibrate'}
@@ -241,53 +244,14 @@ export default function DashboardPage() {
                                             tooltip="Mic Test"
                                             onClick={() => {
                                                 setShowAppZoomMenu(false);
-                                                tools.setActiveTool(null);
+                                                if (!showMicTest) tools.setActiveTool(null);
                                                 setShowMicTest(!showMicTest);
                                             }}
                                             isActive={showMicTest}
                                         />
                                     </div>
 
-                                    {/* Componentes de Herramientas Dinámicas */}
-                                    {tools.activeTool === 'calibrate' && (
-                                        <Card className="w-80 shadow-xl border-none glass"><CardBody className="p-4">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h4 className="label-technical">Audio Setup</h4>
-                                                <div className="flex gap-2">
-                                                    <Button isIconOnly size="sm" variant="flat" color="danger" onClick={() => tools.setActiveTool(null)}><X size={16} /></Button>
-                                                    <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
-                                                        await fetch('/api/config/vad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold }) });
-                                                        tools.setActiveTool(null);
-                                                    }}><Check size={16} /></Button>
-                                                </div>
-                                            </div>
-                                            <Slider label="Voice Start" size="sm" step={5} minValue={20} maxValue={1000} value={voiceThreshold} onChange={(v) => setVoiceThreshold(v as number)} color="success" />
-                                            <Slider label="Silence Stop" size="sm" step={5} minValue={10} maxValue={800} value={silenceThreshold} onChange={(v) => setSilenceThreshold(v as number)} color="danger" />
-                                        </CardBody></Card>
-                                    )}
-                                    {tools.activeTool === 'format' && (
-                                        <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h5 className="label-technical">Refinement</h5>
-                                                <Button isIconOnly size="sm" variant="light" radius="full" onClick={() => tools.setActiveTool(null)}><X size={14} /></Button>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" color="primary" className="flex-1 rounded-xl" onClick={tools.handleAutoFormat} isLoading={!!(transcriptionService.transcriptionId && transcriptionService.processingIds.has(transcriptionService.transcriptionId))}>Auto-Format</Button>
-                                            </div>
-                                        </CardBody></Card>
-                                    )}
-                                    {tools.activeTool === 'upload' && (
-                                        <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h5 className="label-technical">Upload Audio</h5>
-                                                <Button isIconOnly size="sm" variant="light" radius="full" onClick={() => tools.setActiveTool(null)}><X size={14} /></Button>
-                                            </div>
-                                            <input ref={tools.uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)} />
-                                            <Button size="sm" variant="flat" className="w-full mb-3 rounded-xl" onClick={() => tools.uploadInputRef.current?.click()}>Choose File</Button>
-                                            <p className="text-[10px] text-slate-500 mb-3 truncate font-medium">{tools.uploadFileName || 'No file selected'}</p>
-                                            <Button size="sm" color="primary" className="w-full rounded-xl" onClick={tools.handleUpload}>Start Transcription</Button>
-                                        </CardBody></Card>
-                                    )}
+                                    {/* Componentes de Herramientas Dinámicas movidos a la barra lateral */}
                                 </div>
                                 <RecordingPanel />
                             </div>
@@ -305,7 +269,156 @@ export default function DashboardPage() {
 
                             <aside className={`flex-shrink-0 transition-all duration-500 ease-in-out modern-scrollbar ${showSidebar ? 'w-[420px] opacity-100' : 'w-0 opacity-0 pointer-events-none overflow-hidden'}`}>
                                 <div className="h-full flex flex-col p-4 gap-4">
-                                    {showMicTest && <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300"><MicTest onClose={() => setShowMicTest(false)} /></div>}
+                                    {showMicTest && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <MicTest onClose={() => setShowMicTest(false)} />
+                                        </div>
+                                    )}
+
+                                    {tools.activeTool === 'calibrate' && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                                                                <SlidersHorizontal size={18} className="text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Calibración VAD</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Ajusta los umbrales de voz</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
+                                                                <X size={14} />
+                                                            </Button>
+                                                            <Button
+                                                                isIconOnly
+                                                                size="sm"
+                                                                variant="light"
+                                                                className="w-6 h-6 min-w-0 text-emerald-500 hover:bg-emerald-500/10"
+                                                                onClick={async () => {
+                                                                    await fetch('/api/config/vad', {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold })
+                                                                    });
+                                                                    tools.setActiveTool(null);
+                                                                }}
+                                                            >
+                                                                <Check size={14} />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-6 py-2">
+                                                        <Slider
+                                                            label="Sensibilidad Voz"
+                                                            size="sm"
+                                                            step={5}
+                                                            minValue={20}
+                                                            maxValue={1000}
+                                                            value={voiceThreshold}
+                                                            onChange={(v) => setVoiceThreshold(v as number)}
+                                                            color="success"
+                                                            classNames={{
+                                                                label: "text-xs font-semibold text-theme-secondary",
+                                                                value: "text-xs font-bold text-emerald-500"
+                                                            }}
+                                                        />
+                                                        <Slider
+                                                            label="Umbral de Silencio"
+                                                            size="sm"
+                                                            step={5}
+                                                            minValue={10}
+                                                            maxValue={800}
+                                                            value={silenceThreshold}
+                                                            onChange={(v) => setSilenceThreshold(v as number)}
+                                                            color="danger"
+                                                            classNames={{
+                                                                label: "text-xs font-semibold text-theme-secondary",
+                                                                value: "text-xs font-bold text-rose-500"
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
+
+                                    {tools.activeTool === 'format' && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg">
+                                                                <Wand2 size={18} className="text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Refinamiento IA</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Formateo profesional inteligente</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
+                                                            <X size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <Button
+                                                        size="md"
+                                                        color="primary"
+                                                        className="w-full rounded-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25"
+                                                        onClick={tools.handleAutoFormat}
+                                                        isLoading={!!(transcriptionService.transcriptionId && transcriptionService.processingIds.has(transcriptionService.transcriptionId))}
+                                                    >
+                                                        Auto-Formatear Clase
+                                                    </Button>
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
+
+                                    {tools.activeTool === 'upload' && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+                                                                <FileAudio2 size={18} className="text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Subir Audio</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Transcribe archivos locales</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
+                                                            <X size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <input ref={tools.uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)} />
+                                                    <div
+                                                        className="border-2 border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-all"
+                                                        onClick={() => tools.uploadInputRef.current?.click()}
+                                                    >
+                                                        <FileAudio2 size={24} className="text-blue-400 opacity-50" />
+                                                        <p className="text-[10px] text-slate-400 font-bold truncate max-w-full px-2">
+                                                            {tools.uploadFileName || 'Haz clic para seleccionar'}
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        size="md"
+                                                        color="primary"
+                                                        className="w-full rounded-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 shadow-lg shadow-blue-500/25"
+                                                        onClick={tools.handleUpload}
+                                                        disabled={!tools.uploadFileName}
+                                                    >
+                                                        Iniciar Transcripción
+                                                    </Button>
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-h-0"><LiveTranscription /></div>
                                 </div>
                             </aside>
