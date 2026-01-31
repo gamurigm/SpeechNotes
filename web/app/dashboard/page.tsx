@@ -8,7 +8,7 @@ import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
 import { ChatSidebar } from './components/ChatSidebar';
 import { useRecording } from '@/hooks/useRecording';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search, Mic } from 'lucide-react';
 import { useBackground } from '../providers';
 import { BackgroundPicker } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
@@ -154,7 +154,13 @@ export default function DashboardPage() {
     const ZoomControl = () => (
         <div ref={zoomRef} className="flex items-start gap-2">
             <button
-                onClick={(e) => { e.stopPropagation(); setShowAppZoomMenu((s) => !s); }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (!showAppZoomMenu) {
+                        tools.setActiveTool(null);
+                    }
+                    setShowAppZoomMenu((s) => !s);
+                }}
                 className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu
                     ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md'
                     : isLight
@@ -203,15 +209,43 @@ export default function DashboardPage() {
                                         <BackgroundPicker />
                                         <div className="w-px h-6 bg-slate-200/50 mx-1" />
                                         <ZoomControl />
-                                        {tools.activeTool === null ? (
-                                            <>
-                                                <ToolbarIcon icon={<Wand2 size={18} />} tooltip="Format" onClick={() => tools.toggleTool('format')} isActive={tools.activeTool === 'format'} />
-                                                <ToolbarIcon icon={<FileAudio2 size={18} />} tooltip="Upload" onClick={() => tools.toggleTool('upload')} isActive={tools.activeTool === 'upload'} />
-                                                <ToolbarIcon icon={<SlidersHorizontal size={18} />} tooltip="VAD" onClick={() => tools.toggleTool('calibrate')} isActive={tools.activeTool === 'calibrate'} />
-                                            </>
-                                        ) : (
-                                            <ToolbarIcon icon={<X size={18} />} tooltip="Close Tool" onClick={() => tools.setActiveTool(null)} />
-                                        )}
+                                        <ToolbarIcon
+                                            icon={<Wand2 size={18} />}
+                                            tooltip="Format"
+                                            onClick={() => {
+                                                setShowAppZoomMenu(false);
+                                                tools.toggleTool('format');
+                                            }}
+                                            isActive={tools.activeTool === 'format'}
+                                        />
+                                        <ToolbarIcon
+                                            icon={<FileAudio2 size={18} />}
+                                            tooltip="Upload"
+                                            onClick={() => {
+                                                setShowAppZoomMenu(false);
+                                                tools.toggleTool('upload');
+                                            }}
+                                            isActive={tools.activeTool === 'upload'}
+                                        />
+                                        <ToolbarIcon
+                                            icon={<SlidersHorizontal size={18} />}
+                                            tooltip="VAD"
+                                            onClick={() => {
+                                                setShowAppZoomMenu(false);
+                                                tools.toggleTool('calibrate');
+                                            }}
+                                            isActive={tools.activeTool === 'calibrate'}
+                                        />
+                                        <ToolbarIcon
+                                            icon={<Mic size={18} />}
+                                            tooltip="Mic Test"
+                                            onClick={() => {
+                                                setShowAppZoomMenu(false);
+                                                tools.setActiveTool(null);
+                                                setShowMicTest(!showMicTest);
+                                            }}
+                                            isActive={showMicTest}
+                                        />
                                     </div>
 
                                     {/* Componentes de Herramientas Dinámicas */}
@@ -219,10 +253,13 @@ export default function DashboardPage() {
                                         <Card className="w-80 shadow-xl border-none glass"><CardBody className="p-4">
                                             <div className="flex items-center justify-between mb-4">
                                                 <h4 className="label-technical">Audio Setup</h4>
-                                                <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
-                                                    await fetch('/api/config/vad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold }) });
-                                                    tools.setActiveTool(null);
-                                                }}><Check size={16} /></Button>
+                                                <div className="flex gap-2">
+                                                    <Button isIconOnly size="sm" variant="flat" color="danger" onClick={() => tools.setActiveTool(null)}><X size={16} /></Button>
+                                                    <Button isIconOnly size="sm" variant="flat" color="success" onClick={async () => {
+                                                        await fetch('/api/config/vad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ voice_threshold: voiceThreshold, silence_threshold: silenceThreshold }) });
+                                                        tools.setActiveTool(null);
+                                                    }}><Check size={16} /></Button>
+                                                </div>
                                             </div>
                                             <Slider label="Voice Start" size="sm" step={5} minValue={20} maxValue={1000} value={voiceThreshold} onChange={(v) => setVoiceThreshold(v as number)} color="success" />
                                             <Slider label="Silence Stop" size="sm" step={5} minValue={10} maxValue={800} value={silenceThreshold} onChange={(v) => setSilenceThreshold(v as number)} color="danger" />
@@ -230,15 +267,21 @@ export default function DashboardPage() {
                                     )}
                                     {tools.activeTool === 'format' && (
                                         <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
-                                            <h5 className="label-technical mb-3">Refinement</h5>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h5 className="label-technical">Refinement</h5>
+                                                <Button isIconOnly size="sm" variant="light" radius="full" onClick={() => tools.setActiveTool(null)}><X size={14} /></Button>
+                                            </div>
                                             <div className="flex gap-2">
                                                 <Button size="sm" color="primary" className="flex-1 rounded-xl" onClick={tools.handleAutoFormat} isLoading={!!(transcriptionService.transcriptionId && transcriptionService.processingIds.has(transcriptionService.transcriptionId))}>Auto-Format</Button>
-                                                <Button size="sm" variant="bordered" className="rounded-xl" onClick={() => tools.setActiveTool(null)}>Close</Button>
                                             </div>
                                         </CardBody></Card>
                                     )}
                                     {tools.activeTool === 'upload' && (
                                         <Card className="w-64 shadow-xl border-none glass"><CardBody className="p-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h5 className="label-technical">Upload Audio</h5>
+                                                <Button isIconOnly size="sm" variant="light" radius="full" onClick={() => tools.setActiveTool(null)}><X size={14} /></Button>
+                                            </div>
                                             <input ref={tools.uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)} />
                                             <Button size="sm" variant="flat" className="w-full mb-3 rounded-xl" onClick={() => tools.uploadInputRef.current?.click()}>Choose File</Button>
                                             <p className="text-[10px] text-slate-500 mb-3 truncate font-medium">{tools.uploadFileName || 'No file selected'}</p>
