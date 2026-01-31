@@ -54,43 +54,6 @@ async def list_transcriptions(limit: int = 50):
     except Exception as e:
         raise HTTPException(500, f"Error: {str(e)}")
 
-@router.get("/{transcription_id}")
-async def get_transcription_by_id(transcription_id: str):
-    """Get a specific processed transcription by id"""
-    try:
-        doc = repo.get_by_id(transcription_id)
-        if not doc:
-            raise HTTPException(404, "Not found")
-
-        segments = repo.get_segments(doc["_id"])
-        content = renderer.render_transcription(doc, segments)
-
-        return {
-            "id": str(doc["_id"]),
-            "filename": doc.get("filename"),
-            "date": doc.get("date"),
-            "content": content,
-            "is_formatted": doc.get("is_formatted", False)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, f"Error: {str(e)}")
-
-@router.put("/{transcription_id}")
-async def update_transcription(transcription_id: str, update: TranscriptionUpdate):
-    """Update transcription content"""
-    if repo.update_content(transcription_id, update.content):
-        return {"status": "updated"}
-    raise HTTPException(404, "Not found")
-
-@router.delete("/{transcription_id}")
-async def delete_transcription(transcription_id: str):
-    """Logically delete a transcription"""
-    if repo.delete(transcription_id):
-        return {"status": "deleted"}
-    raise HTTPException(404, "Not found")
-
 @router.get("/search")
 async def search_transcriptions(q: str):
     """Global search using Repository logic"""
@@ -135,3 +98,39 @@ async def search_transcriptions(q: str):
     except Exception as e:
         raise HTTPException(500, f"Search error: {str(e)}")
 
+@router.get("/{transcription_id}")
+async def get_transcription_by_id(transcription_id: str):
+    """Get a specific processed transcription by id"""
+    try:
+        doc = repo.get_by_id(transcription_id)
+        if not doc:
+            raise HTTPException(404, "Not found")
+
+        segments = repo.get_segments(doc["_id"])
+        content = renderer.render_transcription(doc, segments)
+
+        return {
+            "id": str(doc["_id"]),
+            "filename": doc.get("filename"),
+            "date": doc.get("date"),
+            "content": content,
+            "is_formatted": doc.get("is_formatted", False)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error: {str(e)}")
+
+@router.put("/{transcription_id}")
+async def update_transcription(transcription_id: str, update: TranscriptionUpdate):
+    """Update transcription content"""
+    if repo.update_content(transcription_id, update.content):
+        return {"status": "updated"}
+    raise HTTPException(404, "Not found")
+
+@router.delete("/{transcription_id}")
+async def delete_transcription(transcription_id: str):
+    """Logically delete a transcription"""
+    if repo.delete(transcription_id):
+        return {"status": "deleted"}
+    raise HTTPException(404, "Not found")

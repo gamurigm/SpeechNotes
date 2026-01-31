@@ -36,7 +36,7 @@ export function useToolRegistry({
 
         try {
             const filename = transcriptions[selectedIndex].filename;
-            const res = await fetch('http://localhost:8001/api/format/start', {
+            const res = await fetch('/api/format/start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ export function useToolRegistry({
             if (!res.ok) throw new Error('Failed to start formatting');
             const { job_id, ws_url } = await res.json();
 
-            const ws = new WebSocket(`ws://localhost:8001/api/format${ws_url}`);
+            const ws = new WebSocket(`ws://127.0.0.1:8001/api/format${ws_url}`);
             ws.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                 if (data.status === 'job_completed' || data.status === 'completed') {

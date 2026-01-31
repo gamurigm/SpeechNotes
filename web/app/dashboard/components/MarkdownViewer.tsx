@@ -44,7 +44,7 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
 
     // Font style state
     const [fontFamily, setFontFamily] = useState<string>('Inter, system-ui, -apple-system, sans-serif');
-    const [fontSize, setFontSize] = useState<number>(14);
+    const [fontSize, setFontSize] = useState<number>(16);
 
     const highlightText = (text: any) => {
         if (!searchQuery || typeof text !== 'string') return text;
@@ -249,96 +249,142 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
                 </div>
             )}
 
-            <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 z-10">
-                <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                        <h2
-                            className="text-lg font-black tracking-tighter leading-tight title-semi-neon"
-                            style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.3 * (zoomLevel / 100))}px` }}
-                        >
-                            {displayTitle}
-                        </h2>
+            <div className="flex flex-wrap items-center justify-between p-4 gap-x-8 gap-y-4 border-b border-white/10 sticky top-0 z-20 bg-inherit backdrop-blur-md">
+                <div className="flex flex-col min-w-[300px] flex-1">
+                    <h2
+                        className="text-2xl font-black tracking-tighter leading-tight title-semi-neon truncate"
+                        style={{ fontFamily, fontSize: `${Math.round(fontSize * 1.8 * (zoomLevel / 100))}px` }}
+                        title={displayTitle}
+                    >
+                        {displayTitle}
+                    </h2>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--foreground)]/50 block whitespace-nowrap">
+                            {extractedDate ? `• ${extractedDate} •` : '• Transcripción Reciente •'}
+                        </span>
                         {isFormatted && (
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
-                                <Sparkles size={11} className="text-violet-400 animate-pulse" />
-                                <span className="text-[10px] font-black text-violet-300 uppercase tracking-widest">AI Formatted</span>
+                            <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+                                <Sparkles size={10} className="text-violet-400 animate-pulse" />
+                                <span className="text-[9px] font-black text-violet-300 uppercase tracking-widest">AI Formatted</span>
                             </div>
                         )}
                     </div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--foreground)]/50 mt-1.5 block">
-                        {extractedDate ? `• ${extractedDate} •` : '• Transcripción Reciente •'}
-                    </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-4 flex-shrink-0 ml-auto">
                     {nav && (
-                        <div className="flex items-center gap-1.5 mr-2">
-                            <button onClick={nav.onPrev} disabled={!nav.hasPrev} className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 disabled:opacity-30 transition-all text-[var(--foreground)]">
-                                <ChevronLeft size={16} />
-                            </button>
-                            <button onClick={nav.onNext} disabled={!nav.hasNext} className="p-2 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 disabled:opacity-30 transition-all text-[var(--foreground)]">
-                                <ChevronRight size={16} />
-                            </button>
-                            {typeof nav.index === 'number' && (
-                                <span className="text-[10px] font-bold text-[var(--foreground)]/60 ml-1">{nav.index + 1}/{nav.total}</span>
-                            )}
+                        <div className="flex items-center gap-2 p-1 bg-white/5 dark:bg-black/30 rounded-2xl border border-white/10 shadow-lg group/nav transition-all duration-500">
+                            {/* Navigation Core */}
+                            <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/5">
+                                <button
+                                    onClick={nav.onPrev}
+                                    disabled={!nav.hasPrev}
+                                    className={`p-1.5 rounded-lg transition-all duration-300 ${nav.hasPrev ? 'hover:bg-indigo-500/20 text-[var(--foreground)] hover:scale-110 active:scale-95' : 'opacity-10 cursor-not-allowed'}`}
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+
+                                <div className="px-3 flex flex-col items-center justify-center min-w-[64px]">
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-lg font-black bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent" key={nav.index}>
+                                            {(nav.index || 0) + 1}
+                                        </span>
+                                        <span className="text-xs font-bold opacity-10 text-[var(--foreground)]">/</span>
+                                        <span className="text-[10px] font-black opacity-30 text-[var(--foreground)] font-mono">{nav.total}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={nav.onNext}
+                                    disabled={!nav.hasNext}
+                                    className={`p-1.5 rounded-lg transition-all duration-300 ${nav.hasNext ? 'hover:bg-indigo-500/20 text-[var(--foreground)] hover:scale-110 active:scale-95' : 'opacity-10 cursor-not-allowed'}`}
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            {/* Quick Jump */}
+                            <div className="flex items-center bg-indigo-500/5 border border-indigo-500/10 rounded-full p-0.5 group/jump">
+                                <input
+                                    type="text"
+                                    placeholder="GO"
+                                    className="w-9 h-9 bg-black/40 border border-white/5 rounded-full text-[9px] font-black text-center text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 placeholder:text-white/20"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const val = parseInt((e.target as HTMLInputElement).value);
+                                            if (!isNaN(val) && val > 0 && val <= (nav.total || 0)) {
+                                                nav.onJump?.(val - 1);
+                                                (e.target as HTMLInputElement).value = '';
+                                                (e.target as HTMLInputElement).blur();
+                                            }
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
                     )}
-                    <div className="flex gap-1.5">
-                        {isEditing ? (
-                            <>
-                                <button onClick={handleCancel} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
-                                <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-sm">{isSaving ? '...' : 'Guardar'}</button>
-                            </>
-                        ) : (
-                            <>
-                                <div className="relative group">
-                                    <button
-                                        onClick={() => setShowStyleMenu(!showStyleMenu)}
-                                        className={`p-2 rounded-lg transition-all relative ${showStyleMenu ? 'bg-indigo-600 text-white shadow-lg' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
-                                    >
-                                        <Type size={18} />
-                                        {!showStyleMenu && <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 ${isLight ? 'border-white' : 'border-slate-800'} animate-soft-pulse`} />}
-                                    </button>
-                                </div>
-                                {onFormatProfessional && !isFormatted && (
+
+                    {isEditing ? (
+                        <div className="flex items-center gap-2">
+                            <button onClick={handleCancel} className="p-2 text-[var(--foreground)]/70 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all"><X size={18} /></button>
+                            <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20">{isSaving ? '...' : 'Guardar Cambios'}</button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            {/* Grouping content actions */}
+                            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-white/5 dark:bg-white/5 rounded-2xl border border-white/10 shadow-sm">
+                                {onFormatProfessional && (
                                     <button
                                         onClick={onFormatProfessional}
-                                        className={`flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-105 active:scale-95 group/prof`}
-                                        title="Formatear Profesionalmente (Thinking Model)"
+                                        className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r ${isFormatted ? 'from-slate-600 to-slate-700' : 'from-violet-600 to-indigo-600'} hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black shadow-lg ${isFormatted ? 'shadow-slate-500/10' : 'shadow-indigo-500/20'} transition-all transform hover:scale-105 active:scale-95 group/prof`}
+                                        title={isFormatted ? "Volver a refinar con IA" : "Refinar contenido con Inteligencia Artificial"}
                                     >
-                                        <Sparkles size={14} className="group-hover/prof:animate-pulse" />
-                                        <span className="hidden sm:inline">Pro Format</span>
+                                        <Sparkles size={12} className={`${isFormatted ? 'text-violet-300' : 'text-white'} group-hover/prof:rotate-12 transition-transform`} />
+                                        <span>IA Refine</span>
                                     </button>
                                 )}
-                                <button onClick={() => setIsEditing(true)} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Edit size={18} /></button>
+                                <button onClick={() => setIsEditing(true)} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Editar"><Edit size={16} /></button>
+
+                                <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+                                <button onClick={handleExportPdf} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Exportar PDF"><Download size={16} /></button>
+                                <button
+                                    onClick={() => setShowStyleMenu(!showStyleMenu)}
+                                    className={`p-2 rounded-xl transition-all relative ${showStyleMenu ? 'bg-indigo-600 text-white shadow-lg' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                    title="Personalizar Tipografía"
+                                >
+                                    <Type size={16} />
+                                </button>
+
                                 {onDelete && (
-                                    <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-1 rounded-xl border border-rose-500/20' : 'gap-0'}`}>
-                                        {isConfirmingDelete && (
+                                    <>
+                                        <div className="w-px h-4 bg-white/10 mx-0.5" />
+                                        <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-0.5 rounded-lg border border-rose-500/20' : 'gap-0'}`}>
+                                            {isConfirmingDelete && (
+                                                <button
+                                                    onClick={() => setIsConfirmingDelete(false)}
+                                                    className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md text-slate-400 transition-colors"
+                                                    title="Cancelar"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                             <button
-                                                onClick={() => setIsConfirmingDelete(false)}
-                                                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-slate-400 transition-colors"
-                                                title="Cancelar"
+                                                onClick={handleDelete}
+                                                className={`p-2 rounded-lg transition-all ${isConfirmingDelete
+                                                    ? 'bg-rose-500 text-white shadow-lg'
+                                                    : 'text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10'
+                                                    }`}
+                                                title={isConfirmingDelete ? "Confirmar eliminación" : "Eliminar clase"}
                                             >
-                                                <X size={16} />
+                                                <Trash2 size={isConfirmingDelete ? 14 : 16} />
                                             </button>
-                                        )}
-                                        <button
-                                            onClick={handleDelete}
-                                            className={`p-2 rounded-lg transition-all ${isConfirmingDelete
-                                                ? 'bg-rose-500 text-white shadow-lg'
-                                                : 'text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10'
-                                                }`}
-                                            title={isConfirmingDelete ? "Confirmar eliminación" : "Eliminar clase"}
-                                        >
-                                            <Trash2 size={isConfirmingDelete ? 16 : 18} />
-                                        </button>
-                                    </div>
+                                        </div>
+                                    </>
                                 )}
-                                <button onClick={handleExportPdf} className={`p-2 rounded-lg transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}><Download size={18} /></button>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -386,22 +432,7 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
                 )}
             </div>
 
-            {/* Premium Minimal Navigator Scrubber */}
-            {!isEditing && nav && nav.total && nav.total > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1.5 glass rounded-full border border-white/10 shadow-lg scale-90 hover:scale-100 transition-all duration-300 opacity-40 hover:opacity-100 group/nav">
-                    {Array.from({ length: nav.total }).map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => nav.onJump?.(i)}
-                            className={`h-1 rounded-full transition-all duration-300 ${i === nav.index
-                                ? 'w-6 bg-[var(--theme-neon-color)] shadow-[0_0_8px_var(--theme-neon-color)]'
-                                : 'w-2 bg-white/20 hover:bg-white/40'
-                                }`}
-                            title={`Clase ${i + 1}`}
-                        />
-                    ))}
-                </div>
-            )}
+
         </div>
     );
 }

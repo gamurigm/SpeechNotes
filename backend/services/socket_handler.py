@@ -531,7 +531,17 @@ def register_socket_events(sio):
                 except Exception as e:
                     print(f"[Socket.IO] Error transcribing remaining buffer: {e}")
 
-            # 3. Create and Save markdown transcription
+            # 3. Create and Save markdown transcription ONLY if there is content
+            if not session["transcription_buffer"]:
+                print(f"[Socket.IO] Skipping save for {sid}: No text transcribed.")
+                try:
+                    await sio.emit('error', {
+                        'message': 'No se detectó voz o contenido para transcribir. No se guardará el documento vacío.'
+                    }, room=sid)
+                except:
+                    pass
+                return
+
             all_transcripts = [(datetime.now(), item['text']) for item in session["transcription_buffer"]]
             metadata = {'title': 'Transcripción de Audio', 'method': 'Real-time VAD'}
             

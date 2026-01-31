@@ -108,18 +108,15 @@ class RivaTranscriber:
         )
         
         # Add speech contexts to help real-time quality
-        speech_context = riva.client.SpeechContext(
-            phrases=[
-                "clase", "lección", "universidad", "estudiante", "profesor", 
-                "examen", "tarea", "proyecto", "análisis", "diseño", "software",
-                "ingeniería", "sistemas", "datos", "información", "código",
-                "programación", "desarrollo", "arquitectura", "reunión", "equipo",
-                "objetivos", "metodología", "investigación", "resultados",
-                "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
-            ],
-            boost=20.0
-        )
-        config.config.speech_contexts.append(speech_context)
+        phrases = [
+            "clase", "lección", "universidad", "estudiante", "profesor", 
+            "examen", "tarea", "proyecto", "análisis", "diseño", "software",
+            "ingeniería", "sistemas", "datos", "información", "código",
+            "programación", "desarrollo", "arquitectura", "reunión", "equipo",
+            "objetivos", "metodología", "investigación", "resultados",
+            "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
+        ]
+        riva.client.add_word_boosting_to_config(config, phrases, 20.0)
         
         responses = self.asr_service.streaming_response_generator(
             audio_chunks=audio_stream,
@@ -169,18 +166,15 @@ class RivaTranscriber:
                 )
                 
                 # Add speech contexts to boost valid Spanish vocabulary and reduce hallucinations
-                speech_context = riva.client.SpeechContext(
-                    phrases=[
-                        "clase", "lección", "universidad", "estudiante", "profesor", 
-                        "examen", "tarea", "proyecto", "análisis", "diseño", "software",
-                        "ingeniería", "sistemas", "datos", "información", "código",
-                        "programación", "desarrollo", "arquitectura", "reunión", "equipo",
-                        "objetivos", "metodología", "investigación", "resultados",
-                        "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
-                    ],
-                    boost=20.0 # High boost to favor these words over noise
-                )
-                config.speech_contexts.append(speech_context)
+                phrases = [
+                    "clase", "lección", "universidad", "estudiante", "profesor", 
+                    "examen", "tarea", "proyecto", "análisis", "diseño", "software",
+                    "ingeniería", "sistemas", "datos", "información", "código",
+                    "programación", "desarrollo", "arquitectura", "reunión", "equipo",
+                    "objetivos", "metodología", "investigación", "resultados",
+                    "sí", "no", "entendido", "correcto", "pregunta", "respuesta"
+                ]
+                riva.client.add_word_boosting_to_config(config, phrases, 20.0)
                 
                 # Try to detect WAV header
                 try:

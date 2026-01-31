@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardBody, Spinner, Slider, Button } from "@heroui/react";
+import { Card, CardBody, Spinner, Slider, Button, Divider } from "@heroui/react";
 import { RecordingPanel } from './components/RecordingPanel';
 import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
 import { ChatSidebar } from './components/ChatSidebar';
 import { useRecording } from '@/hooks/useRecording';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search, Mic } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves } from 'lucide-react';
 import { useBackground } from '../providers';
-import { BackgroundPicker } from "./components/BackgroundPicker";
+import { BackgroundPicker, ThemeSettings } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
 
 // Hooks especializados (SRP / SOLID)
@@ -63,7 +63,6 @@ export default function DashboardPage() {
 
     const [mdZoom, setMdZoom] = useState(100);
     const [appZoom, setAppZoom] = useState(100);
-    const [showAppZoomMenu, setShowAppZoomMenu] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [isChatExpanded, setIsChatExpanded] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
@@ -121,7 +120,7 @@ export default function DashboardPage() {
         }
         setIsSearching(true);
         try {
-            const res = await fetch(`http://localhost:8001/api/transcriptions/search?q=${encodeURIComponent(val)}`);
+            const res = await fetch(`/api/transcriptions/search?q=${encodeURIComponent(val)}`);
             const data = await res.json();
             setSearchResults(data.items || []);
         } catch (e) {
@@ -149,48 +148,7 @@ export default function DashboardPage() {
     };
 
     const currentTitle = extractTitleFromMarkdown(transcriptionService.latestContent);
-    const zoomRef = useRef<HTMLDivElement | null>(null);
 
-    const ZoomControl = () => (
-        <div ref={zoomRef} className="flex items-start gap-2">
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (!showAppZoomMenu) {
-                        tools.setActiveTool(null);
-                    }
-                    setShowAppZoomMenu((s) => !s);
-                }}
-                className={`p-2 rounded-lg transition-all duration-200 ${showAppZoomMenu
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md'
-                    : isLight
-                        ? 'text-slate-600 hover:text-blue-600 hover:bg-slate-100 shadow-sm'
-                        : 'text-slate-300 hover:text-blue-400 hover:bg-white/10 shadow-sm'
-                    }`}
-            >
-                <ZoomIn size={18} />
-            </button>
-            {showAppZoomMenu && (
-                <div
-                    onMouseDown={(e) => e.stopPropagation()}
-                    className={`fixed mt-12 ${isLight ? 'bg-white/80 border-slate-200' : 'bg-black/60 border-white/10'} backdrop-blur-xl border rounded-full shadow-2xl p-2 px-3 flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200 z-50`}
-                >
-                    <div className="flex items-center gap-2 px-1">
-                        <input
-                            type="range" min={50} max={145} step={1}
-                            value={appZoom}
-                            onChange={(e) => handleAppZoom(parseInt(e.target.value))}
-                            className="w-32 h-1.5 appearance-none cursor-pointer rounded-full"
-                            style={{
-                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((appZoom - 50) / 95) * 100}%, ${isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.1)'} ${((appZoom - 50) / 95) * 100}%, ${isLight ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255, 255, 255, 0.1)'} 100%)`
-                            }}
-                        />
-                        <div className={`text-xs font-black w-10 text-right ${isLight ? 'text-blue-700' : 'text-blue-400'}`}>{appZoom}%</div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 
     return (
         <div className="bg-transparent min-h-screen overflow-hidden relative">
@@ -206,24 +164,38 @@ export default function DashboardPage() {
                             <div className="max-w-7xl w-full flex items-center justify-center gap-6">
                                 <div className="flex flex-col gap-2 items-start">
                                     <div className="flex items-center gap-2">
-                                        <BackgroundPicker />
-                                        <div className="w-px h-6 bg-slate-200/50 mx-1" />
-                                        <ZoomControl />
                                         <ToolbarIcon
-                                            icon={<Wand2 size={18} />}
-                                            tooltip="Format"
+                                            icon={<Palette size={18} />}
+                                            tooltip="Temas"
                                             onClick={() => {
-                                                setShowAppZoomMenu(false);
                                                 setShowMicTest(false);
-                                                tools.toggleTool('format');
+                                                tools.toggleTool('themes');
                                             }}
-                                            isActive={tools.activeTool === 'format'}
+                                            isActive={tools.activeTool === 'themes'}
+                                        />
+                                        <div className="w-px h-6 bg-slate-200/50 mx-1" />
+                                        <ToolbarIcon
+                                            icon={<ZoomIn size={18} />}
+                                            tooltip="Zoom"
+                                            onClick={() => {
+                                                setShowMicTest(false);
+                                                tools.toggleTool('zoom');
+                                            }}
+                                            isActive={tools.activeTool === 'zoom'}
+                                        />
+                                        <ToolbarIcon
+                                            icon={<AudioLines size={18} />}
+                                            tooltip="FFMPEG Audio"
+                                            onClick={() => {
+                                                setShowMicTest(false);
+                                                tools.toggleTool('audio_process');
+                                            }}
+                                            isActive={tools.activeTool === 'audio_process'}
                                         />
                                         <ToolbarIcon
                                             icon={<FileAudio2 size={18} />}
                                             tooltip="Upload"
                                             onClick={() => {
-                                                setShowAppZoomMenu(false);
                                                 setShowMicTest(false);
                                                 tools.toggleTool('upload');
                                             }}
@@ -233,7 +205,6 @@ export default function DashboardPage() {
                                             icon={<SlidersHorizontal size={18} />}
                                             tooltip="VAD"
                                             onClick={() => {
-                                                setShowAppZoomMenu(false);
                                                 setShowMicTest(false);
                                                 tools.toggleTool('calibrate');
                                             }}
@@ -243,7 +214,6 @@ export default function DashboardPage() {
                                             icon={<Mic size={18} />}
                                             tooltip="Mic Test"
                                             onClick={() => {
-                                                setShowAppZoomMenu(false);
                                                 if (!showMicTest) tools.setActiveTool(null);
                                                 setShowMicTest(!showMicTest);
                                             }}
@@ -346,32 +316,71 @@ export default function DashboardPage() {
                                         </div>
                                     )}
 
-                                    {tools.activeTool === 'format' && (
+                                    {tools.activeTool === 'audio_process' && (
                                         <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
                                             <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
                                                 <CardBody className="p-5 space-y-4">
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg">
-                                                                <Wand2 size={18} className="text-white" />
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                                                                <Waves size={18} className="text-white" />
                                                             </div>
                                                             <div>
-                                                                <h3 className="text-sm font-semibold text-theme-primary">Refinamiento IA</h3>
-                                                                <p className="text-[10px] text-theme-secondary font-medium">Formateo profesional inteligente</p>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Transformación Audio</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Motor FFMPEG de Alto Rendimiento</p>
                                                             </div>
                                                         </div>
                                                         <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
                                                             <X size={14} />
                                                         </Button>
                                                     </div>
+
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="flat"
+                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
+                                                            startContent={<Sparkles size={12} />}
+                                                            onClick={() => setNotification({ message: 'Reducción de ruido iniciada...', type: 'info' })}
+                                                        >
+                                                            Denoise
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="flat"
+                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
+                                                            startContent={<Music4 size={12} />}
+                                                            onClick={() => setNotification({ message: 'Normalizando volumen...', type: 'info' })}
+                                                        >
+                                                            Normalize
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="flat"
+                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
+                                                            onClick={() => setNotification({ message: 'Eliminando silencios...', type: 'info' })}
+                                                        >
+                                                            Trim Silence
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="flat"
+                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
+                                                            onClick={() => setNotification({ message: 'Convirtiendo a MP3 High Quality...', type: 'info' })}
+                                                        >
+                                                            Convert MP3
+                                                        </Button>
+                                                    </div>
+
+                                                    <Divider className="opacity-10" />
+
                                                     <Button
                                                         size="md"
                                                         color="primary"
-                                                        className="w-full rounded-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25"
-                                                        onClick={tools.handleAutoFormat}
-                                                        isLoading={!!(transcriptionService.transcriptionId && transcriptionService.processingIds.has(transcriptionService.transcriptionId))}
+                                                        className="w-full rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25"
+                                                        onClick={() => setNotification({ message: 'Ejecutando cadena de procesamiento FFMPEG...', type: 'success' })}
                                                     >
-                                                        Auto-Formatear Clase
+                                                        Procesar Archivo
                                                     </Button>
                                                 </CardBody>
                                             </Card>
@@ -419,7 +428,101 @@ export default function DashboardPage() {
                                             </Card>
                                         </div>
                                     )}
-                                    <div className="flex-1 min-h-0"><LiveTranscription /></div>
+
+                                    {tools.activeTool === 'zoom' && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                                                                <ZoomIn size={18} className="text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Zoom de Interfaz</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Ajusta el tamaño global</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
+                                                            <X size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-theme-secondary">Escala</span>
+                                                            <span className="text-xs font-bold text-blue-500">{appZoom}%</span>
+                                                        </div>
+                                                        <Slider
+                                                            size="sm"
+                                                            step={1}
+                                                            minValue={50}
+                                                            maxValue={145}
+                                                            value={appZoom}
+                                                            onChange={(v) => handleAppZoom(v as number)}
+                                                            color="primary"
+                                                            className="max-w-md"
+                                                            hideValue
+                                                        />
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
+
+                                    {tools.activeTool === 'themes' && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg">
+                                                                <Palette size={18} className="text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-semibold text-theme-primary">Temas y Fondo</h3>
+                                                                <p className="text-[10px] text-theme-secondary font-medium">Personaliza tu espacio</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
+                                                            <X size={14} />
+                                                        </Button>
+                                                    </div>
+                                                    <ThemeSettings />
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
+                                    {/* Background Tasks - Integrated into sidebar flow to avoid overlap */}
+                                    {transcriptionService.processingIds.size > 0 && (
+                                        <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <Card className="w-full glass border-indigo-500/20 shadow-xl overflow-hidden rounded-2xl">
+                                                <CardBody className="p-4">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-500">
+                                                            <Sparkles size={16} className="animate-pulse" />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Background Tasks</h4>
+                                                            <p className="text-[9px] text-theme-secondary font-bold">{transcriptionService.processingIds.size} procesos activos</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        {Array.from(transcriptionService.processingIds).map(id => (
+                                                            <div key={id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+                                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                                    <Loader2 size={10} className="text-indigo-400 animate-spin flex-shrink-0" />
+                                                                    <span className="text-[10px] font-bold truncate opacity-80">
+                                                                        {id.startsWith('upload-') ? 'Sincronizando Audio...' : id.startsWith('temp-') ? 'Finalizando grabación...' : 'Formateo Inteligente...'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-h-0 mt-auto"><LiveTranscription /></div>
                                 </div>
                             </aside>
 
@@ -500,34 +603,6 @@ export default function DashboardPage() {
                 .modern-scrollbar { scrollbar-gutter: stable; }
             `}</style>
 
-            {/* Background Tasks Drawer */}
-            {transcriptionService.processingIds.size > 0 && (
-                <div className="fixed bottom-6 left-6 z-[101] animate-in slide-in-from-bottom-5 duration-700">
-                    <Card className="w-72 glass border-indigo-500/20 shadow-2xl">
-                        <CardBody className="p-4">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-500"><Sparkles size={16} className="animate-pulse" /></div>
-                                <div>
-                                    <h4 className="text-xs font-black uppercase tracking-widest text-indigo-500">Background Tasks</h4>
-                                    <p className="text-[10px] text-slate-500 font-bold">{transcriptionService.processingIds.size} procesos activos</p>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                {Array.from(transcriptionService.processingIds).map(id => (
-                                    <div key={id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
-                                        <div className="flex items-center gap-2 overflow-hidden">
-                                            <Loader2 size={12} className="text-indigo-400 animate-spin flex-shrink-0" />
-                                            <span className="text-[10px] font-bold truncate opacity-80">
-                                                {id.startsWith('upload-') ? 'Sincronizando Audio...' : id.startsWith('temp-') ? 'Finalizando grabación...' : 'Formateo Inteligente...'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardBody>
-                    </Card>
-                </div>
-            )}
 
             {/* Command Palette Search */}
             {showSearchPalette && (

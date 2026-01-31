@@ -326,7 +326,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                                         );
                                     })()}
                                 </div>
-                                <span className="block mt-1 text-[9px] font-bold uppercase text-slate-700 tracking-widest opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                                <span className={`block mt-1.5 text-[11px] font-bold uppercase ${isLight ? 'text-slate-500' : 'text-slate-400'} tracking-wider opacity-60 group-hover/msg:opacity-100 transition-opacity`}>
                                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
