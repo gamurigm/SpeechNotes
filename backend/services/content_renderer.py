@@ -41,6 +41,13 @@ class ContentRenderer:
         self.raw_strategy = RawContentStrategy()
 
     def render_transcription(self, doc: Dict, segments: List[Dict]) -> str:
+        # 0. Check if document is still being processed
+        if not doc.get("processed", True):
+            raw = doc.get("raw_content") or ""
+            if raw:
+                return raw  # Show raw content while processing
+            return "# ⏳ Procesando transcripción...\n\nEl documento está siendo analizado. Refresca en unos segundos."
+        
         # 1. Try Professional Format (if explicit flag or if content exists)
         if doc.get("formatted_content") and (doc.get("is_formatted") or not doc.get("raw_content")):
             return self.formatted_strategy.render(doc, segments)
@@ -53,3 +60,4 @@ class ContentRenderer:
         # 3. Fallback to any remaining text content
         content = self.raw_strategy.render(doc, segments)
         return content or "# Sin contenido disponible"
+
