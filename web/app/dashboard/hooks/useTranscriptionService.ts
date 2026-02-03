@@ -76,9 +76,13 @@ export function useTranscriptionService() {
     // Socket listeners for background updates
     useEffect(() => {
         const socket = getSocket();
+
         const handleRecordingStopped = () => {
+            // Give immediate feedback that something is happening
             const jobFakeId = `temp-${Date.now()}`;
             setProcessingIds(prev => new Set(prev).add(jobFakeId));
+
+            // Still do an early refresh to catch the file if it was ingested quickly
             setTimeout(async () => {
                 await loadTranscriptionsList();
                 setProcessingIds(prev => {
@@ -86,11 +90,24 @@ export function useTranscriptionService() {
                     next.delete(jobFakeId);
                     return next;
                 });
-            }, 3000);
+            }, 1000);
+        };
+
+        const handleProcessingComplete = async (data: any) => {
+            console.log('[Socket.IO] Processing complete:', data);
+            // Full refresh when backend is totally done
+            await loadTranscriptionsList();
+
+            // If the completed file is the newest one, it will be selected by loadTranscriptionsList
         };
 
         socket.on('recording_stopped', handleRecordingStopped);
-        return () => { socket.off('recording_stopped', handleRecordingStopped); };
+        socket.on('processing_complete', handleProcessingComplete);
+
+        return () => {
+            socket.off('recording_stopped', handleRecordingStopped);
+            socket.off('processing_complete', handleProcessingComplete);
+        };
     }, [loadTranscriptionsList]);
 
     // Initial load

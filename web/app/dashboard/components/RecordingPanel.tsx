@@ -1,6 +1,6 @@
 'use client';
 
-import { useRecording } from '@/hooks/useRecording';
+import { useRecording } from '../providers/RecordingProvider';
 import { Mic, Square, Settings2 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { useState } from 'react';

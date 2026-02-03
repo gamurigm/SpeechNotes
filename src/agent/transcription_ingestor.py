@@ -53,13 +53,21 @@ class TranscriptionIngestor:
         return stats
     
     @logfire.instrument
-    def _ingest_file(self, file_path: Path) -> bool:
+    def _ingest_file(self, file_path: Path, source_type: str = "live_recording", source_filename: str = None) -> bool:
         """
         Ingest a single file.
+        
+        Args:
+            file_path: Path to the markdown file (Path or str)
+            source_type: Either "live_recording" or "uploaded_file"
+            source_filename: Original filename if uploaded
         
         Returns:
             True if added, False if skipped (already exists)
         """
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+            
         # Check if already exists
         existing = self.db.transcriptions.find_one({"filename": file_path.name})
         if existing:
@@ -76,6 +84,8 @@ class TranscriptionIngestor:
             "date": metadata["date"],
             "time": metadata["time"],
             "word_count": metadata["word_count"],
+            "source_type": source_type,  # NEW: Track origin
+            "source_filename": source_filename,  # NEW: Original uploaded filename
             "processed": False,
             "ingested_at": datetime.now()
         }
@@ -90,7 +100,7 @@ class TranscriptionIngestor:
         if segments:
             self.db.segments.insert_many(segments)
             
-        print(f"[INFO] Ingested {file_path.name} with {len(segments)} initial segments")
+        print(f"[INFO] Ingested {file_path.name} ({source_type}) with {len(segments)} initial segments")
         return True
     
     def _extract_metadata(self, file_path: Path) -> Dict[str, Any]:

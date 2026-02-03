@@ -7,7 +7,7 @@ import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
 import { ChatSidebar } from './components/ChatSidebar';
-import { useRecording } from '@/hooks/useRecording';
+import { RecordingProvider, useRecording } from './providers/RecordingProvider';
 import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves } from 'lucide-react';
 import { useBackground } from '../providers';
 import { BackgroundPicker, ThemeSettings } from "./components/BackgroundPicker";
@@ -60,6 +60,14 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
 };
 
 export default function DashboardPage() {
+    return (
+        <RecordingProvider>
+            <DashboardContent />
+        </RecordingProvider>
+    );
+}
+
+function DashboardContent() {
     // 1. Estados de UI y Navegación
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
@@ -333,70 +341,186 @@ export default function DashboardPage() {
 
                                     {tools.activeTool === 'audio_process' && (
                                         <div className="flex-shrink-0 animate-in slide-in-from-top-2 fade-in duration-300">
-                                            <Card className="w-full shadow-xl border-none glass overflow-hidden rounded-2xl">
-                                                <CardBody className="p-5 space-y-4">
+                                            <Card className="w-full shadow-2xl border-none glass overflow-hidden rounded-2xl">
+                                                <CardBody className="p-6 space-y-5">
+                                                    {/* Header */}
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-                                                                <Waves size={18} className="text-white" />
+                                                            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-violet-600 shadow-lg shadow-blue-500/30">
+                                                                <Waves size={20} className="text-white" />
                                                             </div>
                                                             <div>
-                                                                <h3 className="text-sm font-semibold text-theme-primary">Transformación Audio</h3>
-                                                                <p className="text-[10px] text-theme-secondary font-medium">Motor FFMPEG de Alto Rendimiento</p>
+                                                                <h3 className="text-base font-bold text-white drop-shadow-lg">Transformación de Audio</h3>
+                                                                <p className="text-xs text-white/70 font-semibold">Motor FFmpeg • Alta Velocidad</p>
                                                             </div>
                                                         </div>
-                                                        <Button isIconOnly size="sm" variant="light" className="w-6 h-6 min-w-0 text-slate-500 hover:text-rose-500" onClick={() => tools.setActiveTool(null)}>
-                                                            <X size={14} />
+                                                        <Button
+                                                            isIconOnly
+                                                            size="sm"
+                                                            variant="light"
+                                                            className="w-8 h-8 min-w-0 text-white/60 hover:text-rose-400 hover:bg-rose-500/10"
+                                                            onClick={() => tools.setActiveTool(null)}
+                                                        >
+                                                            <X size={16} />
                                                         </Button>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="flat"
-                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
-                                                            startContent={<Sparkles size={12} />}
-                                                            onClick={() => setNotification({ message: 'Reducción de ruido iniciada...', type: 'info' })}
+                                                    {/* File Upload Zone */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-white/90 uppercase tracking-wide flex items-center gap-2">
+                                                            <FileAudio2 size={14} className="text-blue-400" />
+                                                            Cargar Audio
+                                                        </label>
+                                                        <input
+                                                            ref={tools.uploadInputRef}
+                                                            type="file"
+                                                            accept="audio/*"
+                                                            className="hidden"
+                                                            onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)}
+                                                        />
+                                                        <div
+                                                            className="relative border-2 border-dashed border-white/20 rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/5 transition-all duration-300 group"
+                                                            onClick={() => tools.uploadInputRef.current?.click()}
                                                         >
-                                                            Denoise
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="flat"
-                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
-                                                            startContent={<Music4 size={12} />}
-                                                            onClick={() => setNotification({ message: 'Normalizando volumen...', type: 'info' })}
-                                                        >
-                                                            Normalize
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="flat"
-                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
-                                                            onClick={() => setNotification({ message: 'Eliminando silencios...', type: 'info' })}
-                                                        >
-                                                            Trim Silence
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="flat"
-                                                            className="rounded-xl font-bold bg-white/5 hover:bg-white/10 text-[10px]"
-                                                            onClick={() => setNotification({ message: 'Convirtiendo a MP3 High Quality...', type: 'info' })}
-                                                        >
-                                                            Convert MP3
-                                                        </Button>
+                                                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-violet-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <div className="relative z-10 flex flex-col items-center gap-2">
+                                                                <div className="p-3 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                                                                    <FileAudio2 size={24} className="text-blue-400" />
+                                                                </div>
+                                                                <p className="text-sm font-bold text-white/80 truncate max-w-full px-2">
+                                                                    {tools.uploadFileName || 'Click para seleccionar archivo'}
+                                                                </p>
+                                                                <p className="text-[10px] text-white/40 font-semibold">MP3, WAV, M4A, OGG, WebM</p>
+                                                            </div>
+                                                        </div>
                                                     </div>
 
-                                                    <Divider className="opacity-10" />
+                                                    <Divider className="opacity-20" />
 
-                                                    <Button
-                                                        size="md"
-                                                        color="primary"
-                                                        className="w-full rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25"
-                                                        onClick={() => setNotification({ message: 'Ejecutando cadena de procesamiento FFMPEG...', type: 'success' })}
-                                                    >
-                                                        Procesar Archivo
-                                                    </Button>
+                                                    {/* Conversion Profiles */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-white/90 uppercase tracking-wide flex items-center gap-2">
+                                                            <Sparkles size={14} className="text-violet-400" />
+                                                            Perfiles de Conversión
+                                                        </label>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-auto py-3 px-2 flex flex-col items-center gap-1 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/30 text-white rounded-xl"
+                                                                onClick={() => setNotification({ message: 'Perfil Transcripción: 16kHz, Mono, WAV', type: 'info' })}
+                                                            >
+                                                                <Mic size={16} className="text-emerald-400" />
+                                                                <span className="text-[10px] font-bold">Transcripción</span>
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-auto py-3 px-2 flex flex-col items-center gap-1 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-500/30 text-white rounded-xl"
+                                                                onClick={() => setNotification({ message: 'Perfil Alta Calidad: FLAC, 48kHz', type: 'info' })}
+                                                            >
+                                                                <Music4 size={16} className="text-blue-400" />
+                                                                <span className="text-[10px] font-bold">Alta Calidad</span>
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-auto py-3 px-2 flex flex-col items-center gap-1 bg-gradient-to-br from-orange-500/20 to-red-500/20 hover:from-orange-500/30 hover:to-red-500/30 border border-orange-500/30 text-white rounded-xl"
+                                                                onClick={() => setNotification({ message: 'Perfil Almacenamiento: MP3, 64kbps', type: 'info' })}
+                                                            >
+                                                                <FileAudio2 size={16} className="text-orange-400" />
+                                                                <span className="text-[10px] font-bold">Almacenar</span>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    <Divider className="opacity-20" />
+
+                                                    {/* Advanced Functions */}
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-white/90 uppercase tracking-wide flex items-center gap-2">
+                                                            <SlidersHorizontal size={14} className="text-pink-400" />
+                                                            Funciones Avanzadas
+                                                        </label>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '🔊 Normalizando volumen a -16dB...', type: 'info' })}
+                                                            >
+                                                                <Music4 size={14} />
+                                                                Normalizar
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '✂️ Eliminando silencios...', type: 'info' })}
+                                                            >
+                                                                <Sparkles size={14} />
+                                                                Quitar Silencio
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '⏱️ Extrayendo segmento...', type: 'info' })}
+                                                            >
+                                                                <ZoomIn size={14} />
+                                                                Extraer
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '🔗 Uniendo archivos...', type: 'info' })}
+                                                            >
+                                                                <Waves size={14} />
+                                                                Unir
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '⚡ Cambiando velocidad a 1.5x...', type: 'info' })}
+                                                            >
+                                                                <AudioLines size={14} />
+                                                                Velocidad
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                className="rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white text-xs border border-white/10"
+                                                                onClick={() => setNotification({ message: '🎯 Detectando formato...', type: 'info' })}
+                                                            >
+                                                                <FileText size={14} />
+                                                                Detectar
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    <Divider className="opacity-20" />
+
+                                                    {/* Action Buttons */}
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <Button
+                                                            size="md"
+                                                            variant="flat"
+                                                            className="rounded-xl font-bold bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white border border-violet-500/30"
+                                                            disabled={!tools.uploadFileName}
+                                                            onClick={() => setNotification({ message: '📥 Procesando y descargando...', type: 'success' })}
+                                                        >
+                                                            <FileAudio2 size={16} />
+                                                            Descargar
+                                                        </Button>
+                                                        <Button
+                                                            size="md"
+                                                            className="rounded-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 shadow-lg shadow-blue-500/30 text-white"
+                                                            disabled={!tools.uploadFileName}
+                                                            onClick={() => setNotification({ message: '🚀 Ejecutando pipeline FFmpeg...', type: 'success' })}
+                                                        >
+                                                            <Wand2 size={16} />
+                                                            Procesar
+                                                        </Button>
+                                                    </div>
                                                 </CardBody>
                                             </Card>
                                         </div>

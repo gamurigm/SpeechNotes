@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRecording } from '@/hooks/useRecording';
+import { useRecording } from '../providers/RecordingProvider';
 import { Mic, Waves, Sparkles, Volume2, Zap } from 'lucide-react';
 import { useBackground } from '../../providers';
 

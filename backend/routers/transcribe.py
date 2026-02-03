@@ -45,14 +45,19 @@ def process_audio_file(input_path: Path, output_path: Path):
         return False
 
 @logfire.instrument
-async def run_post_processing(md_path: Path):
+async def run_post_processing(md_path: Path, source_type: str = "live_recording", source_filename: str = None):
     """
     Run ingestion, analysis and generation in background
+    
+    Args:
+        md_path: Path to the markdown file
+        source_type: Either "live_recording" or "uploaded_file"
+        source_filename: Original filename if uploaded
     """
     try:
-        # Ingest into MongoDB
+        # Ingest into MongoDB with source metadata
         ingestor = TranscriptionIngestor()
-        ingestor._ingest_file(md_path)
+        ingestor._ingest_file(md_path, source_type=source_type, source_filename=source_filename)
         
         # Analysis (Logfire, summaries, etc)
         analyzer = TranscriptionAnalyzer()
@@ -68,9 +73,15 @@ async def run_post_processing(md_path: Path):
         traceback.print_exc()
 
 @logfire.instrument
-async def full_transcription_pipeline(file_path: Path, output_name: str, temp_dir: Path):
+async def full_transcription_pipeline(file_path: Path, output_name: str, temp_dir: Path, original_filename: str = None):
     """
     Background job: Standardize audio -> Transcribe -> Post-process
+    
+    Args:
+        file_path: Path to the uploaded audio file
+        output_name: Name for the output markdown file
+        temp_dir: Temporary directory for processing
+        original_filename: Original name of the uploaded file
     """
     try:
         # 1. Standardize with ffmpeg
@@ -89,9 +100,24 @@ async def full_transcription_pipeline(file_path: Path, output_name: str, temp_di
 
         print(f"[Worker] Starting transcription for {output_name}...")
         md_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
+        
+        # 2.5. Add header to markdown file indicating it's from uploaded file
+        if md_path.exists() and original_filename:
+            content = md_path.read_text(encoding='utf-8')
+            header = f"""---
+**📁 Transcripción de Archivo Subido**  
+📄 Archivo Original: `{original_filename}`  
+📅 Fecha de Procesamiento: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
+🤖 Motor: NVIDIA Riva + FFmpeg
 
-        # 3. Batch Post-processing
-        await run_post_processing(md_path)
+---
+
+"""
+            md_path.write_text(header + content, encoding='utf-8')
+            print(f"[Worker] ✅ Added upload metadata header to {md_path.name}")
+
+        # 3. Batch Post-processing with source metadata
+        await run_post_processing(md_path, source_type="uploaded_file", source_filename=original_filename)
         print(f"[Worker] ✅ All background tasks completed for {output_name}")
 
     except Exception as e:
@@ -127,8 +153,14 @@ async def transcribe_uploaded_file(
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_name = f"transcripcion_upload_{timestamp_str}.md"
         
-        # 3. Schedule the WHOLE pipeline as a background task
-        background_tasks.add_task(full_transcription_pipeline, temp_input, output_name, temp_dir)
+        # 3. Schedule the WHOLE pipeline as a background task with original filename
+        background_tasks.add_task(
+            full_transcription_pipeline, 
+            temp_input, 
+            output_name, 
+            temp_dir,
+            file.filename  # Pass original filename for metadata
+        )
         
         return {
             "status": "success",

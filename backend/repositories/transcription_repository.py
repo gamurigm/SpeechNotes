@@ -14,7 +14,7 @@ class TranscriptionRepository:
 
     def get_latest(self) -> Optional[Dict]:
         return self.db.transcriptions.find_one(
-            {"processed": True, "is_deleted": {"$ne": True}},
+            {"is_deleted": {"$ne": True}},
             sort=[("ingested_at", -1)]
         )
 
@@ -26,7 +26,7 @@ class TranscriptionRepository:
 
     def list_recent(self, limit: int = 50) -> List[Dict]:
         cursor = self.db.transcriptions.find(
-            {"processed": True, "is_deleted": {"$ne": True}}
+            {"is_deleted": {"$ne": True}}
         ).sort("ingested_at", -1).limit(limit)
         return list(cursor)
 

@@ -29,11 +29,17 @@ from routers import chat
 from routers import vad_config
 from routers import documents
 from routers import transcribe
+from routers import audio_format
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins=['http://localhost:3006']
+    cors_allowed_origins=[
+        'http://localhost:3006',
+        'http://127.0.0.1:3006',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ]
 )
 
 # Create FastAPI app
@@ -66,6 +72,8 @@ app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(transcribe.router, prefix="/api", tags=["transcribe"])
+app.include_router(audio_format.router, prefix="/api/audio-format", tags=["audio-format"])
+
 
 # Instrument FastAPI app for tracing (if available)
 try:
