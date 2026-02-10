@@ -58,4 +58,14 @@ Olvídate de buscar "palabras exactas".
 
 ---
 
+## 🏗️ Arquitectura y Patrones de Diseño
+
+Este proyecto implementa una arquitectura robusta basada en **Patrones de Diseño (GoF)** y **Principios SOLID** para garantizar mantenibilidad, escalabilidad y testabilidad.
+
+Consulta la documentación detallada en [ARCHITECTURE.md](./ARCHITECTURE.md), donde se explican:
+- **Backend**: Service Layer, Facade (Socket.IO), Adapter (Audio), Strategy (VAD), Singleton, Repository.
+- **Frontend**: Builder (AudioGraph), Singleton/Facade (ApiClient), Observer.
+
+---
+
 > *"El futuro de tomar notas no es escribir, es escuchar."* - **SpeechNotes Team** 🍌

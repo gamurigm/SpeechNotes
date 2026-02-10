@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiClient } from '@/utils/api-client';
+import { ApiClient } from '@/services/ApiClient';
 import { getSocket } from '@/utils/socket';
 
 export function useTranscriptionService() {
@@ -13,7 +13,7 @@ export function useTranscriptionService() {
     const loadTranscriptionById = useCallback(async (id: string) => {
         setIsLoading(true);
         try {
-            const data = await apiClient.getTranscription(id);
+            const data = await ApiClient.getInstance().getTranscription(id);
             setLatestContent(data.content);
             setTranscriptionId(data.id);
         } catch (e) {
@@ -28,7 +28,7 @@ export function useTranscriptionService() {
     const loadTranscriptionsList = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.getTranscriptions();
+            const res = await ApiClient.getInstance().listTranscriptions();
             const items = res.items || [];
             setTranscriptions(items);
 
@@ -42,7 +42,7 @@ export function useTranscriptionService() {
                 setSelectedIndex(index >= 0 ? index : 0);
                 await loadTranscriptionById(targetId);
             } else if (items.length === 0) {
-                const latest = await apiClient.getLatestTranscription();
+                const latest = await ApiClient.getInstance().getLatestTranscription();
                 setLatestContent(latest.content);
                 setTranscriptionId(latest.id);
             }
@@ -55,14 +55,14 @@ export function useTranscriptionService() {
 
     const handleSave = async (content: string) => {
         if (!transcriptionId) return;
-        await apiClient.updateTranscription(transcriptionId, content);
+        await ApiClient.getInstance().updateTranscription(transcriptionId, content);
         setLatestContent(content);
     };
 
     const handleDelete = async () => {
         if (!transcriptionId) return;
         try {
-            await apiClient.deleteTranscription(transcriptionId);
+            await ApiClient.getInstance().deleteTranscription(transcriptionId);
             setTranscriptionId(null);
             setSelectedIndex(0);
             await loadTranscriptionsList();

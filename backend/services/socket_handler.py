@@ -1,3 +1,30 @@
+"""
+Socket Handler - Facade Pattern (Structural) + Observer Pattern (Behavioral)
+
+Acts as a **Facade** that hides the complexity of the audio-processing
+subsystem (AudioService, VADService, TranscriberProxy) behind a clean
+Socket.IO event interface.
+
+The Socket.IO event registration itself follows the **Observer** pattern:
+clients emit events and this module dispatches them to the appropriate
+handler.
+
+Design Patterns:
+    - Facade (Structural): `register_socket_events()` is a single entry
+      point for all real-time transcription operations.
+    - Observer (Behavioral): Socket.IO events act as observable subjects;
+      handler functions are observers.
+    - Dependency Injection (DIP): Audio processing and VAD are delegated
+      to injected service objects, not hard-coded.
+
+SOLID Principles:
+    - SRP: This file only handles Socket.IO event routing. Audio
+      conversion lives in `audio_service.py`, VAD in `vad_service.py`.
+    - DIP: Depends on abstract ports (`AudioProcessorPort`, `VADStrategy`),
+      not on concrete implementations.
+    - OCP: New events can be added without touching existing handlers.
+"""
+
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -5,145 +32,43 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
-import wave
-import struct
-import math
 import asyncio
 import traceback
-import tempfile
-import io
 import logfire
 from typing import Any
-from pydub import AudioSegment
 
 load_dotenv()
 
-# Import realtime.py components
+# ── Service imports (DIP: depend on abstractions) ──
+from backend.services.audio_service import (
+    AudioProcessorPort,
+    WebMAudioAdapter,
+    PCMPassthroughAdapter,
+    AudioUtils,
+)
+from backend.services.vad_service import (
+    ThresholdVADStrategy,
+    VADConfig as ServiceVADConfig,
+    VADStrategy,
+)
+
+# ── Domain imports ──
 from src.core.environment_factory import TranscriptionEnvironmentFactoryProvider
 from src.transcription import FormatterFactory, OutputWriter
 
-# Store active sessions
-active_sessions = {}
-
-# Global transcriber instance
+# ──────────────────────────────────────────────
+#  Module-level singletons (Creational)
+# ──────────────────────────────────────────────
+active_sessions: dict[str, dict] = {}
 transcriber = None
 
-def calculate_rms(audio_data: bytes) -> float:
-    """
-    Calculate RMS (Root Mean Square) amplitude of audio data
-    Assumes 16-bit mono PCM
-    """
-    if not audio_data:
-        return 0
-        
-    count = len(audio_data) // 2
-    if count == 0:
-        return 0
-    
-    try:
-        # Unpack 16-bit integers (ensure exact buffer size)
-        shorts = struct.unpack(f"{count}h", audio_data[:count*2])
-        sum_squares = sum(s**2 for s in shorts)
-        rms = math.sqrt(sum_squares / count)
-        
-        # Log to file for hidden debugging
-        with open("vad_debug.log", "a") as f:
-            f.write(f"{datetime.now().isoformat()} - RMS: {rms:.2f}\n")
-        
-        return rms
-    except Exception as e:
-        print(f"[RMS] Error: {e}")
-        return 0
-
-
-def apply_gain(pcm_data: bytes, gain: float = 1.0) -> bytes:
-    """
-    Apply gain (volume amplification) to PCM audio data.
-    
-    Args:
-        pcm_data: Raw PCM bytes (16-bit mono)
-        gain: Multiplier for audio amplitude (1.0 = no change, 2.0 = double volume)
-    
-    Returns:
-        Amplified PCM bytes
-    """
-    if not pcm_data or gain == 1.0:
-        return pcm_data
-    
-    try:
-        count = len(pcm_data) // 2
-        if count == 0:
-            return pcm_data
-        
-        # Unpack 16-bit integers
-        shorts = list(struct.unpack(f"{count}h", pcm_data[:count*2]))
-        
-        # Apply gain with clipping to avoid overflow
-        amplified = []
-        for s in shorts:
-            amplified_val = int(s * gain)
-            # Clip to 16-bit range
-            if amplified_val > 32767:
-                amplified_val = 32767
-            elif amplified_val < -32768:
-                amplified_val = -32768
-            amplified.append(amplified_val)
-        
-        # Pack back to bytes
-        return struct.pack(f"{len(amplified)}h", *amplified)
-    except Exception as e:
-        print(f"[Gain] Error applying gain: {e}")
-        return pcm_data
-
-
-def convert_webm_to_pcm(webm_data: bytes, sample_rate: int = 16000) -> bytes:
-    """
-    Convert WebM (Opus) audio from browser to PCM format for Riva transcriber
-    
-    Args:
-        webm_data: Raw WebM audio bytes from browser MediaRecorder
-        sample_rate: Target sample rate (default 16000 for Riva)
-    
-    Returns:
-        PCM audio bytes (16-bit mono) or empty bytes on failure
-    """
-    if not webm_data or len(webm_data) < 100:
-        return b""
-    
-    try:
-        # Create temp file for ffmpeg input (pydub needs file-like object)
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_in:
-            tmp_in.write(webm_data)
-            tmp_in_path = tmp_in.name
-        
-        try:
-            # Load WebM with pydub (uses ffmpeg)
-            audio = AudioSegment.from_file(tmp_in_path, format="webm")
-            
-            # Convert to mono, 16-bit, target sample rate
-            audio = audio.set_channels(1)
-            audio = audio.set_sample_width(2)  # 16-bit
-            audio = audio.set_frame_rate(sample_rate)
-            
-            # Export to raw PCM bytes
-            pcm_data = audio.raw_data
-            
-            return pcm_data
-            
-        finally:
-            # Cleanup temp file
-            try:
-                os.unlink(tmp_in_path)
-            except:
-                pass
-                
-    except Exception as e:
-        print(f"[Audio Convert] Error converting WebM to PCM: {e}")
-        return b""
+# Adapter instances (Structural – Adapter Pattern)
+_webm_adapter: AudioProcessorPort = WebMAudioAdapter()
+_pcm_adapter: AudioProcessorPort = PCMPassthroughAdapter()
 
 
 def get_transcriber():
-    """Get or create transcriber instance from realtime.py"""
+    """Get or create transcriber instance (Lazy Initialization – Creational)."""
     global transcriber
     if transcriber is None:
         try:
@@ -155,99 +80,73 @@ def get_transcriber():
             transcriber = None
     return transcriber
 
-def save_audio_as_wav(audio_data_in: Any, output_path: Path, sample_rate: int = 16000):
-    """
-    Save audio chunks as WAV file
-    
-    Args:
-        audio_data_in: List of audio byte chunks OR raw bytes
-        output_path: Path to save WAV file
-        sample_rate: Sample rate in Hz
-    """
-    try:
-        # Combine chunks if it's a list
-        if isinstance(audio_data_in, list):
-            audio_data = b''.join(audio_data_in)
-        else:
-            audio_data = audio_data_in
-            
-        if not audio_data:
-            print(f"[Audio] No audio data to save for {output_path}")
-            return False
-            
-        # Create WAV file
-        with wave.open(str(output_path), 'wb') as wav_file:
-            wav_file.setnchannels(1)  # Mono
-            wav_file.setsampwidth(2)  # 16-bit
-            wav_file.setframerate(sample_rate)
-            wav_file.writeframes(audio_data)
-        
-        print(f"[Audio] Saved WAV file: {output_path} ({len(audio_data)} bytes)")
-        return True
-    except Exception as e:
-        print(f"[Audio] Error saving WAV: {e}")
-        return False
 
 def transcribe_audio_chunk(audio_data: bytes, threshold: int = 20) -> str:
-    """
-    Transcribe audio chunk using realtime.py transcriber
-    
-    Args:
-        audio_data: Raw audio bytes (PCM)
-        threshold: RMS threshold to skip obvious silence chunks early
-    
-    Returns:
-        Transcribed text
-    """
-    # 1. Early Silence Detection (very low threshold)
-    rms = calculate_rms(audio_data)
-    
-    # If it's absolute silence, skip API call
+    """Transcribe a PCM audio chunk using the Riva engine."""
+    rms = AudioUtils.calculate_rms(audio_data)
     if rms < threshold:
         return ""
-        
+
     trans = get_transcriber()
-    
     if not trans:
         return ""
-    
+
     try:
-        # Transcribe using realtime.py
         transcript = trans.offline_transcribe(audio_data, language="es")
-        
-        if transcript:
-            return transcript.strip()
-        else:
-            return ""
-            
+        return transcript.strip() if transcript else ""
     except Exception as e:
         print(f"[Transcriber] Error: {e}")
         return ""
 
+
+def format_timestamp(seconds: float) -> str:
+    """Format seconds as HH:MM:SS."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+# ──────────────────────────────────────────────
+#  Facade: register_socket_events
+# ──────────────────────────────────────────────
+
 def register_socket_events(sio):
-    """Register all Socket.IO event handlers"""
+    """
+    Facade Pattern entry point.
     
+    Registers all Socket.IO event handlers.  Internally delegates:
+      - Audio conversion  →  AudioProcessorPort (Adapter)
+      - VAD logic          →  VADStrategy          (Strategy / State)
+      - Transcription      →  Riva transcriber      (Lazy Singleton)
+      - Persistence        →  TranscriptionRepository (Repository)
+    """
+
+    # ── Observer: connect ──
+
     @sio.event
     async def connect(sid, environ):
-        """Client connected"""
+        """Client connected – initialise session with VAD strategy."""
         print(f"[Socket.IO] Client connected: {sid}")
+
+        # Each session gets its own VAD strategy instance (Strategy Pattern)
+        vad_strategy: VADStrategy = ThresholdVADStrategy(
+            ServiceVADConfig(voice_threshold=80, silence_threshold=40, silence_chunks_to_end=1)
+        )
+
         active_sessions[sid] = {
             "transcription_buffer": [],
             "start_time": datetime.now(),
-            "audio_chunks": [],      # Original WebM chunks
-            "pcm_audio": b"",        # Converted PCM audio
-            "speech_buffer": b"",    # BUFFER: Accumulated speech for transcription
-            "silence_counter": 0,    # BUFFER: Count silent chunks to detect end of phrase
-            "voice_threshold": 80,   # Lowered for more sensitivity (was 120)
-            "silence_threshold": 40, # Lowered for more sensitivity (was 80)
-            "is_speaking": False,     # VAD state
-            "mic_gain": 1.5,          # Microphone gain
-            "active": False           # Recording state
+            "audio_chunks": [],       # Original WebM chunks
+            "pcm_audio": b"",         # Converted PCM audio
+            "speech_buffer": b"",     # Accumulated speech
+            "vad_strategy": vad_strategy,  # Injected strategy
+            "mic_gain": 1.5,
+            "active": False,
         }
-        
-        # Initialize transcriber on first connection
+
         get_transcriber()
-        # Emit connection ack (wrapped to avoid crashing on send failures)
+
         try:
             await sio.emit('connected', {
                 'message': 'Connected to transcription server',
@@ -256,41 +155,47 @@ def register_socket_events(sio):
         except Exception as e:
             print(f"[Socket.IO] emit connected error: {e}")
             traceback.print_exc()
-    
+
+    # ── Observer: disconnect ──
+
     @sio.event
     async def disconnect(sid):
-        """Client disconnected"""
+        """Client disconnected – cleanup."""
         print(f"[Socket.IO] Client disconnected: {sid}")
-        if sid in active_sessions:
-            del active_sessions[sid]
-    
+        active_sessions.pop(sid, None)
+
+    # ── Observer: start_recording ──
+
     @sio.event
     async def start_recording(sid, *args):
-        """Start recording session"""
+        """Start recording session with optional VAD config override."""
         print(f"[Socket.IO] Start recording: {sid}")
-        
-        # Handle arguments (data might be the first arg in args)
         data = args[0] if args else None
-        
+
         if sid in active_sessions:
-            active_sessions[sid]["start_time"] = datetime.now()
-            active_sessions[sid]["transcription_buffer"] = []
-            active_sessions[sid]["audio_chunks"] = []
-            active_sessions[sid]["pcm_audio"] = b""
-            active_sessions[sid]["speech_buffer"] = b""
-            active_sessions[sid]["silence_counter"] = 0
-            active_sessions[sid]["is_speaking"] = False
-            active_sessions[sid]["active"] = True
-            
-            # Update settings if provided
+            session = active_sessions[sid]
+            session.update({
+                "start_time": datetime.now(),
+                "transcription_buffer": [],
+                "audio_chunks": [],
+                "pcm_audio": b"",
+                "speech_buffer": b"",
+                "active": True,
+            })
+
+            # Reconfigure VAD if client sends thresholds
             if data and isinstance(data, dict):
-                if 'voiceThreshold' in data:
-                    active_sessions[sid]["voice_threshold"] = int(data['voiceThreshold'])
-                if 'silenceThreshold' in data:
-                    active_sessions[sid]["silence_threshold"] = int(data['silenceThreshold'])
-                
-                print(f"[Socket.IO] VAD Config - Voice: {active_sessions[sid].get('voice_threshold')}, Silence: {active_sessions[sid].get('silence_threshold')}")
-            
+                vad_cfg = ServiceVADConfig(
+                    voice_threshold=int(data.get('voiceThreshold', 80)),
+                    silence_threshold=int(data.get('silenceThreshold', 40)),
+                    silence_chunks_to_end=1,
+                )
+                session["vad_strategy"] = ThresholdVADStrategy(vad_cfg)
+                print(f"[Socket.IO] VAD Config - Voice: {vad_cfg.voice_threshold}, Silence: {vad_cfg.silence_threshold}")
+
+            # Reset VAD state machine
+            session["vad_strategy"].reset()
+
             try:
                 await sio.emit('recording_started', {
                     'timestamp': datetime.now().isoformat()
@@ -298,198 +203,166 @@ def register_socket_events(sio):
             except Exception as e:
                 print(f"[Socket.IO] emit recording_started error: {e}")
                 traceback.print_exc()
-    
+
+    # ── Observer: set_mic_gain ──
+
     @sio.event
     async def set_mic_gain(sid, data):
-        """Set microphone gain level"""
+        """Set microphone gain level."""
         if sid not in active_sessions:
             return
-        
-        gain = 1.5  # Default
+
+        gain = 1.5
         if isinstance(data, dict) and 'gain' in data:
             gain = float(data['gain'])
         elif isinstance(data, (int, float)):
             gain = float(data)
-        
-        # Clamp gain between 0.5 and 5.0
+
         gain = max(0.5, min(5.0, gain))
-        
         active_sessions[sid]["mic_gain"] = gain
         print(f"[Socket.IO] Mic gain set to {gain:.2f} for {sid}")
-        
+
         try:
-            await sio.emit('mic_gain_updated', {
-                'gain': gain
-            }, room=sid)
+            await sio.emit('mic_gain_updated', {'gain': gain}, room=sid)
         except Exception as e:
             print(f"[Socket.IO] emit mic_gain_updated error: {e}")
-    
+
+    # ── Observer: audio_chunk (WebM) ──
+
     @sio.event
     @logfire.instrument
     async def audio_chunk(sid, data):
-        """Receive audio chunk from client and transcribe with realtime.py (legacy WebM format)"""
+        """Receive WebM audio → Adapter → PCM pipeline."""
         if sid not in active_sessions or not active_sessions[sid].get("active"):
             return
-        
+
         session = active_sessions[sid]
-        
-        # Store original WebM audio chunk for saving later
         session["audio_chunks"].append(data)
-        
-        # Convert WebM to PCM for processing (run in thread to avoid blocking)
+
+        # Adapter Pattern: convert WebM → PCM
         try:
-            pcm_data = await asyncio.to_thread(convert_webm_to_pcm, data)
+            pcm_data = await asyncio.to_thread(_webm_adapter.to_pcm, data)
         except Exception as e:
             print(f"[Audio] Conversion error: {e}")
             pcm_data = b""
-        
+
         if not pcm_data:
-            # Skip this chunk if conversion failed
             return
-        
-        # Process PCM data
-        await _process_pcm_chunk(sid, pcm_data, session)
-    
+
+        await _process_pcm_chunk(sio, sid, pcm_data, session)
+
+    # ── Observer: audio_chunk_pcm ──
+
     @sio.event
     @logfire.instrument
     async def audio_chunk_pcm(sid, data):
-        """Receive raw PCM audio chunk from client (16-bit mono 16kHz)"""
+        """Receive raw PCM audio (identity adapter)."""
         if sid not in active_sessions or not active_sessions[sid].get("active"):
             return
-        
+
         session = active_sessions[sid]
-        
-        # Data is already raw PCM bytes
         pcm_data = bytes(data) if not isinstance(data, bytes) else data
-        
+
         if not pcm_data or len(pcm_data) < 100:
             return
+
+        await _process_pcm_chunk(sio, sid, pcm_data, session)
+
+    # ──────────────────────────────────────
+    #  Internal pipeline (hidden by Facade)
+    # ──────────────────────────────────────
+
+    async def _process_pcm_chunk(sio_inst, sid: str, pcm_data: bytes, session: dict):
+        """
+        Common PCM processing pipeline.
         
-        # Process PCM data
-        await _process_pcm_chunk(sid, pcm_data, session)
-    
-    async def _process_pcm_chunk(sid, pcm_data: bytes, session: dict):
-        """Common PCM processing logic for both WebM and raw PCM inputs"""
-        # Apply microphone gain
+        1. Apply gain   →  AudioUtils  (SRP helper)
+        2. VAD decision →  VADStrategy (Strategy Pattern)
+        3. Buffer logic →  local state
+        4. Transcribe   →  Riva engine
+        """
+        # 1. Gain
         mic_gain = session.get("mic_gain", 1.5)
         if mic_gain != 1.0:
-            pcm_data = apply_gain(pcm_data, mic_gain)
-        
-        # Store PCM audio for transcription file
-        if "pcm_audio" not in session:
-            session["pcm_audio"] = b""
+            pcm_data = AudioUtils.apply_gain(pcm_data, mic_gain)
+
         session["pcm_audio"] += pcm_data
-        
-        # Calculate elapsed time
+
+        # Timestamp
         elapsed = (datetime.now() - session["start_time"]).total_seconds()
         timestamp = format_timestamp(elapsed)
-        
-        # VAD Logic (Hysteresis) - now using PCM data
-        rms = calculate_rms(pcm_data)
-        
-        # Always emit audio level to client for monitoring
+
+        # 2. VAD (Strategy Pattern delegation)
+        vad: VADStrategy = session["vad_strategy"]
+        result = vad.process_chunk(pcm_data)
+
+        # Emit audio level (Observer feedback to client)
         try:
-            await sio.emit('audio_level', {
-                'rms': round(rms, 1),
+            await sio_inst.emit('audio_level', {
+                'rms': round(result.rms, 1),
                 'gain': mic_gain,
-                'timestamp': timestamp
+                'timestamp': timestamp,
             }, room=sid)
-        except:
+        except Exception:
             pass
-        
-        # Log RMS every few chunks for debugging
-        print(f"[Audio Level] RMS: {rms:.0f} | Gain: {mic_gain:.1f}x")
-        
-        voice_thresh = session.get("voice_threshold", 120)
-        silence_thresh = session.get("silence_threshold", 80)
-        is_speaking = session.get("is_speaking", False)
 
-        if not is_speaking:
-            if rms > voice_thresh:
-                session["is_speaking"] = True
-                is_speaking = True
-                session["silence_counter"] = 0
-                print(f"[VAD] Voice started (RMS: {rms:.0f} > {voice_thresh})")
-        else:
-            if rms < silence_thresh:
-                session["silence_counter"] += 1
-                # If we detect silence for 1 chunk (4 seconds), end the phrase
-                if session["silence_counter"] >= 1:
-                    session["is_speaking"] = False
-                    is_speaking = False
-                    print(f"[VAD] Phrase ended (Silence detected in 4s chunk)")
-            else:
-                session["silence_counter"] = 0
+        print(f"[Audio Level] RMS: {result.rms:.0f} | Gain: {mic_gain:.1f}x")
 
-        # BUFFER LOGIC: Accumulate data while speaking or during brief silence
-        if is_speaking or (session.get("speech_buffer") and session["silence_counter"] > 0):
+        # 3. Buffer logic
+        if result.should_buffer:
             session["speech_buffer"] += pcm_data
-            
-        # TRIGGER TRANSCRIPTION: 
-        # 1. When phrase just ended
-        # 2. Every 4 seconds (each chunk) if speaking, to give periodic updates
+
         buffer_len_sec = len(session.get("speech_buffer", b"")) / (16000 * 2)
-        
+
         should_transcribe = False
-        if not is_speaking and session.get("speech_buffer"):
+        if result.phrase_ended and session.get("speech_buffer"):
             should_transcribe = True
         elif buffer_len_sec >= 4.0:
             should_transcribe = True
-            # We keep speaking, but we want the update every 4s
-            print(f"[BUFFER] Periodic trigger: 4s reached")
+            print("[BUFFER] Periodic trigger: 4s reached")
 
         if should_transcribe:
             buffer_to_send = session["speech_buffer"]
-            session["speech_buffer"] = b"" # Reset immediately
-            session["silence_counter"] = 0
-            
+            session["speech_buffer"] = b""
+
             try:
-                # Use offline_transcribe to get full phrase context and punctuation
                 text = await asyncio.to_thread(transcribe_audio_chunk, buffer_to_send, 0)
 
                 if text and text.strip():
-                    # Add to buffer
                     session["transcription_buffer"].append({
                         "timestamp": timestamp,
-                        "text": text
+                        "text": text,
                     })
 
-                    # Send transcription back to client
                     try:
-                        await sio.emit('transcription', {
+                        await sio_inst.emit('transcription', {
                             "timestamp": timestamp,
-                            "text": text
+                            "text": text,
                         }, room=sid)
                     except Exception as e_emit:
                         print(f"[Socket.IO] emit error: {e_emit}")
 
                     print(f"[Socket.IO] Full Phrase for {sid}: {text[:100]}...")
-                    with open("vad_debug.log", "a") as f:
-                        f.write(f"{datetime.now().isoformat()} - PHRASE: {text}\n")
 
             except Exception as e:
                 print(f"[Socket.IO] Error transcribing buffered segment: {e}")
-                import traceback
                 traceback.print_exc()
 
-    
+    # ── Observer: stop_recording ──
+
     @sio.event
     @logfire.instrument
     async def stop_recording(sid):
-        """Stop recording: schedule post-processing in background to avoid blocking."""
+        """Stop recording: schedule post-processing in background."""
         print(f"[Socket.IO] Stop recording: {sid}")
 
         if sid not in active_sessions:
             await sio.emit('error', {'message': 'No active session'}, room=sid)
             return
 
-        # Mark as inactive immediately
         active_sessions[sid]["active"] = False
-
-        # Schedule the heavy work in background so we don't block the Socket.IO event loop
         asyncio.create_task(_handle_stop_recording(sid))
 
-        # Immediately acknowledge receipt to the client
         try:
             await sio.emit('recording_stopped', {
                 'message': 'Transcription saved and processing started',
@@ -500,10 +373,9 @@ def register_socket_events(sio):
         except Exception as e:
             print(f"[Socket.IO] emit ack error: {e}")
 
-
     @logfire.instrument
     async def _handle_stop_recording(sid: str):
-        """Background worker to perform blocking post-processing steps using Repository Pattern."""
+        """Background worker – Repository Pattern for persistence."""
         session = active_sessions.get(sid)
         if not session:
             return
@@ -514,57 +386,61 @@ def register_socket_events(sio):
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-            # 1. Save audio as WAV
+            # 1. Save audio as WAV via AudioUtils
             audio_filename = f"audio_{timestamp}.wav"
             if session.get("pcm_audio"):
                 await asyncio.to_thread(repo.save_audio, session["pcm_audio"], audio_filename)
 
-            # 2. Transcribe any remaining speech in buffer
+            # 2. Transcribe remaining speech buffer
             if session.get("speech_buffer"):
                 try:
                     text = await asyncio.to_thread(transcribe_audio_chunk, session["speech_buffer"], 0)
                     if text and text.strip():
                         session["transcription_buffer"].append({
-                            "timestamp": format_timestamp((datetime.now() - session["start_time"]).total_seconds()),
-                            "text": text
+                            "timestamp": format_timestamp(
+                                (datetime.now() - session["start_time"]).total_seconds()
+                            ),
+                            "text": text,
                         })
                 except Exception as e:
                     print(f"[Socket.IO] Error transcribing remaining buffer: {e}")
 
-            # 3. Create and Save markdown transcription ONLY if there is content
+            # 3. Persist only if we have content
             if not session["transcription_buffer"]:
                 print(f"[Socket.IO] Skipping save for {sid}: No text transcribed.")
                 try:
                     await sio.emit('error', {
-                        'message': 'No se detectó voz o contenido para transcribir. No se guardará el documento vacío.'
+                        'message': 'No se detectó voz o contenido para transcribir.'
                     }, room=sid)
-                except:
+                except Exception:
                     pass
                 return
 
-            all_transcripts = [(datetime.now(), item['text']) for item in session["transcription_buffer"]]
+            all_transcripts = [
+                (datetime.now(), item['text'])
+                for item in session["transcription_buffer"]
+            ]
             metadata = {'title': 'Transcripción de Audio', 'method': 'Real-time VAD'}
-            
+
             formatter = FormatterFactory.create('segmented_markdown')
             formatted_content = await asyncio.to_thread(formatter.format, all_transcripts, metadata)
 
             md_filename = f"transcripcion_{timestamp}.md"
             md_path = await asyncio.to_thread(repo.save_transcription_file, formatted_content, md_filename)
 
-            # 4. Post-processing: ingest/analyze/generate
+            # 4. Post-processing
             try:
                 await asyncio.to_thread(repo.post_process_file, md_path)
                 print(f"[Socket.IO] Post-processing completed for {sid}")
             except Exception as e:
                 print(f"[Socket.IO] Warning: Post-processing error: {e}")
 
-            # Notify client
             try:
                 await sio.emit('processing_complete', {
                     'message': 'Processing finished',
                     'filename': md_filename,
                     'audio_file': audio_filename,
-                    'segments': len(session["transcription_buffer"])
+                    'segments': len(session["transcription_buffer"]),
                 }, room=sid)
             except Exception as e_emit:
                 print(f"[Socket.IO] emit processing_complete error: {e_emit}")
@@ -581,11 +457,3 @@ def register_socket_events(sio):
                 await sio.emit('error', {'message': str(e)}, room=sid)
             except Exception:
                 pass
-
-
-def format_timestamp(seconds: float) -> str:
-    """Format seconds as HH:MM:SS"""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    return f"{hours:02d}:{minutes:02d}:{secs:02d}"

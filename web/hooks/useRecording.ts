@@ -1,12 +1,21 @@
 /**
- * useRecording Hook
- * Manages audio recording and Socket.IO communication
+ * useRecording Hook - Facade & Observer Pattern
+ * 
+ * Orchestrates the recording process by coordinating:
+ * 1. AudioGraph (Builder/Adapter): Handles Web Audio API complexity.
+ * 2. Socket.IO (Observer): Handles real-time communication.
+ * 3. React State (Observer): Updates UI based on events.
+ * 
+ * Refactoring:
+ * - Extracted low-level audio logic to AudioGraph.
+ * - simplified component state management.
  */
 
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { getSocket, connectSocket, disconnectSocket } from '@/utils/socket';
+import { getSocket, connectSocket } from '@/utils/socket';
+import { AudioGraph } from '@/services/AudioGraph';
 
 interface TranscriptionMessage {
     timestamp: string;
@@ -14,210 +23,140 @@ interface TranscriptionMessage {
 }
 
 export function useRecording() {
+    // UI State
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
     const [messages, setMessages] = useState<TranscriptionMessage[]>([]);
+
+    // Audio Visualization
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-    const [gainNode, setGainNode] = useState<GainNode | null>(null);
+
+    // Settings
     const [gainValue, setGainValue] = useState(1.0);
     const [voiceThreshold, setVoiceThreshold] = useState(100);
     const [silenceThreshold, setSilenceThreshold] = useState(60);
 
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    // Refs for cleanup and persistence
+    const audioGraphRef = useRef<AudioGraph | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
 
+    // ──────────────────────────────────────────────
+    //  Socket.IO Observer Setup
+    // ──────────────────────────────────────────────
     useEffect(() => {
         const socket = getSocket();
 
-        socket.on('connected', (data) => {
-            console.log('[Socket.IO] Connected:', data);
-        });
-
-        socket.on('recording_started', (data) => {
-            console.log('[Socket.IO] Recording started:', data);
-        });
-
-        socket.on('transcription', (data: TranscriptionMessage) => {
-            console.log('[Socket.IO] Transcription:', data);
+        const handleConnected = (data: any) => console.log('[Socket] Connected:', data);
+        const handleStarted = (data: any) => console.log('[Socket] Started:', data);
+        const handleStopped = (data: any) => {
+            console.log('[Socket] Stopped:', data);
+            stopRecordingInternal(); // Ensure local state is consistent
+        };
+        const handleTranscription = (data: TranscriptionMessage) => {
+            console.log('[Socket] Transcription:', data);
             setMessages(prev => [...prev, data]);
-        });
+        };
+        const handleError = (data: any) => console.error('[Socket] Error:', data);
 
-        socket.on('recording_stopped', (data) => {
-            console.log('[Socket.IO] Recording stopped:', data);
-            setIsRecording(false);
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-            // Cleanup audio context
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-            }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-            setAnalyser(null);
-        });
-
-        socket.on('error', (data) => {
-            console.error('[Socket.IO] Error:', data);
-        });
+        socket.on('connected', handleConnected);
+        socket.on('recording_started', handleStarted);
+        socket.on('transcription', handleTranscription);
+        socket.on('recording_stopped', handleStopped);
+        socket.on('error', handleError);
 
         return () => {
-            socket.off('connected');
-            socket.off('recording_started');
-            socket.off('transcription');
-            socket.off('recording_stopped');
-            socket.off('error');
+            socket.off('connected', handleConnected);
+            socket.off('recording_started', handleStarted);
+            socket.off('transcription', handleTranscription);
+            socket.off('recording_stopped', handleStopped);
+            socket.off('error', handleError);
         };
     }, []);
 
-    // Update gain when state changes
+    // ──────────────────────────────────────────────
+    //  Gain Control (Observer)
+    // ──────────────────────────────────────────────
     useEffect(() => {
-        if (gainNode) {
-            gainNode.gain.value = gainValue;
+        if (audioGraphRef.current) {
+            audioGraphRef.current.setGain(gainValue);
         }
-    }, [gainValue, gainNode]);
+    }, [gainValue]);
+
+    // ──────────────────────────────────────────────
+    //  Actions (Facade)
+    // ──────────────────────────────────────────────
 
     const startRecording = useCallback(async () => {
         try {
             connectSocket();
             const socket = getSocket();
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    sampleRate: 16000,
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true
+            // Initialize AudioGraph (Adapter/Builder)
+            // Pass a callback to emit data (Observer)
+            const graph = new AudioGraph((audioData) => {
+                if (socket.connected) {
+                    socket.emit('audio_chunk_pcm', audioData);
                 }
             });
-            streamRef.current = stream;
 
-            // Setup Audio Context at 16kHz for Riva compatibility
-            const audioContext = new AudioContext({ sampleRate: 16000 });
-            audioContextRef.current = audioContext;
+            await graph.initialize();
 
-            const source = audioContext.createMediaStreamSource(stream);
-            const gain = audioContext.createGain();
-            const analyserNode = audioContext.createAnalyser();
+            // Build the graph and get analyser for visualization
+            const analyserNode = graph.createGraph({
+                sampleRate: 16000,
+                fftSize: 256,
+                gain: gainValue
+            });
 
-            // Configure Analyser
-            analyserNode.fftSize = 256;
-
-            // Configure Gain
-            gain.gain.value = gainValue;
-
-            // Connect graph: Source -> Gain -> Analyser
-            source.connect(gain);
-            gain.connect(analyserNode);
-
+            audioGraphRef.current = graph;
             setAnalyser(analyserNode);
-            setGainNode(gain);
-
-            // Use ScriptProcessorNode to capture raw PCM data
-            // Buffer size of 4096 at 16kHz = ~256ms per chunk
-            const bufferSize = 4096;
-            const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
-
-            // Accumulator to send ~4 seconds of audio at a time
-            let pcmAccumulator: Int16Array[] = [];
-            let samplesAccumulated = 0;
-            const samplesPerSecond = 64000;
-
-            scriptProcessor.onaudioprocess = (event) => {
-                if (!socket.connected) return;
-
-                const inputData = event.inputBuffer.getChannelData(0);
-
-                // Convert Float32 to Int16 PCM
-                const pcmData = new Int16Array(inputData.length);
-                for (let i = 0; i < inputData.length; i++) {
-                    const s = Math.max(-1, Math.min(1, inputData[i]));
-                    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                }
-
-                pcmAccumulator.push(pcmData);
-                samplesAccumulated += pcmData.length;
-
-                // Send approximately every 4 seconds of audio
-                if (samplesAccumulated >= samplesPerSecond) {
-                    // Combine all accumulated chunks
-                    const totalLength = pcmAccumulator.reduce((acc, arr) => acc + arr.length, 0);
-                    const combined = new Int16Array(totalLength);
-                    let offset = 0;
-                    for (const chunk of pcmAccumulator) {
-                        combined.set(chunk, offset);
-                        offset += chunk.length;
-                    }
-
-                    // Send as ArrayBuffer
-                    socket.emit('audio_chunk_pcm', combined.buffer);
-
-                    // Reset accumulator
-                    pcmAccumulator = [];
-                    samplesAccumulated = 0;
-                }
-
-                // Pass through audio (required for ScriptProcessor to work)
-                const outputData = event.outputBuffer.getChannelData(0);
-                for (let i = 0; i < inputData.length; i++) {
-                    outputData[i] = 0; // Mute output to avoid feedback
-                }
-            };
-
-            // Connect script processor
-            analyserNode.connect(scriptProcessor);
-            scriptProcessor.connect(audioContext.destination);
-
-            // Store reference for cleanup
-            (audioContextRef.current as any)._scriptProcessor = scriptProcessor;
-
             setIsRecording(true);
             setMessages([]);
             setDuration(0);
 
-            // Notify server with settings
+            // Notify server with current VAD settings
             socket.emit('start_recording', {
-                voiceThreshold: voiceThreshold,
-                silenceThreshold: silenceThreshold
+                voiceThreshold,
+                silenceThreshold
             });
 
-            // Start duration timer
+            // Start timer
+            if (intervalRef.current) clearInterval(intervalRef.current);
             intervalRef.current = setInterval(() => {
                 setDuration(d => d + 1);
             }, 1000);
 
         } catch (error) {
             console.error('Error starting recording:', error);
-            alert('Error al acceder al micrófono');
+            alert('Error al acceder al micrófono. Verifique los permisos.');
         }
     }, [gainValue, voiceThreshold, silenceThreshold]);
 
-    const stopRecording = useCallback(() => {
-        const socket = getSocket();
+    const stopRecordingInternal = useCallback(() => {
+        // Cleanup AudioGraph
+        if (audioGraphRef.current) {
+            audioGraphRef.current.dispose();
+            audioGraphRef.current = null;
+        }
 
-        socket.emit('stop_recording');
-
-        // Immediate Cleanup
+        // Cleanup Timer
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
-        }
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-        }
-        if (audioContextRef.current) {
-            audioContextRef.current.close();
-            audioContextRef.current = null;
+            intervalRef.current = null;
         }
 
         setIsRecording(false);
-        setMessages([]);
-        setDuration(0);
         setAnalyser(null);
+        setDuration(0);
     }, []);
+
+    const stopRecording = useCallback(() => {
+        const socket = getSocket();
+        socket.emit('stop_recording');
+        // We wait for 'recording_stopped' event to call stopRecordingInternal
+        // But we can also force it locally to be responsive
+        stopRecordingInternal();
+    }, [stopRecordingInternal]);
 
     return {
         isRecording,
