@@ -55,7 +55,7 @@ async def get_latest_transcription(service: TranscriptionService = Depends(get_s
         raise HTTPException(500, f"Error: {str(e)}")
 
 
-@router.get("/")
+@router.get("")
 async def list_transcriptions(
     limit: int = 50,
     service: TranscriptionService = Depends(get_service)

@@ -26,25 +26,38 @@ export class ApiClient {
         const url = `${this.baseUrl}${endpoint}`;
         const headers = {
             'Content-Type': 'application/json',
-            ...(options?.headers || {})
+            ...(options?.headers || {}),
         };
 
-        const response = await fetch(url, { ...options, headers });
+        console.log(`[ApiClient] Requesting: ${url}`);
 
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(error.detail || `API Error: ${response.statusText}`);
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                cache: 'no-store',
+                referrerPolicy: 'no-referrer',
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                console.error(`[ApiClient] Error ${response.status}:`, error);
+                throw new Error(error.detail || `API Error: ${response.statusText}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error(`[ApiClient] Fetch failed for ${url}:`, error);
+            throw error;
         }
-
-        return response.json();
     }
 
     public async getLatestTranscription() {
-        return this.request('/transcriptions/latest/');
+        return this.request('/transcriptions/latest');
     }
 
     public async listTranscriptions(limit: number = 50) {
-        return this.request(`/transcriptions/?limit=${limit}`);
+        return this.request(`/transcriptions?limit=${limit}`);
     }
 
     public async getTranscription(id: string) {
