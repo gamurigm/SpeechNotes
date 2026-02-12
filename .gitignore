@@ -157,7 +157,7 @@ SP-*.jpeg
 promos/
 
 # ── Report (only final PDF tracked) ────────────────────────
-docs/report/
+docs/report/*
 !docs/report/*.pdf
 
 # ── VAD config ──────────────────────────────────────────────
