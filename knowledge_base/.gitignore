@@ -1,7 +1,0 @@
-# Archivos procesados (se pueden regenerar)
-processed_*.md
-index_metadata.json
-
-# Mantener estructura
-!.gitkeep
-!README.md
