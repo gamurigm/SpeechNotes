@@ -246,7 +246,7 @@ Tu tarea es tomar una transcripción bruta y REESCRIBIRLA COMPLETAMENTE como un 
 
 ESTRUCURA OBLIGATORIA:
 
-# [Título Académico Impactante]
+# Título del Documento (Sin etiquetas, claro y profesional)
 
 ## 🎯 Introducción y Contexto
 Un resumen ejecutivo de alto nivel que sitúe al lector en el tema tratado (mínimo 6 líneas).
@@ -309,6 +309,9 @@ Contenido base para procesar:
                 )
 
                 formatted_content = completion.choices[0].message.content.strip()
+
+                # Remove thinking blocks if present
+                formatted_content = re.sub(r'<thinking>.*?</thinking>', '', formatted_content, flags=re.DOTALL).strip()
 
                 # Add metadata header
                 header = f"""---

@@ -170,8 +170,7 @@ def save_to_markdown(data: dict, output_file: str = None):
 
 ---
 
-*Transcrito automáticamente con Whisper Large v3*  
-*Generado: {timestamp}*
+*Generado automáticamente el {timestamp}*
 """
     
     # Save to file with BOM for proper Windows encoding

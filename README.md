@@ -1,71 +1,140 @@
-# 🎙️ SpeechNotes: The Ultimate AI Research Companion 🚀
+# 🎙️ SpeechNotes — AI-Powered Real-Time Transcription System
 
-![Ultimate Dashboard](./docs/assets/screenshots/appCap-ultimate1.png)
+![Dashboard](./docs/assets/screenshots/appCap-ultimate1.png)
 
-**SpeechNotes** no es solo una grabadora; es tu **Segundo Cerebro**. Captura, transcribe, formatea y entiende tus clases y reuniones con una suite de herramientas de IA de vanguardia.
+**SpeechNotes** es un sistema de transcripción de voz en tiempo real, escalable y modular, que captura, procesa y almacena audio desde navegadores web, integrando motores de reconocimiento de voz avanzados y formateo inteligente con IA.
 
 ---
 
-## 🍌 Guía Avanzada de Funciones
+## 📁 Estructura del Proyecto
 
-Descubre todo el poder "Nano Banana" que tienes a tu disposición:
+```
+SpeechNotes/
+├── backend/                    # API REST (FastAPI) + Socket.IO
+│   ├── main.py                 # Entry point del servidor
+│   ├── routers/                # Endpoints REST
+│   ├── services/               # Lógica de negocio (audio, VAD, socket)
+│   └── repositories/           # Capa de persistencia (MongoDB)
+│
+├── web/                        # Frontend (Next.js 14 + React 18)
+│   ├── app/                    # App Router de Next.js
+│   ├── components/             # Componentes React reutilizables
+│   └── services/               # Servicios cliente (ApiClient, etc.)
+│
+├── src/                        # Core compartido
+│   ├── core/                   # Factories, configuración
+│   └── transcription/          # Formatters, motores de transcripción
+│
+├── config/                     # Archivos de configuración del sistema
+├── scripts/                    # Scripts de utilidad y automatización
+├── legacy/                     # Código legacy (referencia)
+├── knowledge_base/             # Base de conocimiento extraída
+│
+├── docs/                       # Documentación del proyecto
+│   ├── informe_arquitectura.pdf  # 📄 Informe final (22 páginas)
+│   ├── patrones_diseno.md        # Documentación de patrones GoF
+│   ├── diagramas/                # Diagramas UML (PNG generados)
+│   └── assets/                   # Screenshots y recursos visuales
+│
+├── docker-compose.yml          # Orquestación de contenedores
+├── .env.example                # Variables de entorno de ejemplo
+├── run_all.ps1                 # Script de inicio rápido (Windows)
+└── README.md                   # Este archivo
+```
 
-### ⚡ 1. Transcripción en Tiempo Real (Riva + VAD)
-*   **Zero-Latency Capture:** Usa **NVIDIA Riva** para transcribir tu voz en milisegundos.
-*   **VAD Visual:** El anillo de grabación y el visualizador reaccionan a tu voz. Si el anillo brilla, ¡te escuchamos!
-*   **Sync Instantáneo:** Gracias a nuestros _WebSockets optimizados_, lo que dices aparece en tu pantalla al instante. **Ya no hay esperas:** el texto "crudo" se muestra mientras la IA lo pule.
+---
 
-### 🎛️ 2. Formatting Magic Station (Nuevo)
-Convierte audios desordenados en obras maestras:
-*   **🪄 Magic Format:** Detecta automáticamente el tipo de audio y aplica el mejor perfil.
-*   **🔊 Normalización:** Nivela el volumen automáticamente a -16dB LUFS para un sonido broadcast.
-*   **✂️ Silence Remover:** Elimina los silencios incómodos de tus grabaciones largas.
-*   **🚀 Speed Up:** Acelera audios lentos (1.5x) sin cambiar el tono de la voz gracias a FFmpeg.
+## ⚡ Funcionalidades Principales
 
-### 🧠 3. Cerebro Dual (Kimi & Minimax)
-Dos modelos de IA trabajando en paralelo para ti:
-*   **Kimi (Thinking Mode):** Tu analista profundo. Úsalo para razonar sobre el contenido, encontrar conexiones ocultas y responder preguntas complejas. *Perfecto para exámenes.*
-*   **Minimax (Formatting):** El arquitecto de la información. Estructura tus notas con Markdown impecable, tablas y resúmenes ejecutivos.
-
-### 🔎 4. Búsqueda Semántica "Neural"
-Olvídate de buscar "palabras exactas".
-*   Presiona `Ctrl+F` y describe lo que buscas (ej: *"la parte donde el profe habló de mitocondrias"*).
-*   Nuestro motor **Llama 3.2 Nemoretriever** entenderá el *significado* y te llevará al momento exacto.
-
-### 🎨 5. Experiencia "Glassmorphism"
-*   **Interfaz Inmersiva:** Fondos dinámicos, desenfoques en tiempo real y micro-interacciones suaves.
-*   **Modo Zen:** Colapsa el chat y la barra lateral para enfocarte solo en tus notas.
-*   **Temas:** Personaliza tu entorno desde el menú `Temas` para que coincida con tu vibe.
+| Funcionalidad | Descripción |
+|---|---|
+| 🎤 **Transcripción en Tiempo Real** | NVIDIA Riva + VAD con latencia mínima vía WebSockets |
+| 🧠 **IA Dual** | Kimi K2 (razonamiento profundo) + Minimax (formateo) |
+| 🔎 **Búsqueda Semántica** | Motor Llama 3.2 Nemoretriever para búsqueda por significado |
+| 🎛️ **Procesamiento de Audio** | Normalización, eliminación de silencios, aceleración |
+| 🎨 **UI Glassmorphism** | Interfaz premium con modo oscuro/claro y micro-animaciones |
 
 ---
 
 ## 🚀 Inicio Rápido
 
-1. **Configura tus llaves:**
-   Asegúrate de que tu `.env` tenga `NVIDIA_API_KEY` y `MONGO_URI`.
+### Requisitos Previos
+- Python 3.10+
+- Node.js 18+ / pnpm
+- MongoDB
+- NVIDIA API Key (para Riva STT)
 
-2. **Enciende los motores:**
+### Configuración
+
+1. **Copiar variables de entorno:**
+   ```bash
+   cp .env.example .env
+   # Editar .env con: NVIDIA_API_KEY, MONGO_URI
+   ```
+
+2. **Iniciar los servicios:**
    ```bash
    # Terminal 1: Backend
    python backend/main.py
 
    # Terminal 2: Frontend
-   pnpm dev
+   cd web && pnpm install && pnpm dev
    ```
 
-3. **¡Graba!**
-   Presiona el botón del micrófono y deja que la magia ocurra.
+3. **Abrir el navegador** en `http://localhost:3000` y presionar el micrófono 🎤
 
 ---
 
 ## 🏗️ Arquitectura y Patrones de Diseño
 
-Este proyecto implementa una arquitectura robusta basada en **Patrones de Diseño (GoF)** y **Principios SOLID** para garantizar mantenibilidad, escalabilidad y testabilidad.
+El proyecto implementa una **arquitectura por capas** (Clean Architecture) con los siguientes patrones GoF:
 
-Consulta la documentación detallada en [ARCHITECTURE.md](./ARCHITECTURE.md), donde se explican:
-- **Backend**: Service Layer, Facade (Socket.IO), Adapter (Audio), Strategy (VAD), Singleton, Repository.
-- **Frontend**: Builder (AudioGraph), Singleton/Facade (ApiClient), Observer.
+### Patrones Creacionales
+| Patrón | Componente | Archivo |
+|---|---|---|
+| **Singleton** | `ApiClient` | `web/services/ApiClient.ts` |
+| **Factory Method** | `FormatterFactory` | `src/transcription/formatters.py` |
+| **Abstract Factory** | `TranscriptionEnvironmentFactory` | `src/core/environment_factory.py` |
+
+### Patrones Estructurales
+| Patrón | Componente | Archivo |
+|---|---|---|
+| **Adapter** | `AudioProcessorPort` | `backend/services/audio_service.py` |
+| **Facade** | `register_socket_events` / `ApiClient` | `backend/services/socket_handler.py` |
+| **Repository** | `TranscriptionRepository` | `backend/repositories/` |
+
+### Patrones Comportamentales
+| Patrón | Componente | Archivo |
+|---|---|---|
+| **Strategy** | `VADStrategy` | `backend/services/vad_service.py` |
+| **State** | `VADState` (Máquina de Estados) | `backend/services/vad_service.py` |
+| **Observer** | Socket.IO Events | `backend/services/socket_handler.py` |
+
+📄 **Documentación completa:** [`docs/informe_arquitectura.pdf`](./docs/informe_arquitectura.pdf) (22 páginas con diagramas UML)
 
 ---
 
-> *"El futuro de tomar notas no es escribir, es escuchar."* - **SpeechNotes Team** 🍌
+## 🐳 Docker
+
+```bash
+docker-compose up --build
+```
+
+Ver [DOCKER.md](./DOCKER.md) para instrucciones detalladas.
+
+---
+
+## 📊 Stack Tecnológico
+
+| Capa | Tecnología | Rol |
+|---|---|---|
+| Frontend | Next.js 14 + React 18 | Interfaz de usuario |
+| Backend | FastAPI + Socket.IO | API REST y comunicación en tiempo real |
+| Motor STT | NVIDIA Riva | Reconocimiento de voz |
+| Base de datos | MongoDB | Persistencia documental |
+| IA | Kimi K2-Thinking | Formateo inteligente de notas |
+| Audio | FFmpeg + pydub | Conversión y normalización |
+
+---
+
+> *"El futuro de tomar notas no es escribir, es escuchar."* — **SpeechNotes Team** 🍌

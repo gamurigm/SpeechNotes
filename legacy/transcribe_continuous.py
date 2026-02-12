@@ -192,8 +192,7 @@ def save_to_markdown(transcript, start_time, duration, output_file=None):
 
 ---
 
-*Transcrito automáticamente con Whisper Large v3*  
-*Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+*Generado automáticamente el {datetime.now().strftime('%Y-%m-%d a las %H:%M:%S')}*
 """
     
     # Guardar archivo

@@ -11,6 +11,11 @@ services:
     networks:
       - speechnotes-network
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -29,25 +34,34 @@ services:
       - ./notas:/app/notas
       - ./knowledge_base:/app/knowledge_base
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - speechnotes-network
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/docs" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8001
     container_name: speechnotes-frontend
     ports:
       - "3006:3006"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8001
-      - DATABASE_URL=file:./dev.db
+      - API_URL=http://backend:8001
+      - DATABASE_URL=file:/app/prisma/dev.db
     volumes:
       - web_prisma_data:/app/prisma
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - speechnotes-network
     restart: unless-stopped

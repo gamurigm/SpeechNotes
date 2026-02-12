@@ -53,6 +53,7 @@ class MarkdownFormatter(OutputFormatter):
         word_count = len(transcript.split())
         char_count = len(transcript)
         
+        now_str = datetime.now().strftime('%Y-%m-%d a las %H:%M:%S')
         md_content = f"""# {title}
 
 ## 📋 Metadata
@@ -71,8 +72,7 @@ class MarkdownFormatter(OutputFormatter):
 
 ---
 
-*Transcrito automáticamente con Whisper Large v3*  
-*Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+*Generado automáticamente el {now_str}*
 """
         
         return md_content
@@ -136,10 +136,10 @@ class SegmentedMarkdownFormatter(OutputFormatter):
             time_str = timestamp.strftime("%H:%M:%S")
             md_content += f"**[{time_str}]** {text}\n\n"
         
-        md_content += """---
+        now_str = datetime.now().strftime('%Y-%m-%d a las %H:%M:%S')
+        md_content += f"""---
 
-*Transcrito automáticamente con Whisper Large v3*  
-*Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+*Generado automáticamente el {now_str}*
 """
         
         return md_content

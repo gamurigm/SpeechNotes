@@ -1,32 +1,32 @@
-# Byte-compiled / optimized / DLL files
+# ============================================================
+#  SpeechNotes — .gitignore
+# ============================================================
+
+# ── Python ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
 *.egg
-
-# Installer logs
+.Python
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# ── Virtual environments ────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Environment / Secrets ──────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Testing ─────────────────────────────────────────────────
 .tox/
 .nox/
 .coverage
@@ -37,170 +37,60 @@ coverage.xml
 *,cover
 hypothesis/
 .pytest_cache/
+/coverage
 
-# Translations
-*.mo
+# ── Node / Next.js ──────────────────────────────────────────
+node_modules/
+.next/
+web/.next/
+out/
+/build
+.swc/
+.pnpm-debug.log*
+pnpm-lock.yaml
+*.tsbuildinfo
+next-env.d.ts
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+/app/generated/prisma
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# ── Database ────────────────────────────────────────────────
+web/prisma/dev.db
+web/prisma/dev.db-journal
 
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-/.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.venv/
-venv/
-env/
-ENV/
-.env
-env.bak/
-venv.bak/
-
-# IDEs and editors
+# ── IDEs / Editors ──────────────────────────────────────────
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
+.qodo/
 
-# OS files
+# ── OS files ────────────────────────────────────────────────
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-Icon    
-
-# OneDrive temp and temp files
+.DS_Store
+Icon?
 ~$*
 
-# Logs
-*.log
-
-# Ignore compiled / built files
-*.pyc
-*.pyo
-*.pyd
-
-# Node
-node_modules/
-.next/
-out/
-build/
-.swc/
-.pnpm-debug.log*
-pnpm-lock.yaml
-
-# Prisma
-web/prisma/dev.db
-web/prisma/dev.db-journal
-
-# Keep whisper/wisper-related files and audio; if you want to keep only those,
-# uncomment the following block and adjust the patterns. Leaving commented is
-# safer so the .gitignore is non-destructive by default.
-#
-# /*
-# !/wisper.md
-# !/wisper*
-# !/audio/
-# !/check_wav.py
-# !/.gitignore
-# */
-
-# Project-specific ignores added by assistant to keep repo minimal
-# Virtualenvs and Python environment
-.venv/
-venv/
-
-# Environment files with secrets
-.env
-
-# Generated notes and recordings (optional - ignored by default)
-notas/
-
-# Saved VAD GUI/config (do not commit local thresholds)
-.vad_config.json
-
-# Temporary audio files
-*.wav
-tmp*.wav
-
-# Logs and temporary files
+# ── Logs and temp files ────────────────────────────────────
 *.log
 *.tmp
-
-# Editor configs
-.vscode/
-
-
-# Temp / grabaciones
-*.wav
-tmp*.wav
-*.tmp
-
-# Transcripciones generadas (opcional - poner si NO quieres guardarlas en git)
-notas/
-# ó si quieres mantener la carpeta pero ignorar solo los .wav:
-# notas/*.wav
-*.mp3
-
-# Logs y temporales extras
-*.log
 *.cache
+vad_debug.log
 
-# Editor / OS (ya lo tienes, pero por si falta)
-.vscode/
-.DS_Store
+# ── Audio / Media (generated) ──────────────────────────────
+*.wav
+*.mp3
+notas/
+audio/
 
-
-
-# ASR mock demo and test scripts (temporary/development files)
-scripts/asr/README_mock_demo.md
-scripts/asr/README_simple_demo.md
-scripts/asr/mock_streaming_demo.py
-scripts/asr/simple_streaming_demo.py
-scripts/asr/test_mic_with_mock.py
-scripts/asr/transcribe_mic_to_markdown.py
-
-# Next.js and Node artifacts
-.next/
-web/.next/
-out/
-build/
-.swc/
-.pnpm-debug.log*
-
-# Database
-web/prisma/dev.db
-web/prisma/dev.db-journal
-
-# Assets/Large files/Promos
+# ── Promo / Marketing assets ──────────────────────────────
 SN-*.png
 SN-*.jpg
 SN-*.jpeg
@@ -209,47 +99,89 @@ SP-*.jpg
 SP-*.jpeg
 promos/
 
+# ── Debug / Utility scripts (root level) ───────────────────
+db_cleanup.py
+debug_files.py
+diagnose_search.py
+fix_db_metadata.py
+inspect_db.py
+reindex.py
+undelete_docs.py
+test_audio_formatter.py
+test_backend_service.py
+test_repo_search.py
 
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ── Misc root files ────────────────────────────────────────
+informe_arquitectura.log
+informe_arquitectura.tex
+arq_ultimate_v1.md
+Code frequency.png
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# ── LaTeX intermediate files (keep ONLY the final PDF) ─────
+docs/**/*.aux
+docs/**/*.fdb_latexmk
+docs/**/*.fls
+docs/**/*.listing
+docs/**/*.log
+docs/**/*.out
+docs/**/*.toc
+docs/**/*.synctex.gz
+docs/**/*.bbl
+docs/**/*.blg
+docs/**/*.nav
+docs/**/*.snm
+docs/**/*.vrb
 
-# testing
-/coverage
+# LaTeX source files (only commit the final PDF)
+docs/informe_arquitectura.tex
+docs/sections/
+docs/diagramas/*.puml
 
-# next.js
-/.next/
-/out/
+# Misc LaTeX / PlantUML docs in root of docs/
+docs/pattern_behavioral.puml
+docs/pattern_creational_factory.puml
+docs/pattern_structural.puml
+docs/architecture_system.puml
 
-# production
-/build
+# Old / scattered documentation (consolidated into report)
+docs/AI_PERFORMANCE.md
+docs/ARCHITECTURE_CHAT.md
+docs/CHAT_SEMANTIC_SEARCH.md
+docs/DEPLOY_DOCKER_HUB.md
+docs/Debugging_Riva_Connection_Timeout.md
+docs/Debugging_Sessions.md
+docs/EXPLICACION_TECNICA_CONFIGMANAGER.md
+docs/FORMATTER_README.md
+docs/GUIA_INICIO_RAPIDO.md
+docs/README_WEBAPP.md
+docs/RESUMEN_IMPLEMENTACION.md
+docs/TAREAS.md
+docs/THINKING_VS_FAST.md
+docs/WORKFLOW_VISUALIZATION.md
+docs/architecture_diagram.md
+docs/audio_format_button_plan.md
+docs/audio_format_explicacion_simple.md
+docs/audio_format_summary.md
+docs/audio_format_test_results.md
+docs/como_usar_pa_canary1b.md
+docs/design_patterns.md
+docs/nvidia_nim_agent.md
+docs/riva_config_analysis.md
+docs/semantic_search_plan.md
+docs/singleton_configmanager_detallado.md
+docs/factory_method_pattern/
 
-# misc
-.DS_Store
+# ── VAD config ──────────────────────────────────────────────
+.vad_config.json
+
+# ── Docker ──────────────────────────────────────────────────
+# (keep docker-compose.yml and Dockerfile)
+
+# ── Vercel ──────────────────────────────────────────────────
+.vercel
+
+# ── Misc ────────────────────────────────────────────────────
 *.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-/app/generated/prisma

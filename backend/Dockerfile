@@ -8,11 +8,11 @@ ENV PYTHONPATH="/app:/app/backend"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    build-essential \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+  ffmpeg \
+  build-essential \
+  curl \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -22,18 +22,24 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r backend/requirements.txt
-RUN pip install --no-cache-dir pydantic-ai logfire
 
 # Copy the rest of the application
-# We copy everything because backend imports from 'src' which is in root
 COPY backend/ /app/backend/
 COPY src/ /app/src/
 
-# Create directory for notes
+# Create directory for notes and knowledge base
 RUN mkdir -p /app/notas /app/knowledge_base
+
+# Add a non-root user for security
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
 
 # Expose port
 EXPOSE 8001
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8001/docs || exit 1
 
 # Command to run the application
 CMD ["python", "backend/main.py"]

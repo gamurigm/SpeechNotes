@@ -246,8 +246,7 @@ def save_transcription_to_markdown(transcripts, output_file=None):
         md_content += f"**[{time_str}]** {text}\n\n"
     
     md_content += "---\n\n"
-    md_content += f"*Transcrito automáticamente con Whisper Large v3*  \n"
-    md_content += f"*Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n"
+    md_content += f"*Generado automáticamente el {datetime.now().strftime('%Y-%m-%d a las %H:%M:%S')}*\n"
     
     # Guardar archivo
     with open(output_path, 'w', encoding='utf-8') as f:
