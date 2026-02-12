@@ -2,6 +2,39 @@
 #  SpeechNotes — .gitignore
 # ============================================================
 
+# ── EXCLUDE EVERYTHING IN ROOT BY DEFAULT ──────────────────
+/*.json
+/*.yaml
+/*.yml
+/*.txt
+/*.bat
+/*.ps1
+/*.md
+/*.log
+/*.conf
+/*.config
+/*.mjs
+/*.js
+/*.toml
+/*.sh
+/*.png
+
+# ── EXCEPTIONS (Keep these root files) ─────────────────────
+!/run_all.ps1
+!/.gitignore
+!/README.md
+!/docker-compose.yml
+# Keep .env.example (safe template) if desired, otherwise comment out
+!/.env.example
+
+# ── KEEP DIRECTORIES ───────────────────────────────────────
+!/src/
+!/backend/
+!/web/
+!/docs/
+!/tests/
+# (tests/ is whitelisted here, but contents might be ignored if not careful, checking below)
+
 # ── Python ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
@@ -28,7 +61,6 @@ venv.bak/
 *.pem
 *.key
 google_credential.json
-# Block any potential secret files that might be missed
 *_secret*
 *_key*
 *_token*
@@ -47,9 +79,8 @@ hypothesis/
 /coverage
 
 # ── Directory Exclusions (User Requested) ──────────────────
-# Only keep core source code (src, backend, web) and report
+# Re-exclude directories that might have been matched by !/src/ etc if they were inside
 scripts/
-tests/
 legacy/
 knowledge_base/
 temporal_docs/
@@ -57,6 +88,12 @@ assets/
 notas/
 audio/
 docs/internal/
+# Exclude tests if user changed mind, but previous step I included it. 
+# User said "scripts, tests, etc lo dejo a tu criterio". 
+# I moved them to tests/ and scripts/.
+# If user says "no incluyas cosas de la raiz", they might mean files.
+# But "scripts, tests" are dirs. I will exclude them from git to be safe/clean as requested.
+tests/
 
 # ── Node / Next.js ──────────────────────────────────────────
 node_modules/
@@ -126,14 +163,5 @@ docs/report/
 # ── VAD config ──────────────────────────────────────────────
 .vad_config.json
 
-# ── Docker ──────────────────────────────────────────────────
-# (keep docker-compose.yml and Dockerfile)
-
 # ── Vercel ──────────────────────────────────────────────────
 .vercel
-
-# ── Misc ────────────────────────────────────────────────────
-requirements-agent.txt
-# run_all scripts might be convenient to keep, but if strict:
-# run_all.bat
-# run_all.ps1
