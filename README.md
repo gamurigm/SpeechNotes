@@ -1,105 +1,82 @@
-# SpeechNotes — Transcripción Inteligente con IA
+<div align="center">
 
-![SpeechNotes Hero](./docs/assets/screenshots/appCap-ultimate1.png)
+# SpeechNotes
 
-> Sistema de transcripción, formateo y traducción asistido por múltiples modelos NVIDIA NIM.  
-> Graba, transcribe, limpia ruido, detecta idioma y formatea tus clases o reuniones en tiempo real.
+**Transcripción inteligente asistida por IA — graba, limpia, transcribe y formatea en tiempo real**
 
----
+[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76b900?logo=nvidia)](https://build.nvidia.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Funcionalidades Principales
+![App Preview](./docs/assets/screenshots/app_preview.png)
 
-### Para Estudiantes y Profesionales
-- **Grabación en vivo con VAD** — solo graba cuando hay voz; ajuste dinámico de umbrales
-- **Transcripción ASR** con `nvidia/parakeet-tdt-0.6b-v2` — precisión optimizada para habla continua
-- **Eliminación de ruido BNR** — pipeline gRPC contra `grpc.nvcf.nvidia.com` (modo passthrough si no está configurado)
-- **Detección de idioma** con `google/gemma-3n-e4b-it` — identifica el idioma del audio transcrito
-- **Traducción** con `mistralai/mistral-large-3-675b-instruct-2512` — dominios academic / technical / general
-- **Formateo con IA** — `qwen/qwen3.5-397b-a17b` reestructura tus notas crudas en documentos con YAML frontmatter
-- **Búsqueda semántica RAG** — encuentra conceptos en todas tus transcripciones via ChromaDB + Llama NemoRetriever
-- **Chat contextual** — pregunta al agente sobre el contenido de tus notas
-
-### Procesamiento de Audio
-- Normalización FFmpeg, limpieza de silencios, conversión de formato
-- Perfiles predefinidos: transcripción 16kHz mono, FLAC alta calidad, MP3 almacenamiento
-- Visualización de niveles y calibración de micrófono en vivo
+</div>
 
 ---
 
-## Stack Tecnológico
+## ¿Qué hace SpeechNotes?
 
-### Frontend
-- **Next.js 16** — App Router, Turbopack
-- **HeroUI 2** — componentes con glassmorphism
-- **Electron** — aplicación desktop empaquetada
-- **Socket.IO Client** — transcripción en tiempo real
+Convierte audio en notas estructuradas usando un pipeline de cinco modelos NVIDIA NIM especializados:
 
-### Backend
-- **FastAPI + Socket.IO** — API REST asíncrona con WebSockets
-- **pydub + FFmpeg** — procesamiento de audio
-- **Logfire** — observabilidad y trazas
-
-### Modelos NVIDIA NIM
-
-| Rol | Modelo | Protocolo |
-|-----|--------|-----------|
-| Transcripción ASR | `nvidia/parakeet-tdt-0.6b-v2` | HTTP `/audio/transcriptions` |
-| Eliminación de ruido | NVIDIA BNR | gRPC TLS |
-| Detección de idioma | `google/gemma-3n-e4b-it` | HTTP chat completions |
-| Traducción | `mistralai/mistral-large-3-675b-instruct-2512` | HTTP chat completions |
-| Formateo / Chat | `qwen/qwen3.5-397b-a17b` | HTTP chat completions |
-| Embeddings | `nvidia/llama-3.2-nemoretriever-300m-embed-v2` | HTTP embeddings |
-
-### Infraestructura
-- **MongoDB** — almacenamiento de transcripciones
-- **ChromaDB** — base de datos vectorial para RAG
-- **Docker** — contenedorización completa
+| Paso | Modelo | Qué hace |
+|------|--------|----------|
+| 1. Limpieza de ruido | NVIDIA BNR (gRPC) | Elimina ruido de fondo antes de transcribir |
+| 2. Transcripción | `nvidia/parakeet-tdt-0.6b-v2` | Convierte voz a texto con alta precisión |
+| 3. Detección de idioma | `google/gemma-3n-e4b-it` | Identifica automáticamente el idioma |
+| 4. Traducción | `mistralai/mistral-large-3-675b-instruct-2512` | Traduce a cualquier idioma |
+| 5. Formateo | `qwen/qwen3.5-397b-a17b` | Reestructura las notas con YAML, secciones y resumen |
 
 ---
 
-## Inicio Rápido
+## Funciones principales
+
+- **Grabación con detección de voz (VAD)** — graba solo cuando hay voz; calibración de umbrales en vivo
+- **Pipeline de audio modular** — elige entre `full`, `asr_only`, `denoise` o `passthrough`
+- **Formateo IA con WebSocket** — progreso en tiempo real mientras el agente reformatea tus notas
+- **Búsqueda semántica RAG** — encuentra conceptos en todas tus transcripciones via ChromaDB
+- **Chat contextual** — pregunta al agente sobre el contenido de tus notas con `qwen3.5`
+- **Procesamiento FFmpeg** — normaliza, acelera, quita silencios, convierte formato
+- **Aplicación Electron** — versión desktop para Windows/macOS con icono en bandeja
+- **Autenticación flexible** — modo desarrollo sin clave, producción con JWT/OAuth
+
+---
+
+## Stack
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | Next.js 16, HeroUI, Socket.IO Client, Electron |
+| Backend | FastAPI, Socket.IO, pydub, FFmpeg, Logfire |
+| Modelos IA | NVIDIA NIM (Parakeet, BNR, Gemma, Mistral, Qwen 3.5) |
+| Base de datos | MongoDB, ChromaDB |
+| Infraestructura | Docker, Python 3.12, pnpm |
+
+---
+
+## Inicio rápido
 
 ### Requisitos
-- Python 3.12+
-- Node.js 20+ y pnpm
-- MongoDB (local o Atlas)
-- API keys NVIDIA NIM (ver `.env.example`)
+- Python 3.12+, Node.js 20+, pnpm, MongoDB, API keys NVIDIA NIM
 
-### Configuración
+### Instalar y ejecutar
 
 ```bash
-# 1. Clonar
-git clone <repo>
-cd SpeechNotes
+# 1. Clonar y configurar
+git clone https://github.com/gamurigm/SpeechNotes.git && cd SpeechNotes
+cp .env.example .env   # Añadir NVIDIA API keys (ver sección abajo)
 
-# 2. Variables de entorno
-cp .env.example .env
-# Editar .env con tus claves (ver sección API Keys abajo)
-
-# 3. Dependencias backend
+# 2. Dependencias
 pip install -r backend/requirements.txt
-
-# 4. Dependencias frontend
 cd web && pnpm install && cd ..
-```
 
-### Ejecutar
-
-**Windows (automático):**
-```powershell
+# 3. Ejecutar (Windows)
 .\run_all.ps1
-```
 
-**Manual:**
-```bash
-# Terminal 1 — Backend
-$env:PYTHONPATH="backend;."
-python backend/main.py
-# → http://127.0.0.1:9443
-
-# Terminal 2 — Frontend
-cd web && pnpm dev
-# → http://localhost:3006
+# O manualmente:
+# Terminal 1 → python backend/main.py        (puerto 9443)
+# Terminal 2 → cd web && pnpm dev            (puerto 3006)
 ```
 
 **Docker:**
@@ -114,156 +91,55 @@ cd desktop && npm run electron:dev
 
 ---
 
-## API Keys Necesarias
-
-Añadir al archivo `.env`:
+## API Keys necesarias
 
 ```dotenv
-# Transcripción ASR
-NVIDIA_API_KEY_ASR=nvapi-...
+# .env
+NVIDIA_API_KEY_ASR=nvapi-...          # Transcripción (Parakeet)
+NVIDIA_API_KEY_BNR=nvapi-...          # Ruido (opcional — passthrough si falta)
+NVIDIA_API_KEY_DETECTOR=nvapi-...     # Detección de idioma (Gemma)
+NVIDIA_API_KEY_TRANSLATOR=nvapi-...   # Traducción (Mistral Large)
+NVIDIA_API_KEY_THINKING=nvapi-...     # Chat y formateo (Qwen 3.5)
+
+CHAT_MODEL_THINKING=qwen/qwen3.5-397b-a17b
 ASR_MODEL=nvidia/parakeet-tdt-0.6b-v2
-
-# Eliminación de ruido (opcional — passthrough si no está)
-NVIDIA_API_KEY_BNR=nvapi-...
-BNR_GRPC_HOST=grpc.nvcf.nvidia.com
-BNR_GRPC_PORT=443
-BNR_FUNCTION_ID=0f21a9ce-2e90-4f93-97bc-7fc6edd02222
-
-# Detección de idioma
-NVIDIA_API_KEY_DETECTOR=nvapi-...
 DETECTOR_MODEL=google/gemma-3n-e4b-it
-
-# Traducción
-NVIDIA_API_KEY_TRANSLATOR=nvapi-...
 TRANSLATOR_MODEL=mistralai/mistral-large-3-675b-instruct-2512
 
-# Chat / Formateo (Qwen 3.5)
-NVIDIA_API_KEY_THINKING=nvapi-...
-CHAT_MODEL_THINKING=qwen/qwen3.5-397b-a17b
-
-# MongoDB
 MONGO_URI=mongodb://localhost:27017/
-MONGO_DB_NAME=agent_knowledge_base
 ```
 
 ---
 
-## Endpoints de la API
-
-### Audio NIM
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `POST` | `/api/audio/transcribe` | Transcripción con Parakeet (subir archivo) |
-| `POST` | `/api/audio/denoise` | Eliminación de ruido BNR (retorna WAV) |
-| `POST` | `/api/audio/pipeline` | Pipeline completo: BNR → ASR → traducción |
-
-### Traducción NIM
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `POST` | `/api/translate` | Traducir texto con Mistral Large |
-| `POST` | `/api/translate/detect` | Detectar idioma con Gemma 3n |
-| `POST` | `/api/translate/batch` | Traducción batch en paralelo |
-
-### Transcripciones
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/transcriptions` | Listar transcripciones paginadas |
-| `GET` | `/api/transcriptions/{id}` | Obtener transcripción por ID |
-| `DELETE` | `/api/transcriptions/{id}` | Eliminar transcripción |
-
-### Formateo con IA
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/format/files` | Listar archivos disponibles |
-| `POST` | `/api/format/start` | Iniciar job de formateo |
-| `WS` | `/api/format/ws/{job_id}` | Progreso en tiempo real |
-| `GET` | `/api/format/job/{job_id}` | Estado del job |
-
----
-
-## Estructura del Proyecto
+## Endpoints principales
 
 ```
-backend/
-  routers/          ← endpoints HTTP y WebSocket
-  services/
-    audio/          ← ASR, BNR, pipeline, VAD, transcription_service
-    agents/         ← pydantic_agent (chat), formatter_agent
-    knowledge/      ← RAG, content_renderer
-    realtime/       ← socket_handler (Socket.IO)
-    nim/            ← adapters HTTP/gRPC y registry de clientes
-    translation/    ← detector (Gemma), translator (Mistral)
-  repositories/     ← acceso a MongoDB
-  utils/            ← auth, helpers
+POST /api/audio/transcribe          Transcribir archivo de audio
+POST /api/audio/denoise             Eliminar ruido (devuelve WAV)
+POST /api/audio/pipeline            Pipeline completo BNR → ASR → traducción
 
-web/                ← Next.js 16 frontend
-  app/dashboard/    ← interfaz principal
-  public/chat-icons/← iconos de la UI
+POST /api/translate                 Traducir texto (Mistral Large)
+POST /api/translate/detect          Detectar idioma (Gemma 3n)
+POST /api/translate/batch           Traducción batch en paralelo
 
-desktop/            ← empaquetado Electron
-assets/
-  icons/            ← imágenes de la UI
-  audio/            ← muestras de audio
-scripts/
-  demos/            ← scripts de demostración RAG/agente
-docs/internal/      ← documentación técnica
+GET  /api/format/files              Listar transcripciones disponibles
+POST /api/format/start              Iniciar job de formateo con IA
+WS   /api/format/ws/{job_id}        Progreso en tiempo real
+
+GET  /api/transcriptions            Listar transcripciones
+GET  /api/chat                      Chat con el agente (streaming)
 ```
 
 ---
 
-## Pipelines de Audio
+## Documentación
 
-| Pipeline | Pasos | Caso de uso |
-|----------|-------|-------------|
-| `full` | BNR → ASR → Traducción | Audio con ruido, transcripción multiidioma |
-| `asr_only` | ASR | Audio limpio, sin traducción |
-| `denoise` | BNR | Solo limpieza de ruido, sin transcribir |
-| `passthrough` | — | Diagnóstico / pruebas |
-
----
-
-## Pruebas
-
-```bash
-# Ejecutar suite completa
-$env:PYTHONPATH="backend"
-python -m pytest backend/tests/ -v
-
-# Tests específicos
-python -m pytest backend/tests/test_settings.py backend/tests/test_security.py
-```
-
----
-
-## Docker
-
-```bash
-# Construir e iniciar
-docker-compose up --build
-
-# Detener
-docker-compose down
-
-# Logs
-docker-compose logs -f backend
-```
-
-Servicios:
-- `backend` → FastAPI + Socket.IO en puerto **9443**
-- `frontend` → Next.js en puerto **3006**
-- `mongodb` → puerto 27017
-
----
-
-## Documentación Adicional
-
-- [Patrones de Diseño GoF aplicados](./docs/patrones_diseno.md)
-- [Guía Docker detallada](./docs/DOCKER.md)
-- [Servicios NIM — arquitectura y referencia de API](./docs/internal/nim_services.md)
+- [Patrones de diseño aplicados](./docs/patrones_diseno.md)
+- [Servicios NIM — arquitectura y referencia](./docs/internal/nim_services.md)
+- [Guía Docker](./docs/DOCKER.md)
 
 ---
 
 ## Licencia
 
-MIT
-
+MIT — desarrollado como proyecto académico en ESPE.
