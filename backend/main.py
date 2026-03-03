@@ -68,7 +68,10 @@ from fastapi import Depends
 app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"], dependencies=[Depends(require_auth)])
 app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-app.include_router(formatter.router, prefix="/api/format", tags=["formatter"], dependencies=[Depends(require_auth)])
+# NOTE: No router-level auth here — WebSocket routes (/ws/{job_id}) cannot resolve
+# Request/Header FastAPI dependencies (ASGI WebSocket scope incompatibility).
+# Each HTTP endpoint in formatter.py already injects Depends(require_auth) individually.
+app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"], dependencies=[Depends(require_auth)])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"], dependencies=[Depends(require_auth)])

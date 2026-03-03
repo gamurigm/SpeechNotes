@@ -181,7 +181,7 @@ async def start_format_job(request: FormatRequest, api_ok: bool = Depends(requir
 
 
 @router.get("/job/{job_id}")
-async def get_job_status(job_id: str):
+async def get_job_status(job_id: str, api_ok: bool = Depends(require_auth)):
     """
     Get current status of a formatting job
     """

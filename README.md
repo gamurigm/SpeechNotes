@@ -1,385 +1,269 @@
-# 🎙️ **SpeechNotes** — Transcripción Inteligente con IA
+# SpeechNotes — Transcripción Inteligente con IA
 
 ![SpeechNotes Hero](./docs/assets/screenshots/appCap-ultimate1.png)
 
-> **Transforma tu voz en notas profesionales en tiempo real**  
-> Sistema de transcripción avanzada con IA que escucha, transcribe y formatea automáticamente tus clases, reuniones y conferencias.
+> Sistema de transcripción, formateo y traducción asistido por múltiples modelos NVIDIA NIM.  
+> Graba, transcribe, limpia ruido, detecta idioma y formatea tus clases o reuniones en tiempo real.
 
 ---
 
-## ✨ **¿Por qué SpeechNotes?**
+## Funcionalidades Principales
 
-SpeechNotes no es solo otro transcriptor. Es tu asistente inteligente que:
+### Para Estudiantes y Profesionales
+- **Grabación en vivo con VAD** — solo graba cuando hay voz; ajuste dinámico de umbrales
+- **Transcripción ASR** con `nvidia/parakeet-tdt-0.6b-v2` — precisión optimizada para habla continua
+- **Eliminación de ruido BNR** — pipeline gRPC contra `grpc.nvcf.nvidia.com` (modo passthrough si no está configurado)
+- **Detección de idioma** con `google/gemma-3n-e4b-it` — identifica el idioma del audio transcrito
+- **Traducción** con `mistralai/mistral-large-3-675b-instruct-2512` — dominios academic / technical / general
+- **Formateo con IA** — `qwen/qwen3.5-397b-a17b` reestructura tus notas crudas en documentos con YAML frontmatter
+- **Búsqueda semántica RAG** — encuentra conceptos en todas tus transcripciones via ChromaDB + Llama NemoRetriever
+- **Chat contextual** — pregunta al agente sobre el contenido de tus notas
 
-- 🎯 **Transcribe en tiempo real** con precisión profesional usando NVIDIA Riva
-- 🧠 **Formatea automáticamente** con IA avanzada (Kimi K2-Thinking) que estructura tus notas
-- 🔍 **Busca semánticamente** — encuentra cualquier tema, no solo palabras exactas
-- 🎨 **Interfaz premium** con glassmorphism y micro-animaciones fluidas
-- 🎛️ **Procesa audio** como un experto: normaliza, limpia silencios, acelera
-
----
-
-## 📸 **Capturas de la Aplicación**
-
-### 🎙️ **Dashboard Principal — Interfaz Glassmorphism**
-
-*Descripción de captura 1:*
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🎨 Fondo degradado suave (violeta/índigo difuminado)       │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│                                                              │
-│  [🎨][🔍][🎵][📁][⚙️][🎤]    ⏺️ GRAB ANDO      [💬 Chat]  │
-│  Temas Zoom Audio Upload VAD Test  ← Barra de herramientas  │
-│                                                              │
-│  ┌────────────────┬──────────────────────────────────────┐  │
-│  │ 📊 SIDEBAR     │  📝 VISOR DE MARKDOWN               │  │
-│  │ ━━━━━━━━━━━━  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │  │
-│  │                │                                      │  │
-│  │ 🎤 Test Mic    │  # Transcripción de Clase           │  │
-│  │ ▓▓▓▓░░░░ 78dB  │                                      │  │
-│  │                │  ## 📋 Metadata                      │  │
-│  │ 🎛️ Calibración │  - Fecha: 2026-02-12                │  │
-│  │ Voz: 80 ████   │  - Duración: 15m 34s                │  │
-│  │ Silencio: 40 ██│                                      │  │
-│  │                │  ## 📝 Contenido                     │  │
-│  │ 🔴 EN VIVO:    │                                      │  │
-│  │ [18:45] Los... │  Lorem ipsum dolor sit amet...       │  │
-│  │ [18:47] La ... │  consectetur adipiscing elit...      │  │
-│  │                │                                      │  │
-│  │                │  [Resaltado de búsqueda activo 🔍]   │  │
-│  └────────────────┴──────────────────────────────────────┘  │
-│                                                              │
-│  Diseño: Efectos de vidrio esmerilado, sombras suaves,      │
-│  bordes brillantes, animaciones de hover 3D                 │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### 🤖 **Formateador IA — Minimax M2**
-
-*Descripción de captura 2:*
-```
-┌──────────────────────────────────────────────────────────────┐
-│  🎯 Formateador con Minimax M2                               │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│                                                              │
-│  ┌────────────────────────┬────────────────────────────┐    │
-│  │ 📂 Archivos           │ ⏱️ Progreso en Tiempo Real │    │
-│  │ ━━━━━━━━━━━━━━━━━━━  │ ━━━━━━━━━━━━━━━━━━━━━━━━━ │    │
-│  │                        │                            │    │
-│  │ ☑️ transcripcion_0... │ Progreso: 2/5 archivos     │    │
-│  │ ☑️ transcripcion_1... │ ▓▓▓▓▓▓▓▓░░░░░░░ 40%       │    │
-│  │ ☑️ transcripcion_2... │                            │    │
-│  │ ☐ transcripcion_3... │ ✅ archivo_01.md           │    │
-│  │ ☐ backup_clase.md    │ 📖 Leyendo...              │    │
-│  │                        │                            │    │
-│  │ [Seleccionar todos]   │ 🤖 archivo_02.md           │    │
-│  │                        │ 🤖 Formateando con M2...   │    │
-│  │ ┌──────────────────┐  │                            │    │
-│  │ │ ✨ Formatear 3   │  │ 💾 archivo_03.md           │    │
-│  │ │    archivos      │  │ 💾 Guardando...            │    │
-│  │ └──────────────────┘  │                            │    │
-│  │   (Botón brillante)   │ Job ID: fmt-abc123-xyz     │    │
-│  └────────────────────────┴────────────────────────────┘    │
-│                                                              │
-│  Características: WebSocket en vivo, barra de progreso      │
-│  animada, estados visuales (lectura/IA/guardado)            │
-└──────────────────────────────────────────────────────────────┘
-```
+### Procesamiento de Audio
+- Normalización FFmpeg, limpieza de silencios, conversión de formato
+- Perfiles predefinidos: transcripción 16kHz mono, FLAC alta calidad, MP3 almacenamiento
+- Visualización de niveles y calibración de micrófono en vivo
 
 ---
 
-## 🎯 **Funcionalidades Principales**
+## Stack Tecnológico
 
-### Para Estudiantes 📚
-- ✅ **Graba clases en vivo** y obtén transcripciones automáticas
-- ✅ **Formatea con IA** tus notas desordenadas en documentos estructurados
-- ✅ **Busca rápidamente** conceptos en todas tus clases
-- ✅ **Temas visuales** personalizables (oscuro/claro + fondos)
+### Frontend
+- **Next.js 16** — App Router, Turbopack
+- **HeroUI 2** — componentes con glassmorphism
+- **Electron** — aplicación desktop empaquetada
+- **Socket.IO Client** — transcripción en tiempo real
 
-### Para Profesionales 💼
-- ✅ **Transcripción NVIDIA Riva** — precisión empresarial en español
-- ✅ **Detección de Voz (VAD)** — solo graba cuando hablas
-- ✅ **Procesamiento FFmpeg** — normaliza, acelera, limpia audio
-- ✅ **Exporta en Markdown** — compatible con Obsidian, Notion, etc.
+### Backend
+- **FastAPI + Socket.IO** — API REST asíncrona con WebSockets
+- **pydub + FFmpeg** — procesamiento de audio
+- **Logfire** — observabilidad y trazas
 
-### Características Técnicas Destacadas 🚀
-- ⚡ **Latencia ultra-baja** — WebSocket bidireccional en tiempo real
-- 🎛️ **Calibración VAD dinámica** — ajusta umbrales de voz/silencio en vivo
-- 🎨 **Micro-animaciones fluidas** — hover 3D, transiciones suaves
-- 📱 **Responsive** — funciona en desktop, tablet, móvil
-- 🔐 **Autenticación Google OAuth** — login instantáneo
+### Modelos NVIDIA NIM
 
----
+| Rol | Modelo | Protocolo |
+|-----|--------|-----------|
+| Transcripción ASR | `nvidia/parakeet-tdt-0.6b-v2` | HTTP `/audio/transcriptions` |
+| Eliminación de ruido | NVIDIA BNR | gRPC TLS |
+| Detección de idioma | `google/gemma-3n-e4b-it` | HTTP chat completions |
+| Traducción | `mistralai/mistral-large-3-675b-instruct-2512` | HTTP chat completions |
+| Formateo / Chat | `qwen/qwen3.5-397b-a17b` | HTTP chat completions |
+| Embeddings | `nvidia/llama-3.2-nemoretriever-300m-embed-v2` | HTTP embeddings |
 
-## 🛠️ **Stack Tecnológico**
-
-### Frontend ✨
-- **Next.js 14** — React Server Components + App Router
-- **HeroUI** — Componentes glassmorphism premium
-- **Socket.IO Client** — Comunicación en tiempo real
-- **Lucide Icons** — Iconografía moderna
-
-### Backend ⚙️
-- **FastAPI** — API REST asíncrona y ultra-rápida
-- **Socket.IO** — WebSockets para transcripción en vivo
-- **NVIDIA Riva** — Motor de reconocimiento de voz de nivel empresarial
-- **FFmpeg + pydub** — Procesamiento profesional de audio
-
-### Inteligencia Artificial 🧠
-- **Kimi K2-Thinking** — Razonamiento profundo para formateo de notas
-- **Minimax M2** — Formateo batch de alta velocidad
-- **Llama 3.2 Nemoretriever** — Búsqueda semántica vectorial
-
-### Infraestructura 🏗️
-- **MongoDB** — Base de datos NoSQL para transcripciones
-- **Docker** — Contenedorización completa
-- **Logfire** — Observabilidad y monitoreo
+### Infraestructura
+- **MongoDB** — almacenamiento de transcripciones
+- **ChromaDB** — base de datos vectorial para RAG
+- **Docker** — contenedorización completa
 
 ---
 
-## 🚀 **Guía de Inicio Rápido**
+## Inicio Rápido
 
-### 1️⃣ **Requisitos Previos**
-```bash
-# Verifica que tengas:
-- Python 3.10+
-- Node.js 18+
-- pnpm (npm install -g pnpm)
+### Requisitos
+- Python 3.12+
+- Node.js 20+ y pnpm
 - MongoDB (local o Atlas)
-- API Keys (NVIDIA, OpenAI/Minimax)
-```
+- API keys NVIDIA NIM (ver `.env.example`)
 
-### 2️⃣ **Configuración Inicial**
+### Configuración
+
 ```bash
-# 1. Clona el repositorio
-git clone <tu-repo>
+# 1. Clonar
+git clone <repo>
 cd SpeechNotes
 
-# 2. Configura las variables de entorno
+# 2. Variables de entorno
 cp .env.example .env
-# Edita .env con tus API Keys:
-#   - NVIDIA_API_KEY (para Riva STT)
-#   - MONGO_URI (tu conexión MongoDB)
-#   - MINIMAX_API_KEY (para formateo IA)
-#   - GOOGLE_CLIENT_ID (OAuth opcional)
+# Editar .env con tus claves (ver sección API Keys abajo)
+
+# 3. Dependencias backend
+pip install -r backend/requirements.txt
+
+# 4. Dependencias frontend
+cd web && pnpm install && cd ..
 ```
 
-### 3️⃣ **Instalar Dependencias**
-```bash
-# Backend (Python)
-pip install -r requirements.txt
+### Ejecutar
 
-# Frontend (Node.js)
-cd web
-pnpm install
-cd ..
-```
-
-### 4️⃣ **Ejecutar la Aplicación**
-
-**Opción A: Manual (2 terminales)**
-```bash
-# Terminal 1: Backend
-python backend/main.py
-# ✅ Server running on http://localhost:8001
-
-# Terminal 2: Frontend
-cd web
-pnpm dev
-# ✅ App running on http://localhost:3000
-```
-
-**Opción B: Script automatizado (Windows)**
+**Windows (automático):**
 ```powershell
 .\run_all.ps1
 ```
 
-**Opción C: Docker (recomendado para producción)**
+**Manual:**
+```bash
+# Terminal 1 — Backend
+$env:PYTHONPATH="backend;."
+python backend/main.py
+# → http://127.0.0.1:9443
+
+# Terminal 2 — Frontend
+cd web && pnpm dev
+# → http://localhost:3006
+```
+
+**Docker:**
 ```bash
 docker-compose up --build
 ```
 
-### 5️⃣ **¡Listo! Abre tu navegador**
-```
-http://localhost:3000
+**Electron (desktop):**
+```bash
+cd desktop && npm run electron:dev
 ```
 
 ---
 
-## 📖 **Guía de Usuario Rápida**
+## API Keys Necesarias
 
-### 🎤 **Cómo Grabar una Clase**
+Añadir al archivo `.env`:
 
-1. **Haz clic en el botón rojo de grabación** 🔴
-2. **Habla normalmente** — la IA detectará automáticamente tu voz
-3. **Observa la transcripción en vivo** en el panel lateral
-4. **Presiona parar** cuando termines ⏹️
-5. **Accede a tus notas** en el visor de Markdown
+```dotenv
+# Transcripción ASR
+NVIDIA_API_KEY_ASR=nvapi-...
+ASR_MODEL=nvidia/parakeet-tdt-0.6b-v2
 
-### 🎨 **Personalizar la Interfaz**
+# Eliminación de ruido (opcional — passthrough si no está)
+NVIDIA_API_KEY_BNR=nvapi-...
+BNR_GRPC_HOST=grpc.nvcf.nvidia.com
+BNR_GRPC_PORT=443
+BNR_FUNCTION_ID=0f21a9ce-2e90-4f93-97bc-7fc6edd02222
 
-1. Click en **🎨 Temas**
-2. Elige tu **modo** (Oscuro/Claro)
-3. Selecciona un **fondo** (Gradientes, Imagen, Video)
-4. Ajusta el **zoom** con **Ctrl + / -**
+# Detección de idioma
+NVIDIA_API_KEY_DETECTOR=nvapi-...
+DETECTOR_MODEL=google/gemma-3n-e4b-it
 
-### 🤖 **Formatear con IA**
+# Traducción
+NVIDIA_API_KEY_TRANSLATOR=nvapi-...
+TRANSLATOR_MODEL=mistralai/mistral-large-3-675b-instruct-2512
 
-1. Ve a `/formatter` en el menú
-2. **Selecciona archivos** de transcripción
-3. Click en **✨ Formatear con IA**
-4. Observa el **progreso en tiempo real**
-5. Descarga tus **notas estructuradas**
+# Chat / Formateo (Qwen 3.5)
+NVIDIA_API_KEY_THINKING=nvapi-...
+CHAT_MODEL_THINKING=qwen/qwen3.5-397b-a17b
 
-### 🔍 **Buscar en tus Clases**
-
-1. Presiona **Ctrl + F**
-2. Escribe lo que buscas (ej: "teorema de Pitágoras")
-3. Selecciona un resultado
-4. El texto se **resaltará automáticamente**
-
-### 🎛️ **Procesar Audio con FFmpeg**
-
-1. Click en **🎵 FFMPEG Audio**
-2. Sube un archivo de audio
-3. Elige un perfil:
-   - **Transcripción** (16kHz, optimizado para Riva)
-   - **Alta Calidad** (FLAC 48kHz)
-   - **Almacenamiento** (MP3 comprimido)
-4. Aplica funciones:
-   - **Normalizar** (volumen uniforme)
-   - **Quitar Silencio** (ahorra tiempo)
-   - **Velocidad** (acelera/desacelera)
-5. Descarga el resultado procesado
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/
+MONGO_DB_NAME=agent_knowledge_base
+```
 
 ---
 
-## 🐳 **Despliegue con Docker**
+## Endpoints de la API
+
+### Audio NIM
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/api/audio/transcribe` | Transcripción con Parakeet (subir archivo) |
+| `POST` | `/api/audio/denoise` | Eliminación de ruido BNR (retorna WAV) |
+| `POST` | `/api/audio/pipeline` | Pipeline completo: BNR → ASR → traducción |
+
+### Traducción NIM
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/api/translate` | Traducir texto con Mistral Large |
+| `POST` | `/api/translate/detect` | Detectar idioma con Gemma 3n |
+| `POST` | `/api/translate/batch` | Traducción batch en paralelo |
+
+### Transcripciones
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/transcriptions` | Listar transcripciones paginadas |
+| `GET` | `/api/transcriptions/{id}` | Obtener transcripción por ID |
+| `DELETE` | `/api/transcriptions/{id}` | Eliminar transcripción |
+
+### Formateo con IA
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/format/files` | Listar archivos disponibles |
+| `POST` | `/api/format/start` | Iniciar job de formateo |
+| `WS` | `/api/format/ws/{job_id}` | Progreso en tiempo real |
+| `GET` | `/api/format/job/{job_id}` | Estado del job |
+
+---
+
+## Estructura del Proyecto
+
+```
+backend/
+  routers/          ← endpoints HTTP y WebSocket
+  services/
+    audio/          ← ASR, BNR, pipeline, VAD, transcription_service
+    agents/         ← pydantic_agent (chat), formatter_agent
+    knowledge/      ← RAG, content_renderer
+    realtime/       ← socket_handler (Socket.IO)
+    nim/            ← adapters HTTP/gRPC y registry de clientes
+    translation/    ← detector (Gemma), translator (Mistral)
+  repositories/     ← acceso a MongoDB
+  utils/            ← auth, helpers
+
+web/                ← Next.js 16 frontend
+  app/dashboard/    ← interfaz principal
+  public/chat-icons/← iconos de la UI
+
+desktop/            ← empaquetado Electron
+assets/
+  icons/            ← imágenes de la UI
+  audio/            ← muestras de audio
+scripts/
+  demos/            ← scripts de demostración RAG/agente
+docs/internal/      ← documentación técnica
+```
+
+---
+
+## Pipelines de Audio
+
+| Pipeline | Pasos | Caso de uso |
+|----------|-------|-------------|
+| `full` | BNR → ASR → Traducción | Audio con ruido, transcripción multiidioma |
+| `asr_only` | ASR | Audio limpio, sin traducción |
+| `denoise` | BNR | Solo limpieza de ruido, sin transcribir |
+| `passthrough` | — | Diagnóstico / pruebas |
+
+---
+
+## Pruebas
 
 ```bash
-# Construir e iniciar todos los servicios
+# Ejecutar suite completa
+$env:PYTHONPATH="backend"
+python -m pytest backend/tests/ -v
+
+# Tests específicos
+python -m pytest backend/tests/test_settings.py backend/tests/test_security.py
+```
+
+---
+
+## Docker
+
+```bash
+# Construir e iniciar
 docker-compose up --build
 
-# Detener servicios
+# Detener
 docker-compose down
 
-# Ver logs en tiempo real
-docker-compose logs -f
+# Logs
+docker-compose logs -f backend
 ```
 
-**Servicios incluidos:**
-- `backend` → FastAPI + Socket.IO (puerto 8001)
-- `frontend` → Next.js (puerto 3000)
-- `mongodb` → Base de datos (puerto 27017)
+Servicios:
+- `backend` → FastAPI + Socket.IO en puerto **9443**
+- `frontend` → Next.js en puerto **3006**
+- `mongodb` → puerto 27017
 
 ---
 
-## 🛡️ **Pruebas y Calidad**
+## Documentación Adicional
 
-El backend de SpeechNotes ha sido sometido a un riguroso proceso de validación para garantizar la estabilidad, precisión y rendimiento.
-
-### 🧪 **Resumen de Pruebas Unitarias e Integración**
-
-| Categoría | Pruebas Implementadas | Objetivo | Estado |
-|---|---|---|---|
-| **Core Services** | `test_audio_formatter`, `test_formatter` | Validación de conversión de audio y exportación a Markdown. | ✅ Pass |
-| **Infraestructura** | `test_mongo`, `test_mongo_ports` | Persistencia de datos en MongoDB y resiliencia de puertos. | ✅ Pass |
-| **API Endpoints** | `test_backend`, `test_backend_service` | Pruebas de salud (Healthcheck) y endpoints REST/Socket.IO. | ✅ Pass |
-| **STT Engine** | `test_nvidia_client`, `test_nvidia_key` | Conectividad con NVIDIA Riva y validación de API Keys. | ✅ Pass |
-| **AI Agent** | `test_agent`, `test_embeddings` | Flujo de trabajo con LangGraph y búsqueda semántica FAISS. | ✅ Pass |
-
-### 🚀 **Pruebas de Rendimiento (Benchmark con k6)**
-
-Se realizaron pruebas de carga y estrés para medir la escalabilidad del sistema:
-
-| Tipo de Prueba | Escenario | Métrica Clave | Resultado |
-|---|---|---|---|
-| **Load Test** | 50 usuarios concurrentes | Tiempo de respuesta (P95) | **< 250ms** |
-| **Stress Test** | Incremental hasta 200 VU | Estabilidad del Socket | **0.01% Error Rate** |
-| **STT Latency** | Flujo continuo de audio | Delay de transcripción | **~150ms** |
-| **Audio Processing** | Batch de 10 archivos | Velocidad de conversión | **18x Faster than realtime** |
+- [Patrones de Diseño GoF aplicados](./docs/patrones_diseno.md)
+- [Guía Docker detallada](./docs/DOCKER.md)
+- [Servicios NIM — arquitectura y referencia de API](./docs/internal/nim_services.md)
 
 ---
 
-## 💡 **Casos de Uso**
+## Licencia
 
-### 🎓 Estudiantes
-- Graba clases magistrales sin perder detalle
-- Busca conceptos específicos al estudiar
-- Formatea apuntes para crear resúmenes estructurados
+MIT
 
-### 👨‍💼 Profesionales
-- Transcribe reuniones y juntas
-- Documenta conferencias técnicas
-- Crea minutas automáticas
-
-### 🎙️ Creadores de Contenido
-- Transcribe podcasts/videos
-- Genera subtítulos precisos
-- Convierte audio en blogs
-
----
-
-## ❓ **Solución de Problemas**
-
-### No se detecta el micrófono
-- ✅ Permite permisos en el navegador (🔒 icono en la barra URL)
-- ✅ Verifica que tu micrófono esté conectado
-- ✅ Usa el **🎤 Test Mic** para calibrar
-
-### Error de conexión con el backend
-- ✅ Verifica que `python backend/main.py` esté corriendo
-- ✅ Revisa que el puerto **8001** esté libre
-- ✅ Comprueba `.env` tiene `NVIDIA_API_KEY`
-
-### La transcripción no aparece
-- ✅ Ajusta **🎛️ Calibración VAD** (sube sensibilidad)
-- ✅ Habla más cerca del micrófono
-- ✅ Verifica niveles en **🎤 Test Mic** (>50dB)
-
----
-
-## 📚 **Documentación Adicional**
-
-- 📄 [Informe de Arquitectura (PDF)](./docs/informe_arquitectura.pdf) — 22 páginas con diagramas UML
-- 🎨 [Patrones de Diseño GoF](./docs/patrones_diseno.md) — Implementación de 8 patrones
-- 🐳 [Guía Docker](./DOCKER.md) — Despliegue completo con contenedores
-
----
-
-## 🤝 **Contribuciones**
-
-SpeechNotes es un proyecto educativo. Si deseas contribuir:
-
-1. Fork el repositorio
-2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -m 'Agregar X funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
-
----
-
-## 📜 **Licencia**
-
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
-
----
-
-## 🍌 **Créditos**
-
-Desarrollado con ❤️ por el equipo **SpeechNotes Team**
-
-> *"El futuro de tomar notas no es escribir, es escuchar."*
-
-**Tecnologías clave:** NVIDIA Riva • Next.js • FastAPI • MongoDB • Kimi K2-Thinking
-
----
-
-**¿Listo para transformar tu forma de tomar notas? 🚀**
-
-```bash
-python backend/main.py & cd web && pnpm dev
-```
-
-*Abre http://localhost:3000 y empieza a grabar* 🎤✨
