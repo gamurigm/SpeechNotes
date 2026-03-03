@@ -172,6 +172,8 @@ export function useRecording() {
         voiceThreshold,
         setVoiceThreshold,
         silenceThreshold,
-        setSilenceThreshold        language,
-        setLanguage,    };
+        setSilenceThreshold,
+        language,
+        setLanguage,
+    };
 }
