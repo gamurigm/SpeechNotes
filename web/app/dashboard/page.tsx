@@ -132,7 +132,9 @@ function DashboardContent() {
         }
         setIsSearching(true);
         try {
-            const res = await fetch(`/api/transcriptions/search?q=${encodeURIComponent(val)}`);
+            const res = await fetch(`/api/transcriptions/search?q=${encodeURIComponent(val)}`, {
+                headers: { 'x-api-key': 'dev-secret-api-key' }
+            });
             const data = await res.json();
             setSearchResults(data.items || []);
         } catch (e) {

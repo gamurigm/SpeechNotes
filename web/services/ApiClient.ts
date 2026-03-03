@@ -11,7 +11,7 @@
 
 export class ApiClient {
     private static instance: ApiClient;
-    private baseUrl: string = 'http://127.0.0.1:8001/api';
+    private baseUrl: string = 'http://127.0.0.1:9443/api';
 
     private constructor() { }
 
@@ -26,6 +26,7 @@ export class ApiClient {
         const url = `${this.baseUrl}${endpoint}`;
         const headers = {
             'Content-Type': 'application/json',
+            'x-api-key': 'dev-secret-api-key',
             ...(options?.headers || {}),
         };
 

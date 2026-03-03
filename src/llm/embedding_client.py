@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+from src.database.config_service import ConfigService
 
 
 class EmbeddingClient:
@@ -29,8 +30,9 @@ class EmbeddingClient:
     def __init__(self):
         """Initialize the Embedding client (only once)."""
         if not self._initialized:
-            self.api_key = os.getenv("NVIDIA_EMBEDDING_API_KEY") or os.getenv("NVIDIA_API_KEY")
-            self.base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+            _cfg = ConfigService()
+            self.api_key = _cfg.get("NVIDIA_EMBEDDING_API_KEY") or _cfg.get("NVIDIA_API_KEY")
+            self.base_url = _cfg.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
             self.model_name = "nvidia/llama-3.2-nemoretriever-300m-embed-v2"
             
             if not self.api_key:

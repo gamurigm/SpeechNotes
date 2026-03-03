@@ -53,16 +53,36 @@ load_dotenv(os.path.join(os.getcwd(), '.env'))
 load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 load_dotenv() # Fallback for any other standard search path
 
+from src.database.config_service import ConfigService
+_cfg = ConfigService()
+
+DEPRECATED_MODELS = {
+    "minimaxai/minimax-m2",
+}
+DEFAULT_THINKING_MODEL = "qwen/qwen3.5-397b-a17b"
+
+
+def _resolve_model(config_key: str, fallback: str) -> str:
+    model = _cfg.get(config_key, fallback)
+    if model in DEPRECATED_MODELS:
+        logger.warning("[LLM] Model '%s' is deprecated/EOL. Falling back to '%s'", model, fallback)
+        try:
+            _cfg.set(config_key, fallback, category="models")
+        except Exception:
+            pass
+        return fallback
+    return model
+
 # --- Agent Configuration ---
 
-# Get model configuration from environment
-NVIDIA_API_KEY_THINKING = os.getenv("NVIDIA_API_KEY_THINKING")
-NVIDIA_API_KEY_FAST = os.getenv("NVIDIA_API_KEY_FAST")
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY") # Keep for compatibility
-NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-MODEL_NAME = os.getenv("CHAT_MODEL_THINKING", "minimaxai/minimax-m2")
-MODEL_NAME_FAST = os.getenv("CHAT_MODEL_FAST", "nvidia/nvidia-nemotron-nano-9b-v2")
-LOGFIRE_TOKEN = os.getenv("LOGFIRE_TOKEN")
+# Get model configuration from ConfigService (SQLite) with env fallback
+NVIDIA_API_KEY_THINKING = _cfg.get("NVIDIA_API_KEY_THINKING")
+NVIDIA_API_KEY_FAST = _cfg.get("NVIDIA_API_KEY_FAST")
+NVIDIA_API_KEY = _cfg.get("NVIDIA_API_KEY")  # Keep for compatibility
+NVIDIA_BASE_URL = _cfg.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+MODEL_NAME = _resolve_model("CHAT_MODEL_THINKING", DEFAULT_THINKING_MODEL)
+MODEL_NAME_FAST = _cfg.get("CHAT_MODEL_FAST", "nvidia/nvidia-nemotron-nano-9b-v2")
+LOGFIRE_TOKEN = _cfg.get("LOGFIRE_TOKEN")
 
 # System prompt that enforces document-focused responses
 SYSTEM_PROMPT = """Eres Kimi, un asistente experto en analizar transcripciones de clases universitarias.

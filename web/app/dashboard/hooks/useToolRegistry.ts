@@ -51,7 +51,7 @@ export function useToolRegistry({
             if (!res.ok) throw new Error('Failed to start formatting');
             const { job_id, ws_url } = await res.json();
 
-            const ws = new WebSocket(`ws://127.0.0.1:8001/api/format${ws_url}`);
+            const ws = new WebSocket(`ws://127.0.0.1:9443/api/format${ws_url}`);
             ws.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                 if (data.status === 'job_completed' || data.status === 'completed') {
@@ -96,7 +96,7 @@ export function useToolRegistry({
         setProcessingIds(prev => new Set(prev).add(uploadJobId));
 
         try {
-            await fetch('/api/transcribe-file', { method: 'POST', body: fd });
+            await fetch('/api/transcribe-file', { method: 'POST', body: fd, headers: { 'x-api-key': 'dev-secret-api-key' } });
             setTimeout(async () => {
                 await loadTranscriptionsList();
                 setProcessingIds(prev => {

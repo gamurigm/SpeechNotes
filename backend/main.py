@@ -30,6 +30,7 @@ from routers import vad_config
 from routers import documents
 from routers import transcribe
 from routers import audio_format
+from routers import settings
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -58,16 +59,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from utils.auth import require_auth
+from fastapi import Depends
+
 # Include REST API routers
-app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"])
+app.include_router(transcriptions.router, prefix="/api/transcriptions", tags=["transcriptions"], dependencies=[Depends(require_auth)])
 app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
-app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(formatter.router, prefix="/api/format", tags=["formatter"], dependencies=[Depends(require_auth)])
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"], dependencies=[Depends(require_auth)])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
-app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
-app.include_router(transcribe.router, prefix="/api", tags=["transcribe"])
+app.include_router(documents.router, prefix="/api/documents", tags=["documents"], dependencies=[Depends(require_auth)])
+app.include_router(transcribe.router, prefix="/api", tags=["transcribe"], dependencies=[Depends(require_auth)])
 app.include_router(audio_format.router, prefix="/api/audio-format", tags=["audio-format"])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
 
 # Instrument FastAPI app for tracing (if available)
@@ -98,5 +103,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Running on port 8001 to match frontend fallback
-    uvicorn.run(socket_app, host="0.0.0.0", port=8001, reload=False)
+    # Running on port 9443 to avoid common port collisions
+    uvicorn.run(socket_app, host="0.0.0.0", port=9443, reload=False)

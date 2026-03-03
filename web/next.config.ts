@@ -2,11 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  images: {
+    unoptimized: true,
+  },
   async rewrites() {
     return [
       {
         source: '/api/:path((?!auth).*)',
-        destination: `${process.env.API_URL || 'http://127.0.0.1:8001'}/api/:path*`,
+        destination: `${process.env.API_URL || 'http://127.0.0.1:9443'}/api/:path*`,
       },
     ];
   },

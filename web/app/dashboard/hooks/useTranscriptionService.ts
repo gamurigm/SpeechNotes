@@ -28,8 +28,8 @@ export function useTranscriptionService() {
     const loadTranscriptionsList = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await ApiClient.getInstance().listTranscriptions();
-            const items = res.items || [];
+            const res: any = await ApiClient.getInstance().listTranscriptions();
+            const items = res?.items || [];
             setTranscriptions(items);
 
             const savedId = localStorage.getItem('sn-last-doc-id');
@@ -42,9 +42,11 @@ export function useTranscriptionService() {
                 setSelectedIndex(index >= 0 ? index : 0);
                 await loadTranscriptionById(targetId);
             } else if (items.length === 0) {
-                const latest = await ApiClient.getInstance().getLatestTranscription();
-                setLatestContent(latest.content);
-                setTranscriptionId(latest.id);
+                const latest: any = await ApiClient.getInstance().getLatestTranscription();
+                if (latest) {
+                    setLatestContent(latest.content);
+                    setTranscriptionId(latest.id);
+                }
             }
         } catch (e) {
             console.error('Error loading transcriptions list', e);

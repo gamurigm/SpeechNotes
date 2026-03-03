@@ -47,17 +47,9 @@ export default function FormatterPage() {
     try {
       setIsLoading(true);
       // Try with session cookies first (preferred)
-      let res = await fetch('http://localhost:8001/api/format/files', {
-        credentials: 'include'
+      let res = await fetch('http://localhost:9443/api/format/files', {
+        headers: { 'x-api-key': 'dev-secret-api-key' }
       });
-
-      // If session request failed (e.g., not authenticated), fall back to dev API key
-      if (!res.ok) {
-        console.warn('Session fetch failed, retrying with dev API key', res.status);
-        res = await fetch('http://localhost:8001/api/format/files', {
-          headers: { 'x-api-key': 'dev-secret-api-key' }
-        });
-      }
 
       if (!res.ok) {
         const text = await res.text();
@@ -109,23 +101,11 @@ export default function FormatterPage() {
 
     try {
       // Start formatting job
-      // Try to start job with session cookies first
-      let res = await fetch('http://localhost:8001/api/format/start', {
+      let res = await fetch('http://localhost:9443/api/format/start', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
         body: JSON.stringify({ files: Array.from(selectedFiles), output_dir: 'notas' })
       });
-
-      // If session attempt failed, retry with dev API key as fallback
-      if (!res.ok) {
-        console.warn('Session start failed, retrying with dev API key', res.status);
-        res = await fetch('http://localhost:8001/api/format/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
-          body: JSON.stringify({ files: Array.from(selectedFiles), output_dir: 'notas' })
-        });
-      }
 
       if (!res.ok) {
         const text = await res.text();
@@ -139,7 +119,7 @@ export default function FormatterPage() {
       setJobId(job_id);
 
       // Connect to WebSocket for progress updates
-      const websocket = new WebSocket(`ws://localhost:8001/api/format${ws_url}`);
+      const websocket = new WebSocket(`ws://localhost:9443/api/format${ws_url}`);
       
       websocket.onopen = () => {
         console.log('WebSocket connected');

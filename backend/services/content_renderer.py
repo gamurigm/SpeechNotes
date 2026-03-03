@@ -1,5 +1,10 @@
 from typing import Dict, List, Protocol
-from src.agent.document_generator import DocumentGenerator
+
+try:
+    from src.agent.document_generator import DocumentGenerator
+    _has_generator = True
+except Exception:
+    _has_generator = False
 
 class ContentStrategy(Protocol):
     """Protocol for rendering strategies (SOLID: ISP/DIP)"""
@@ -13,10 +18,12 @@ class FormattedContentStrategy:
 
 class SegmentDocumentStrategy:
     """Strategy for building document from segments using Generator"""
-    def __init__(self, generator: DocumentGenerator):
+    def __init__(self, generator=None):
         self.generator = generator
 
     def render(self, doc: Dict, segments: List[Dict]) -> str:
+        if not self.generator:
+            return ""
         try:
             topics = self.generator._group_by_topic(segments)
             return self.generator._build_markdown(doc, topics)
@@ -35,7 +42,7 @@ class ContentRenderer:
     Decides which rendering strategy to apply based on available data.
     """
     def __init__(self):
-        self.generator = DocumentGenerator()
+        self.generator = DocumentGenerator() if _has_generator else None
         self.formatted_strategy = FormattedContentStrategy()
         self.segment_strategy = SegmentDocumentStrategy(self.generator)
         self.raw_strategy = RawContentStrategy()

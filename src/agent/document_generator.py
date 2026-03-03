@@ -11,6 +11,7 @@ from bson import ObjectId
 import os
 from openai import OpenAI
 from src.database import MongoManager
+from src.database.config_service import ConfigService
 
 
 class DocumentGenerator:
@@ -23,10 +24,11 @@ class DocumentGenerator:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize Minimax Client
-        self.minimax_key = os.getenv("MINIMAX_API_KEY")
-        self.minimax_base = os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
-        self.minimax_model = os.getenv("MINIMAX_MODEL_NAME", "minimaxai/minimax-m2")
+        # Initialize Minimax Client (from ConfigService)
+        _cfg = ConfigService()
+        self.minimax_key = _cfg.get("MINIMAX_API_KEY")
+        self.minimax_base = _cfg.get("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
+        self.minimax_model = _cfg.get("MINIMAX_MODEL_NAME", "qwen/qwen3.5-397b-a17b")
         
         if self.minimax_key:
             self.client = OpenAI(

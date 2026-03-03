@@ -11,6 +11,7 @@ import logfire
 
 # Load environment variables, overriding system vars to ensure .env is used
 load_dotenv(override=True)
+from src.database.config_service import ConfigService
 
 
 class NvidiaInferenceClient:
@@ -31,13 +32,14 @@ class NvidiaInferenceClient:
     def __init__(self):
         """Initialize the NVIDIA client (only once)."""
         if not self._initialized:
-            self.api_key = os.getenv("NVIDIA_API_KEY")
+            _cfg = ConfigService()
+            self.api_key = _cfg.get("NVIDIA_API_KEY")
             # Clean API key (remove comments and whitespace)
             if self.api_key:
                 self.api_key = self.api_key.split('#')[0].strip()
 
-            self.base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-            self.model_name = os.getenv("MODEL_NAME", "deepseek-ai/deepseek-v3.1-terminus")
+            self.base_url = _cfg.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+            self.model_name = _cfg.get("MODEL_NAME", "deepseek-ai/deepseek-v3.1-terminus")
             
             if not self.api_key:
                 raise ValueError("NVIDIA_API_KEY not found in environment variables")
@@ -57,9 +59,9 @@ class NvidiaInferenceClient:
             )
             
             # Default parameters
-            self.temperature = float(os.getenv("TEMPERATURE", "0.2"))
-            self.top_p = float(os.getenv("TOP_P", "0.7"))
-            self.max_tokens = int(os.getenv("MAX_TOKENS", "8192"))
+            self.temperature = float(_cfg.get("TEMPERATURE", "0.2"))
+            self.top_p = float(_cfg.get("TOP_P", "0.7"))
+            self.max_tokens = int(_cfg.get("MAX_TOKENS", "8192"))
             
             NvidiaInferenceClient._initialized = True
     

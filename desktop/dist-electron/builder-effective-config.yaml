@@ -1,0 +1,40 @@
+directories:
+  output: dist-electron
+  buildResources: build
+appId: com.speechnotes.desktop
+productName: SpeechNotes
+files:
+  - filter:
+      - electron/**/*
+      - data/**/*
+extraResources:
+  - from: ../dist/speechnotes-backend/
+    to: backend
+    filter:
+      - '**/*'
+  - from: ../web/.next/standalone/
+    to: frontend
+    filter:
+      - '**/*'
+  - from: ../web/.next/static/
+    to: frontend/.next/static
+    filter:
+      - '**/*'
+  - from: ../web/public/
+    to: frontend/public
+    filter:
+      - '**/*'
+win:
+  target:
+    - nsis
+mac:
+  target:
+    - dmg
+linux:
+  target:
+    - AppImage
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+electronVersion: 33.4.11

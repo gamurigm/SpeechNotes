@@ -8,7 +8,7 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
     if (!socket) {
-        socket = io('http://127.0.0.1:8001', {
+        socket = io('http://127.0.0.1:9443', {
             transports: ['websocket', 'polling'],
             autoConnect: false
         });

@@ -19,10 +19,11 @@ class TranscriptionRepository:
         )
 
     def get_by_id(self, transcription_id: str) -> Optional[Dict]:
-        try:
-            return self.db.transcriptions.find_one({"_id": ObjectId(transcription_id)})
-        except:
-            return None
+        if ObjectId.is_valid(transcription_id):
+            doc = self.db.transcriptions.find_one({"_id": ObjectId(transcription_id)})
+            if doc:
+                return doc
+        return self.db.transcriptions.find_one({"_id": transcription_id})
 
     def list_recent(self, limit: int = 50) -> List[Dict]:
         cursor = self.db.transcriptions.find(
@@ -36,15 +37,23 @@ class TranscriptionRepository:
         ).sort("sequence", 1))
 
     def update_content(self, transcription_id: str, content: str) -> bool:
+        query = {"_id": transcription_id}
+        if ObjectId.is_valid(transcription_id):
+            query = {"$or": [{"_id": ObjectId(transcription_id)}, {"_id": transcription_id}]}
+
         result = self.db.transcriptions.update_one(
-            {"_id": ObjectId(transcription_id)},
+            query,
             {"$set": {"edited_content": content}}
         )
         return result.modified_count > 0
 
     def delete(self, transcription_id: str) -> bool:
+        query = {"_id": transcription_id}
+        if ObjectId.is_valid(transcription_id):
+            query = {"$or": [{"_id": ObjectId(transcription_id)}, {"_id": transcription_id}]}
+
         result = self.db.transcriptions.update_one(
-            {"_id": ObjectId(transcription_id)},
+            query,
             {"$set": {"is_deleted": True}}
         )
         return result.matched_count > 0

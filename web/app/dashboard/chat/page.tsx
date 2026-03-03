@@ -77,7 +77,7 @@ export default function ChatPage() {
                   {message.role === 'user' ? '👤 Tú' : '🤖 Asistente'}
                 </div>
                 <div className="whitespace-pre-wrap">
-                  {message.content}
+                  {"text" in message ? (message as any).text : (message as any).content}
                 </div>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function ChatPage() {
           onSubmit={e => {
             e.preventDefault();
             if (input.trim()) {
-              sendMessage({ role: 'user', content: input });
+              (sendMessage as any)({ role: 'user', content: input });
               setInput('');
             }
           }}

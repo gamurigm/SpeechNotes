@@ -1,0 +1,70 @@
+{
+  "name": "speechnotes-desktop",
+  "version": "1.0.0",
+  "description": "SpeechNotes Desktop - Real-time transcription with AI",
+  "main": "electron/main.js",
+  "author": "SpeechNotes Team",
+  "license": "MIT",
+  "scripts": {
+    "electron:dev": "electron electron/main.js",
+    "electron:build": "electron-builder",
+    "backend:build": "python -m PyInstaller --noconfirm ../backend.spec",
+    "dist": "npm run backend:build && npm run electron:build",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.speechnotes.desktop",
+    "productName": "SpeechNotes",
+    "directories": {
+      "output": "C:/temp/speechnotes-dist"
+    },
+    "files": [
+      "electron/**/*",
+      "data/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist/speechnotes-backend/",
+        "to": "backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../web/.next/standalone/",
+        "to": "frontend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../web/.next/static/",
+        "to": "frontend/.next/static",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../web/public/",
+        "to": "frontend/public",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "mac": {
+      "target": ["dmg"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

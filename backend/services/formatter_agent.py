@@ -77,10 +77,12 @@ class FormatterAgent:
         self.project_root = project_root
         self.jobs: Dict[str, FormatterJob] = {}
         
-        # Initialize client with best available key
-        self.api_key = os.getenv("NVIDIA_API_KEY_THINKING") or os.getenv("MINIMAX_API_KEY")
-        self.base_url = os.getenv("NVIDIA_BASE_URL") or os.getenv("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
-        self.model = os.getenv("FORMATTER_MODEL", "moonshotai/kimi-k2-thinking")
+        # Initialize client with best available key (from ConfigService)
+        from src.database.config_service import ConfigService
+        _cfg = ConfigService()
+        self.api_key = _cfg.get("NVIDIA_API_KEY_THINKING") or _cfg.get("MINIMAX_API_KEY")
+        self.base_url = _cfg.get("NVIDIA_BASE_URL") or _cfg.get("MINIMAX_BASE_URL", "https://integrate.api.nvidia.com/v1")
+        self.model = _cfg.get("FORMATTER_MODEL", "moonshotai/kimi-k2-thinking")
         
         if self.api_key:
             self.client = OpenAI(

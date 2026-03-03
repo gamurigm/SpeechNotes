@@ -4,6 +4,9 @@ import os
 import jwt
 import httpx
 
+from src.database.config_service import ConfigService
+_cfg = ConfigService()
+
 print("[AUTH] Loading updated auth.py with dev-key bypass...")
 
 
@@ -21,7 +24,7 @@ async def require_api_key(x_api_key: Optional[str] = Header(None), authorization
     Reads `API_KEY` from environment (or uses a default for local dev).
     Raises HTTPException(401) if missing or invalid.
     """
-    expected = os.environ.get("API_KEY", "dev-secret-api-key")
+    expected = _cfg.get("API_KEY", "dev-secret-api-key")
 
     provided = x_api_key
     # If x-api-key header not provided, try Authorization: Bearer <key>
@@ -59,7 +62,7 @@ async def require_session(request: Request) -> Any:
         raise HTTPException(status_code=401, detail="Missing session cookie")
 
     # First, attempt to validate session by calling the Next.js session endpoint
-    nextjs_session_url = os.environ.get("NEXTJS_SESSION_URL", "http://localhost:3006/api/auth/session")
+    nextjs_session_url = _cfg.get("NEXTJS_SESSION_URL", "http://localhost:3006/api/auth/session")
     cookie_header = request.headers.get("cookie")
 
     try:
@@ -90,7 +93,7 @@ async def require_session(request: Request) -> Any:
         print(f"[AUTH] Next.js session endpoint request failed: {e}")
 
     # Fallback: attempt to decode JWT locally using NEXTAUTH_SECRET (may fail if cookie is JWE)
-    secret = os.environ.get("NEXTAUTH_SECRET")
+    secret = _cfg.get("NEXTAUTH_SECRET")
     if not secret:
         raise HTTPException(status_code=500, detail="NEXTAUTH_SECRET not configured on server and Next.js session failed")
 
@@ -108,8 +111,14 @@ async def require_session(request: Request) -> Any:
 async def require_auth(request: Request, x_api_key: Optional[str] = Header(None), authorization: Optional[str] = Header(None, alias="Authorization")) -> bool:
     """Combined dependency: prefer session-based auth, fallback to api-key for dev.
 
-    Returns True when authorized.
+    When the configured API_KEY is the default dev key, auth is skipped entirely
+    (desktop / local mode).  Returns True when authorized.
     """
+    # --- Desktop / local mode: skip auth when no real key is configured ---
+    configured_key = _cfg.get("API_KEY", "dev-secret-api-key")
+    if configured_key == "dev-secret-api-key":
+        return True
+
     try:
         await require_session(request)
         print("[AUTH] Session validated successfully")

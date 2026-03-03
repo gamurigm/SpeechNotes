@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:8001';
+const BACKEND_URL = 'http://localhost:9443';
 
 export async function GET() {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/config/vad`);
+    const res = await fetch(`${BACKEND_URL}/api/config/vad`, {
+      headers: { 'x-api-key': 'dev-secret-api-key' },
+    });
     if (!res.ok) {
         // If backend returns 404 or other error, propagate it or return default
         if (res.status === 404) {
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const res = await fetch(`${BACKEND_URL}/api/config/vad`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
       body: JSON.stringify(body),
     });
     
