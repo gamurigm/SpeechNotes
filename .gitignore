@@ -95,6 +95,14 @@ docs/internal/
 # But "scripts, tests" are dirs. I will exclude them from git to be safe/clean as requested.
 tests/
 
+# ── Build output / PyInstaller ─────────────────────────────
+dist/
+build/
+*.spec
+
+# ── Local data / DB ─────────────────────────────────────────
+data/
+
 # ── Node / Next.js ──────────────────────────────────────────
 node_modules/
 .next/
