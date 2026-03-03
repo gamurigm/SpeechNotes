@@ -53,49 +53,49 @@ from backend.services.audio.vad_service import (
 )
 
 # ── Domain imports ──
-from src.core.environment_factory import TranscriptionEnvironmentFactoryProvider
 from src.transcription import FormatterFactory, OutputWriter
+
+# ── NIM ASR import (Parakeet TDT 0.6B v2) ──
+from backend.services.audio.asr import ASRService, ASRRequest
 
 # ──────────────────────────────────────────────
 #  Module-level singletons (Creational)
 # ──────────────────────────────────────────────
 active_sessions: dict[str, dict] = {}
-transcriber = None
 
 # Adapter instances (Structural – Adapter Pattern)
 _webm_adapter: AudioProcessorPort = WebMAudioAdapter()
 _pcm_adapter: AudioProcessorPort = PCMPassthroughAdapter()
 
 
-def get_transcriber():
-    """Get or create transcriber instance (Lazy Initialization – Creational)."""
-    global transcriber
-    if transcriber is None:
-        try:
-            environment_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
-            transcriber = environment_factory.create_transcriber()
-            print(f"[Transcriber] Initialized with Riva server: {transcriber.config.server}")
-        except Exception as e:
-            print(f"[Transcriber] Error initializing: {e}")
-            transcriber = None
-    return transcriber
+async def _parakeet_transcribe(pcm_bytes: bytes, language: str = "en") -> str:
+    """
+    Transcribe raw 16kHz mono 16-bit PCM via NVIDIA Parakeet TDT 0.6B v2 NIM.
 
+    Wraps the raw PCM buffer in a WAV container before sending to ASRService,
+    which normalises and forwards to the NIM endpoint.
+    """
+    import io
+    import wave
 
-def transcribe_audio_chunk(audio_data: bytes, threshold: int = 20) -> str:
-    """Transcribe a PCM audio chunk using the Riva engine."""
-    rms = AudioUtils.calculate_rms(audio_data)
-    if rms < threshold:
-        return ""
-
-    trans = get_transcriber()
-    if not trans:
-        return ""
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)   # 16-bit
+        wf.setframerate(16000)
+        wf.writeframes(pcm_bytes)
+    wav_bytes = buf.getvalue()
 
     try:
-        transcript = trans.offline_transcribe(audio_data, language="es")
-        return transcript.strip() if transcript else ""
+        svc = ASRService()
+        result = await svc.transcribe(ASRRequest(
+            audio_bytes=wav_bytes,
+            sample_rate=16000,
+            language=language,
+        ))
+        return result.text.strip() if result.text else ""
     except Exception as e:
-        print(f"[Transcriber] Error: {e}")
+        print(f"[Parakeet] Transcription error: {e}")
         return ""
 
 
@@ -118,7 +118,7 @@ def register_socket_events(sio):
     Registers all Socket.IO event handlers.  Internally delegates:
       - Audio conversion  →  AudioProcessorPort (Adapter)
       - VAD logic          →  VADStrategy          (Strategy / State)
-      - Transcription      →  Riva transcriber      (Lazy Singleton)
+      - Transcription      →  Parakeet TDT NIM     (async, per-call)
       - Persistence        →  TranscriptionRepository (Repository)
     """
 
@@ -143,14 +143,13 @@ def register_socket_events(sio):
             "vad_strategy": vad_strategy,  # Injected strategy
             "mic_gain": 1.5,
             "active": False,
+            "language": "en",         # Default: English (Parakeet is English-native)
         }
-
-        get_transcriber()
 
         try:
             await sio.emit('connected', {
                 'message': 'Connected to transcription server',
-                'transcriber': 'Riva Live' if get_transcriber() else 'Unavailable'
+                'transcriber': 'Parakeet TDT 0.6B v2 (NVIDIA NIM)'
             }, room=sid)
         except Exception as e:
             print(f"[Socket.IO] emit connected error: {e}")
@@ -185,6 +184,10 @@ def register_socket_events(sio):
 
             # Reconfigure VAD if client sends thresholds
             if data and isinstance(data, dict):
+                # Allow client to override transcription language
+                if "language" in data:
+                    session["language"] = str(data["language"])
+                    print(f"[Socket.IO] Language set to '{session['language']}' for {sid}")
                 vad_cfg = ServiceVADConfig(
                     voice_threshold=int(data.get('voiceThreshold', 80)),
                     silence_threshold=int(data.get('silenceThreshold', 40)),
@@ -279,7 +282,7 @@ def register_socket_events(sio):
         1. Apply gain   →  AudioUtils  (SRP helper)
         2. VAD decision →  VADStrategy (Strategy Pattern)
         3. Buffer logic →  local state
-        4. Transcribe   →  Riva engine
+        4. Transcribe   →  Parakeet NIM
         """
         # 1. Gain
         mic_gain = session.get("mic_gain", 1.5)
@@ -326,7 +329,8 @@ def register_socket_events(sio):
             session["speech_buffer"] = b""
 
             try:
-                text = await asyncio.to_thread(transcribe_audio_chunk, buffer_to_send, 0)
+                lang = session.get("language", "en")
+                text = await _parakeet_transcribe(buffer_to_send, lang)
 
                 if text and text.strip():
                     session["transcription_buffer"].append({
@@ -394,7 +398,8 @@ def register_socket_events(sio):
             # 2. Transcribe remaining speech buffer
             if session.get("speech_buffer"):
                 try:
-                    text = await asyncio.to_thread(transcribe_audio_chunk, session["speech_buffer"], 0)
+                    lang = session.get("language", "en")
+                    text = await _parakeet_transcribe(session["speech_buffer"], lang)
                     if text and text.strip():
                         session["transcription_buffer"].append({
                             "timestamp": format_timestamp(

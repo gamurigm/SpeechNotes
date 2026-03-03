@@ -161,10 +161,11 @@ async def chat_stream(request: ChatRequest):
             document = load_document_by_filename(request.active_file)
         
         if not document:
-            # Fallback to most recent
+            # Fallback to most recent — include unprocessed docs too, they still
+            # have raw_content which is perfectly usable for chat context.
             logger.info("No document specified, loading most recent")
             latest = db.transcriptions.find_one(
-                {"processed": True},
+                {"is_deleted": {"$ne": True}},
                 sort=[("ingested_at", -1)]
             )
             if latest:
