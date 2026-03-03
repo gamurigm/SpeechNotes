@@ -35,6 +35,7 @@ export function useRecording() {
     const [gainValue, setGainValue] = useState(1.0);
     const [voiceThreshold, setVoiceThreshold] = useState(100);
     const [silenceThreshold, setSilenceThreshold] = useState(60);
+    const [language, setLanguage] = useState<'en' | 'es'>('en');
 
     // Refs for cleanup and persistence
     const audioGraphRef = useRef<AudioGraph | null>(null);
@@ -114,10 +115,11 @@ export function useRecording() {
             setMessages([]);
             setDuration(0);
 
-            // Notify server with current VAD settings
+            // Notify server with VAD settings and language
             socket.emit('start_recording', {
                 voiceThreshold,
-                silenceThreshold
+                silenceThreshold,
+                language,
             });
 
             // Start timer
@@ -170,6 +172,6 @@ export function useRecording() {
         voiceThreshold,
         setVoiceThreshold,
         silenceThreshold,
-        setSilenceThreshold
-    };
+        setSilenceThreshold        language,
+        setLanguage,    };
 }

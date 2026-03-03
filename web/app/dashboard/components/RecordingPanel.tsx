@@ -26,7 +26,9 @@ export function RecordingPanel() {
         voiceThreshold,
         setVoiceThreshold,
         silenceThreshold,
-        setSilenceThreshold
+        setSilenceThreshold,
+        language,
+        setLanguage,
     } = useRecording();
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
@@ -79,6 +81,22 @@ export function RecordingPanel() {
                                 threshold={visualThreshold}
                             />
                         </div>
+
+                        {/* Language toggle */}
+                        <button
+                            onClick={() => !isRecording && setLanguage(language === 'en' ? 'es' : 'en')}
+                            disabled={isRecording}
+                            title={isRecording ? 'Detén la grabación para cambiar idioma' : `Idioma: ${language === 'en' ? 'English' : 'Español'} — clic para cambiar`}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-200
+                                ${isRecording ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
+                                ${language === 'en'
+                                    ? (isLight ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-blue-500/20 border-blue-500/50 text-blue-300')
+                                    : (isLight ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-amber-500/20 border-amber-500/50 text-amber-300')
+                                }`}
+                        >
+                            <span>{language === 'en' ? '🇺🇸' : '🇪🇸'}</span>
+                            <span>{language.toUpperCase()}</span>
+                        </button>
 
                         <Button
                             onPress={() => setShowSettings(!showSettings)}
