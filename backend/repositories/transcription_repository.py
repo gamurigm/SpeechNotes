@@ -1,7 +1,6 @@
 from typing import List, Optional, Dict
 from bson import ObjectId
 from src.database import MongoManager
-from src.agent.document_generator import DocumentGenerator
 
 class TranscriptionRepository:
     """
@@ -10,7 +9,15 @@ class TranscriptionRepository:
     """
     def __init__(self):
         self.db = MongoManager()
-        self.generator = DocumentGenerator()
+        self._generator = None  # Lazy — only initialized when post_process_file is called
+
+    @property
+    def generator(self):
+        """Lazy-initialize DocumentGenerator to avoid slow startup on every list request."""
+        if self._generator is None:
+            from src.agent.document_generator import DocumentGenerator
+            self._generator = DocumentGenerator()
+        return self._generator
 
     def get_latest(self) -> Optional[Dict]:
         return self.db.transcriptions.find_one(
