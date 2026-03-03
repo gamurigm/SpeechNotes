@@ -31,6 +31,8 @@ from routers import documents
 from routers import transcribe
 from routers import audio_format
 from routers import settings
+from routers import audio_processing
+from routers import translation as translation_router
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
@@ -73,6 +75,8 @@ app.include_router(documents.router, prefix="/api/documents", tags=["documents"]
 app.include_router(transcribe.router, prefix="/api", tags=["transcribe"], dependencies=[Depends(require_auth)])
 app.include_router(audio_format.router, prefix="/api/audio-format", tags=["audio-format"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(audio_processing.router, prefix="/api/audio", tags=["audio-nim"], dependencies=[Depends(require_auth)])
+app.include_router(translation_router.router, prefix="/api/translate", tags=["translation-nim"], dependencies=[Depends(require_auth)])
 
 
 # Instrument FastAPI app for tracing (if available)

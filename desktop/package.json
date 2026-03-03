@@ -28,6 +28,7 @@
     },
     "files": [
       "electron/**/*",
+      "assets/**/*",
       "data/**/*"
     ],
     "extraResources": [
@@ -53,10 +54,12 @@
       }
     ],
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "assets/icon.png"
     },
     "mac": {
-      "target": ["dmg"]
+      "target": ["dmg"],
+      "icon": "assets/icon.png"
     },
     "linux": {
       "target": ["AppImage"]

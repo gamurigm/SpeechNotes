@@ -8,7 +8,8 @@ import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
 import { ChatSidebar } from './components/ChatSidebar';
 import { RecordingProvider, useRecording } from './providers/RecordingProvider';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, MessageCircle, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves } from 'lucide-react';
+import Image from 'next/image';
 import { useBackground } from '../providers';
 import { BackgroundPicker, ThemeSettings } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
@@ -734,7 +735,7 @@ function DashboardContent() {
                             boxShadow: isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
                         }}
                     >
-                        <MessageCircle size={26} className={isLight ? 'text-black' : 'text-white'} />
+                        <Image src="/chat-icons/chat-ai2.png" alt="Chat" width={26} height={26} className="object-contain" />
                         <div
                             className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px]"
                             style={{ borderColor: 'var(--background)' }}

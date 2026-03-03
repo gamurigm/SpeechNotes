@@ -155,7 +155,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                <Image src="/chat-icons/live-chat.png" alt="Chat" width={24} height={24} className="object-contain" />
+                                <Image src="/chat-icons/technology.png" alt="Chat" width={24} height={24} className="object-contain" />
                             </div>
                             <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
                         </div>
@@ -271,7 +271,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                                 {msg.role === 'user' ? (
                                     <User size={18} className="text-white" />
                                 ) : (
-                                    <Image src="/chat-icons/chat-ai.png" alt="Assistant" width={18} height={18} className="object-contain" />
+                                    <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={18} height={18} className="object-contain" />
                                 )}
                             </div>
 
@@ -350,7 +350,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                 {isLoading && (
                     <div className="flex gap-4 animate-pulse">
                         <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center">
-                            <Image src="/chat-icons/chat-ai.png" alt="Assistant" width={18} height={18} className="object-contain opacity-80" />
+                            <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={18} height={18} className="object-contain opacity-80" />
                         </div>
                         <div className="flex-1 py-4 px-5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3">
                             <Loader2 size={16} className="text-violet-500 animate-spin" />

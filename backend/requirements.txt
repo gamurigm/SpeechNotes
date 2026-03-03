@@ -19,3 +19,5 @@ sentence-transformers
 tf-keras
 pydub
 logfire[fastapi,pymongo]
+grpcio>=1.62.0
+grpcio-tools>=1.62.0

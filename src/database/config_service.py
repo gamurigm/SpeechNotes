@@ -42,6 +42,11 @@ _DEFAULTS: List[tuple] = [
     ("llm", "MINIMAX_API_KEY",          "Minimax API Key",               1, 1),
     ("llm", "NVIDIA_BASE_URL",          "NVIDIA Base URL",               0, 0),
     ("llm", "MINIMAX_BASE_URL",         "Minimax Base URL",              0, 0),
+    # ---- NIM Specialised Keys ---------------------------------------------
+    ("llm", "NVIDIA_API_KEY_ASR",       "NVIDIA API Key (ASR / Parakeet)",   1, 1),
+    ("llm", "NVIDIA_API_KEY_BNR",       "NVIDIA API Key (BNR gRPC)",         0, 1),
+    ("llm", "NVIDIA_API_KEY_DETECTOR",  "NVIDIA API Key (Lang Detect / Gemma)", 1, 1),
+    ("llm", "NVIDIA_API_KEY_TRANSLATOR","NVIDIA API Key (Translation / Mistral)", 1, 1),
     # ---- Models -----------------------------------------------------------
     ("models", "CHAT_MODEL_THINKING",   "Chat Model (Thinking)",         0, 0),
     ("models", "CHAT_MODEL_FAST",       "Chat Model (Fast)",             0, 0),
@@ -49,6 +54,13 @@ _DEFAULTS: List[tuple] = [
     ("models", "EMBEDDING_MODEL",       "Embedding Model",               0, 0),
     ("models", "MINIMAX_MODEL_NAME",    "Minimax Model Name",            0, 0),
     ("models", "MODEL_NAME",            "Default Model Name",            0, 0),
+    # NIM specialised models
+    ("models", "ASR_MODEL",             "ASR Model (Parakeet)",          0, 0),
+    ("models", "DETECTOR_MODEL",        "Language Detector Model",       0, 0),
+    ("models", "TRANSLATOR_MODEL",      "Translator Model (Mistral)",    0, 0),
+    ("models", "BNR_FUNCTION_ID",       "BNR NVCF Function ID",          0, 0),
+    ("models", "BNR_GRPC_HOST",         "BNR gRPC Host",                 0, 0),
+    ("models", "BNR_GRPC_PORT",         "BNR gRPC Port",                 0, 0),
     # ---- Model parameters -------------------------------------------------
     ("models", "TEMPERATURE",           "Temperature",                   0, 0),
     ("models", "TOP_P",                 "Top P",                         0, 0),

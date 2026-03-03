@@ -135,6 +135,7 @@ async function createWindow() {
         minWidth: 900,
         minHeight: 600,
         title: 'SpeechNotes',
+        icon: path.join(__dirname, '..', 'assets', 'icon.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
