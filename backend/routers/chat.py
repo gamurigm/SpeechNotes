@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from src.database import MongoManager
 
 # Pydantic AI Agent
-from services.pydantic_agent import (
+from services.agents.pydantic_agent import (
     DocumentContext,
     chat_stream_direct,
     chat_stream_with_document,

@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Optional
 
-from backend.services.audio_service import AudioUtils
+from backend.services.audio.audio_service import AudioUtils
 
 
 # ──────────────────────────────────────────────

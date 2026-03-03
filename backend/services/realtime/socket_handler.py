@@ -40,13 +40,13 @@ from typing import Any
 load_dotenv()
 
 # ── Service imports (DIP: depend on abstractions) ──
-from backend.services.audio_service import (
+from backend.services.audio.audio_service import (
     AudioProcessorPort,
     WebMAudioAdapter,
     PCMPassthroughAdapter,
     AudioUtils,
 )
-from backend.services.vad_service import (
+from backend.services.audio.vad_service import (
     ThresholdVADStrategy,
     VADConfig as ServiceVADConfig,
     VADStrategy,

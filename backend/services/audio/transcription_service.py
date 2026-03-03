@@ -20,7 +20,7 @@ SOLID Principles:
 
 from typing import List, Dict, Optional
 from backend.repositories.transcription_repository import TranscriptionRepository
-from backend.services.content_renderer import ContentRenderer
+from backend.services.knowledge.content_renderer import ContentRenderer
 
 
 class TranscriptionService:

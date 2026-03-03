@@ -10,7 +10,7 @@ from pathlib import Path
 import asyncio
 import os
 
-from services.formatter_agent import FormatterAgent
+from services.agents.formatter_agent import FormatterAgent
 try:
     # Prefer importing via package name when backend is on sys.path
     from backend.utils.auth import require_auth

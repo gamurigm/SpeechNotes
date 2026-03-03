@@ -14,9 +14,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 
-from backend.services.transcription_service import TranscriptionService
+from backend.services.audio.transcription_service import TranscriptionService
 from backend.repositories.transcription_repository import TranscriptionRepository
-from backend.services.content_renderer import ContentRenderer
+from backend.services.knowledge.content_renderer import ContentRenderer
 
 router = APIRouter()
 

@@ -10,7 +10,7 @@ from typing import List, Optional, Dict
 from pathlib import Path
 import asyncio
 
-from services.audio_formatter import AudioFormatterService
+from services.audio.audio_formatter import AudioFormatterService
 
 try:
     from backend.utils.auth import require_auth

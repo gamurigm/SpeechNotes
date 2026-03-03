@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from services.audio_processor import AudioProcessor
+from services.audio.audio_processor import AudioProcessor
 import json
 
 router = APIRouter()

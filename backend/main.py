@@ -87,7 +87,7 @@ except Exception:
     pass
 
 # Socket.IO event handlers
-from services.socket_handler import register_socket_events
+from services.realtime.socket_handler import register_socket_events
 register_socket_events(sio)
 
 # Combine FastAPI and Socket.IO
