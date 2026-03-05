@@ -8,10 +8,11 @@
  * 4. Kill all child processes on quit
  */
 
-const { app, BrowserWindow, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, dialog, safeStorage, net: electronNet } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
+const http = require('http');
 
 // ---------------------------------------------------------------------------
 // Paths (differ between dev and packaged)
@@ -37,7 +38,7 @@ let mainWindow = null;
 // Utility: wait for a TCP port to be listening
 // ---------------------------------------------------------------------------
 
-function waitForPort(port, host = '127.0.0.1', timeout = 30000) {
+function waitForPort(port, host = '127.0.0.1', timeout = 60000) {
     return new Promise((resolve, reject) => {
         const deadline = Date.now() + timeout;
 
@@ -45,16 +46,19 @@ function waitForPort(port, host = '127.0.0.1', timeout = 30000) {
             if (Date.now() > deadline) {
                 return reject(new Error(`Timeout waiting for port ${port}`));
             }
-            const socket = new net.Socket();
-            socket.once('connect', () => {
-                socket.destroy();
+            const url = `http://${host}:${port}/`;
+            const req = http.get(url, (res) => {
+                console.log(`[Electron] Port ${port} on ${host} is ready! (status ${res.statusCode})`);
+                res.resume();          // drain the response
                 resolve();
             });
-            socket.once('error', () => {
-                socket.destroy();
-                setTimeout(tryConnect, 500);
+            req.on('error', () => {
+                setTimeout(tryConnect, 1000);
             });
-            socket.connect(port, host);
+            req.setTimeout(2000, () => {
+                req.destroy();
+                setTimeout(tryConnect, 1000);
+            });
         }
 
         tryConnect();
@@ -143,8 +147,12 @@ async function createWindow() {
         },
     });
 
-    // Load the frontend
-    const url = `http://127.0.0.1:${FRONTEND_PORT}`;
+    // Strip 'Electron' from the User-Agent so Google OAuth doesn't block the flow
+    const originalUA = mainWindow.webContents.getUserAgent();
+    mainWindow.webContents.setUserAgent(originalUA.replace(/Electron\/[\d.]+ /, ''));
+
+    // Load the frontend — use 'localhost' (not 127.0.0.1) to match the OAuth callback URI
+    const url = `http://localhost:${FRONTEND_PORT}`;
     console.log(`[Electron] Loading ${url}`);
     mainWindow.loadURL(url);
 
@@ -171,14 +179,14 @@ app.whenReady().then(async () => {
 
             // 2. Start frontend (in production only; in dev Next.js dev server runs separately)
             startFrontend();
-            await waitForPort(FRONTEND_PORT);
+            await waitForPort(FRONTEND_PORT, 'localhost');
             console.log('[Electron] Frontend is ready');
         } else {
             // In dev, just wait for the externally started backend & frontend
             console.log('[Electron] Dev mode – waiting for external backend & frontend...');
-            await waitForPort(BACKEND_PORT);
+            await waitForPort(BACKEND_PORT, '127.0.0.1');
             console.log('[Electron] Backend is ready (external)');
-            await waitForPort(FRONTEND_PORT);
+            await waitForPort(FRONTEND_PORT, '127.0.0.1');
             console.log('[Electron] Frontend is ready (external)');
         }
 

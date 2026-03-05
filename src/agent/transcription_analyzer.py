@@ -5,7 +5,7 @@ Analyzes segments in MongoDB to identify topics and structure.
 
 from typing import List, Dict, Any
 import logfire
-from bson import ObjectId
+
 from src.database import MongoManager
 from src.llm.nvidia_client import NvidiaInferenceClient
 
@@ -45,7 +45,7 @@ class TranscriptionAnalyzer:
         return count
     
     @logfire.instrument
-    def _analyze_transcription(self, transcription_id: ObjectId):
+    def _analyze_transcription(self, transcription_id: str):
         """
         Analyze a single transcription.
         """

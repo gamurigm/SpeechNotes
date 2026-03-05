@@ -712,6 +712,7 @@ function DashboardContent() {
                     <ChatSidebar
                         activeDocId={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.id || undefined}
                         activeDocName={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.filename || undefined}
+                        activeDocContent={transcriptionService.latestContent || undefined}
                         isFormatted={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.is_formatted}
                         isExpanded={isChatExpanded}
                         onToggleExpand={() => setIsChatExpanded(!isChatExpanded)}
@@ -735,7 +736,7 @@ function DashboardContent() {
                             boxShadow: isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
                         }}
                     >
-                        <Image src="/chat-icons/chat-ai2.png" alt="Chat" width={26} height={26} className="object-contain" />
+                        <Image src="/chat-icons/chat-ai2.png" alt="Chat" width={36} height={36} className={`object-contain ${!isLight ? 'brightness-0 invert' : ''}`} />
                         <div
                             className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px]"
                             style={{ borderColor: 'var(--background)' }}

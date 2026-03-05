@@ -18,6 +18,6 @@ langchain-chroma
 sentence-transformers
 tf-keras
 pydub
-logfire[fastapi,pymongo]
+logfire[fastapi,pymongo,requests]
 grpcio>=1.62.0
 grpcio-tools>=1.62.0

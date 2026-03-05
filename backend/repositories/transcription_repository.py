@@ -1,11 +1,11 @@
 from typing import List, Optional, Dict
-from bson import ObjectId
 from src.database import MongoManager
 
 class TranscriptionRepository:
     """
     Data Repository for Transcriptions and Segments.
     Implements Repository Pattern (SOLID: SRP, DIP).
+    Uses SQLiteManager (aliased as MongoManager) — MongoDB removed.
     """
     def __init__(self):
         self.db = MongoManager()
@@ -20,47 +20,50 @@ class TranscriptionRepository:
         return self._generator
 
     def get_latest(self) -> Optional[Dict]:
-        return self.db.transcriptions.find_one(
+        # Try by ingested_at first; fall back to _id (creation order) if missing
+        doc = self.db.transcriptions.find_one(
             {"is_deleted": {"$ne": True}},
             sort=[("ingested_at", -1)]
         )
+        if not doc:
+            doc = self.db.transcriptions.find_one(
+                {"is_deleted": {"$ne": True}},
+                sort=[("_id", -1)]
+            )
+        return doc
 
     def get_by_id(self, transcription_id: str) -> Optional[Dict]:
-        if ObjectId.is_valid(transcription_id):
-            doc = self.db.transcriptions.find_one({"_id": ObjectId(transcription_id)})
-            if doc:
-                return doc
+        """Look up by plain string ID (SQLite uses uuid hex, not ObjectId)."""
         return self.db.transcriptions.find_one({"_id": transcription_id})
 
     def list_recent(self, limit: int = 50) -> List[Dict]:
         cursor = self.db.transcriptions.find(
             {"is_deleted": {"$ne": True}}
         ).sort("ingested_at", -1).limit(limit)
-        return list(cursor)
+        docs = list(cursor)
+        # Fall back to _id sort if every doc has no ingested_at
+        if not docs or all(not d.get("ingested_at") for d in docs):
+            cursor2 = self.db.transcriptions.find(
+                {"is_deleted": {"$ne": True}}
+            ).sort("_id", -1).limit(limit)
+            return list(cursor2)
+        return docs
 
-    def get_segments(self, transcription_id: ObjectId) -> List[Dict]:
+    def get_segments(self, transcription_id: str) -> List[Dict]:
         return list(self.db.segments.find(
             {"transcription_id": transcription_id}
         ).sort("sequence", 1))
 
     def update_content(self, transcription_id: str, content: str) -> bool:
-        query = {"_id": transcription_id}
-        if ObjectId.is_valid(transcription_id):
-            query = {"$or": [{"_id": ObjectId(transcription_id)}, {"_id": transcription_id}]}
-
         result = self.db.transcriptions.update_one(
-            query,
+            {"_id": transcription_id},
             {"$set": {"edited_content": content}}
         )
         return result.modified_count > 0
 
     def delete(self, transcription_id: str) -> bool:
-        query = {"_id": transcription_id}
-        if ObjectId.is_valid(transcription_id):
-            query = {"$or": [{"_id": ObjectId(transcription_id)}, {"_id": transcription_id}]}
-
         result = self.db.transcriptions.update_one(
-            query,
+            {"_id": transcription_id},
             {"$set": {"is_deleted": True}}
         )
         return result.matched_count > 0

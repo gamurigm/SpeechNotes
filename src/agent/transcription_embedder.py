@@ -4,7 +4,7 @@ Generates embeddings for transcription segments and stores them in ChromaDB.
 """
 
 from typing import List, Dict, Any
-from bson import ObjectId
+
 from src.database import MongoManager
 from src.database.vector_store import VectorStore
 from src.llm.embedding_client import EmbeddingClient

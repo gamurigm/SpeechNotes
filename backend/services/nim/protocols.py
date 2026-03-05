@@ -30,7 +30,9 @@ from typing import AsyncIterator, Optional
 class NIMClientType(Enum):
     """Discriminates how a NIM endpoint is reached."""
     HTTP_OPENAI  = auto()   # OpenAI-compatible REST (most models)
-    GRPC         = auto()   # Binary gRPC streaming (BNR, Riva)
+    GRPC         = auto()   # Binary gRPC streaming (BNR)
+    RIVA_ASR     = auto()   # Riva gRPC ASR (Whisper via NVCF)
+    GROQ_ASR     = auto()   # Groq Whisper ASR (legacy, unused)
 
 
 @dataclass(frozen=True)

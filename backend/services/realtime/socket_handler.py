@@ -414,7 +414,7 @@ def register_socket_events(sio):
             if not session["transcription_buffer"]:
                 print(f"[Socket.IO] Skipping save for {sid}: No text transcribed.")
                 try:
-                    await sio.emit('error', {
+                    await sio.emit('warning', {
                         'message': 'No se detectó voz o contenido para transcribir.'
                     }, room=sid)
                 except Exception:

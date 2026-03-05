@@ -29,7 +29,7 @@ export class AudioGraph {
     // PCM Accumulation
     private pcmAccumulator: Int16Array[] = [];
     private samplesAccumulated = 0;
-    private readonly SAMPLES_PER_CHUNK = 64000; // ~4 seconds at 16kHz
+    private readonly SAMPLES_PER_CHUNK = 8000; // ~500ms at 16kHz — enough for real-time VAD
 
     constructor(private onAudioData: (data: ArrayBuffer) => void) { }
 
@@ -136,6 +136,11 @@ export class AudioGraph {
      * Cleanup resources
      */
     dispose() {
+        // Flush any remaining buffered audio before cleanup
+        if (this.samplesAccumulated > 0) {
+            this.flushAccumulator();
+        }
+
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;

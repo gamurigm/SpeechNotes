@@ -30,8 +30,22 @@ export function RecordingPanel() {
         language,
         setLanguage,
     } = useRecording();
+
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
+
+    const LANG_CYCLE: Array<'auto' | 'en' | 'es'> = ['auto', 'en', 'es'];
+    const LANG_LABELS = { auto: '🌐 AUTO', en: '🇺🇸 EN', es: '🇪🇸 ES' };
+    const LANG_TITLES = {
+        auto: 'Auto-detectar idioma (transcribe en el idioma hablado)',
+        en: 'Forzar inglés',
+        es: 'Forzar español',
+    };
+    const LANG_STYLES = {
+        auto: isLight ? 'bg-slate-50 border-slate-300 text-slate-700' : 'bg-white/10 border-white/30 text-slate-200',
+        en:   isLight ? 'bg-blue-50 border-blue-300 text-blue-700'   : 'bg-blue-500/20 border-blue-500/50 text-blue-300',
+        es:   isLight ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-amber-500/20 border-amber-500/50 text-amber-300',
+    };
 
     const [showSettings, setShowSettings] = useState(false);
     const [visualThreshold, setVisualThreshold] = useState(20); // Visual threshold
@@ -82,20 +96,20 @@ export function RecordingPanel() {
                             />
                         </div>
 
-                        {/* Language toggle */}
+                        {/* Language toggle — auto / en / es */}
                         <button
-                            onClick={() => !isRecording && setLanguage(language === 'en' ? 'es' : 'en')}
+                            onClick={() => {
+                                if (isRecording) return;
+                                const idx = LANG_CYCLE.indexOf(language);
+                                setLanguage(LANG_CYCLE[(idx + 1) % LANG_CYCLE.length]);
+                            }}
                             disabled={isRecording}
-                            title={isRecording ? 'Detén la grabación para cambiar idioma' : `Idioma: ${language === 'en' ? 'English' : 'Español'} — clic para cambiar`}
+                            title={isRecording ? 'Detén la grabación para cambiar idioma' : LANG_TITLES[language]}
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-200
                                 ${isRecording ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
-                                ${language === 'en'
-                                    ? (isLight ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-blue-500/20 border-blue-500/50 text-blue-300')
-                                    : (isLight ? 'bg-amber-50 border-amber-300 text-amber-700' : 'bg-amber-500/20 border-amber-500/50 text-amber-300')
-                                }`}
+                                ${LANG_STYLES[language]}`}
                         >
-                            <span>{language === 'en' ? '🇺🇸' : '🇪🇸'}</span>
-                            <span>{language.toUpperCase()}</span>
+                            <span>{LANG_LABELS[language]}</span>
                         </button>
 
                         <Button

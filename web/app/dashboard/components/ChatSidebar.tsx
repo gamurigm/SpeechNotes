@@ -15,16 +15,17 @@ interface Message {
 }
 
 interface ChatSidebarProps {
-    activeDocId?: string;    // MongoDB ObjectId - preferred
-    activeDocName?: string;  // Display name (filename)
-    activeFile?: string;     // DEPRECATED: kept for backwards compat
+    activeDocId?: string;      // MongoDB ObjectId - preferred
+    activeDocName?: string;    // Display name (filename)
+    activeDocContent?: string; // Pre-loaded document content (avoids DB lookup)
+    activeFile?: string;       // DEPRECATED: kept for backwards compat
     isExpanded?: boolean;
     isFormatted?: boolean;
     onToggleExpand?: () => void;
     onClose?: () => void;
 }
 
-export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded, isFormatted, onToggleExpand, onClose }: ChatSidebarProps) {
+export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, activeFile, isExpanded, isFormatted, onToggleExpand, onClose }: ChatSidebarProps) {
     const { theme, themeType } = useBackground();
     const isLight = themeType === 'light';
     const [messages, setMessages] = useState<Message[]>([]);
@@ -92,6 +93,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                     })),
                     doc_id: activeDocId,
                     active_file: activeFile,
+                    doc_content: activeDocContent || undefined,
                     thinking: useThinking
                 })
             });
@@ -155,7 +157,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                     <div className="flex items-center gap-4">
                         <div className="relative">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                <Image src="/chat-icons/technology.png" alt="Chat" width={24} height={24} className="object-contain" />
+                                <Image src="/chat-icons/technology.png" alt="Chat" width={34} height={34} className={`object-contain brightness-0 invert`} />
                             </div>
                             <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
                         </div>
@@ -271,7 +273,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                                 {msg.role === 'user' ? (
                                     <User size={18} className="text-white" />
                                 ) : (
-                                    <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={18} height={18} className="object-contain" />
+                                    <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={28} height={28} className="object-contain brightness-0 invert" />
                                 )}
                             </div>
 
@@ -350,7 +352,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                 {isLoading && (
                     <div className="flex gap-4 animate-pulse">
                         <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center">
-                            <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={18} height={18} className="object-contain opacity-80" />
+                            <Image src="/chat-icons/ai-assistant.png" alt="Assistant" width={28} height={28} className="object-contain opacity-80 brightness-0 invert" />
                         </div>
                         <div className="flex-1 py-4 px-5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3">
                             <Loader2 size={16} className="text-violet-500 animate-spin" />
@@ -382,7 +384,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeFile, isExpanded
                         disabled={!input.trim() || isLoading}
                         className="w-14 h-14 rounded-[1.25rem] bg-gradient-to-br from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-600 disabled:from-slate-800 disabled:to-slate-900 text-white flex items-center justify-center transition-all duration-500 shadow-xl shadow-indigo-900/40 hover:scale-105 active:scale-95 disabled:scale-100 disabled:opacity-50"
                     >
-                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Image src="/chat-icons/chat-ai2.png" alt="Send" width={24} height={24} className="object-contain" />}
+                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Image src="/chat-icons/chat-ai2.png" alt="Send" width={34} height={34} className="object-contain brightness-0 invert" />}
                     </button>
                 </form>
             </div>

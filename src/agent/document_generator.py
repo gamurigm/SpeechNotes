@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
 import logfire
-from bson import ObjectId
+
 import os
 from openai import OpenAI
 from src.database import MongoManager

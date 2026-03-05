@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Edit, Save, X, Download, ChevronLeft, ChevronRight, FileText, Type, Trash2, Sparkles } from 'lucide-react';
+import {
+    Edit, X, Download, ChevronLeft, ChevronRight, Type, Trash2, Sparkles,
+    BookOpen, Copy, Maximize2, Minimize2, Check, Clock, List, AlignLeft,
+} from 'lucide-react';
 import { useBackground } from '../../providers';
 import dynamic from 'next/dynamic';
 
@@ -32,19 +35,57 @@ interface Props {
     searchQuery?: string;
 }
 
+function makeSlug(text: string): string {
+    return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+}
+
 export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional, nav, title, zoomLevel = 100, isFormatted, searchQuery }: Props) {
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
+
+    // ── Existing state ─────────────────────────────────────────
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(content);
     const [isSaving, setIsSaving] = useState(false);
     const [showStyleMenu, setShowStyleMenu] = useState(false);
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
-
-    // Font style state
     const [fontFamily, setFontFamily] = useState<string>('Inter, system-ui, -apple-system, sans-serif');
     const [fontSize, setFontSize] = useState<number>(16);
+
+    // ── New state ──────────────────────────────────────────────
+    const [readingProgress, setReadingProgress] = useState(0);
+    const [showOutline, setShowOutline] = useState(false);
+    const [focusMode, setFocusMode] = useState(false);
+    const [copied, setCopied] = useState<'md' | 'plain' | null>(null);
+    const [selMenu, setSelMenu] = useState<{ x: number; y: number; text: string } | null>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+
+    // Sync editor when navigating between documents
+    useEffect(() => { setEditedContent(content); }, [content]);
+
+    // ── Derived data ───────────────────────────────────────────
+    const wordCount = useMemo(() => {
+        return content
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/[#*`>_~[\]!]/g, '')
+            .split(/\s+/)
+            .filter(Boolean).length;
+    }, [content]);
+
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    const headings = useMemo(() => {
+        const result: { level: number; text: string; id: string }[] = [];
+        content.split('\n').forEach((line) => {
+            const m = line.match(/^(#{1,3})\s+(.+)/);
+            if (m) {
+                const text = m[2].replace(/[*_`]/g, '').trim();
+                result.push({ level: m[1].length, text, id: makeSlug(text) });
+            }
+        });
+        return result;
+    }, [content]);
 
     const highlightText = (text: any) => {
         if (!searchQuery || typeof text !== 'string') return text;
@@ -173,19 +214,61 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
         }
     };
 
+    // ── New handlers ────────────────────────────────────────────
+    const handleScroll = () => {
+        if (!scrollRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const total = scrollHeight - clientHeight;
+        setReadingProgress(total > 0 ? (scrollTop / total) * 100 : 100);
+    };
+
+    const copyContent = async (mode: 'md' | 'plain') => {
+        const text = mode === 'md'
+            ? content
+            : content
+                .replace(/```[\s\S]*?```/g, '')
+                .replace(/`[^`]+`/g, '')
+                .replace(/[#*_~>`[\]!]/g, '')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        await navigator.clipboard.writeText(text);
+        setCopied(mode);
+        setTimeout(() => setCopied(null), 2000);
+    };
+
+    const handleMouseUp = () => {
+        if (isEditing) { setSelMenu(null); return; }
+        const sel = window.getSelection();
+        const text = sel?.toString().trim() ?? '';
+        if (text.length > 2 && sel?.rangeCount) {
+            const rect = sel.getRangeAt(0).getBoundingClientRect();
+            setSelMenu({ x: rect.left + rect.width / 2, y: rect.top, text });
+        } else {
+            setSelMenu(null);
+        }
+    };
+
+    const scrollToHeading = (id: string) => {
+        document.getElementById(`heading-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    // ── Effects ──────────────────────────────────────────────────
+    useEffect(() => {
+        const onDown = (e: MouseEvent) => {
+            if (!(e.target as HTMLElement).closest('[data-sel-toolbar]')) setSelMenu(null);
+        };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, []);
+
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (isEditing) return;
-
-            // Ignore if the focus is on an input, textarea or contenteditable
             const target = e.target as HTMLElement;
-            const isInput = target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable;
+            const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
             if (isInput) return;
-
             if (e.key === 'ArrowLeft' && nav?.onPrev && nav.hasPrev) nav.onPrev();
-            if (e.key === 'ArrowRight' && nav?.onNext && nav.hasNext) nav.hasNext && nav.onNext();
+            if (e.key === 'ArrowRight' && nav?.onNext && nav.hasNext) nav.onNext?.();
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
@@ -196,7 +279,9 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
             if (!showStyleMenu) return;
             if (menuRef.current && !menuRef.current.contains(ev.target as Node)) setShowStyleMenu(false);
         };
-        const onEsc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setShowStyleMenu(false); };
+        const onEsc = (ev: KeyboardEvent) => {
+            if (ev.key === 'Escape') { setShowStyleMenu(false); setShowOutline(false); setFocusMode(false); setSelMenu(null); }
+        };
         document.addEventListener('mousedown', onDocClick);
         document.addEventListener('keydown', onEsc);
         return () => {
@@ -209,18 +294,75 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
     try {
         const m = content && content.match(/(\d{4}-\d{2}-\d{2})/);
         if (m) extractedDate = new Date(m[1]).toISOString().slice(0, 10);
-    } catch (e) { }
+    } catch (e) { /* empty */ }
 
     const displayTitle = title || 'Última Clase';
 
     return (
         <div
-            className="h-full flex flex-col glass backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden"
-            style={{
-                fontFamily: 'var(--font-geist-sans)',
-                '--zoom-factor': zoomLevel / 100
-            } as any}
+            className={`flex flex-col glass backdrop-blur-xl border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-300 ${focusMode ? 'fixed inset-2 z-[90] rounded-[1.5rem]' : 'h-full rounded-[2rem]'}`}
+            style={{ fontFamily: 'var(--font-geist-sans)', '--zoom-factor': zoomLevel / 100 } as React.CSSProperties}
         >
+            {/* ── Reading progress bar ──────────────────────────── */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] z-30 bg-white/5 overflow-hidden">
+                <div
+                    className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-pink-500 transition-[width] duration-100"
+                    style={{ width: `${readingProgress}%` }}
+                />
+            </div>
+
+            {/* ── Selection floating toolbar ──────────────────────── */}
+            {selMenu && (
+                <div
+                    data-sel-toolbar
+                    style={{ position: 'fixed', left: selMenu.x, top: selMenu.y - 56, transform: 'translateX(-50%)', zIndex: 200 }}
+                    className="flex items-center gap-0.5 px-1.5 py-1 bg-slate-900/97 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl text-white animate-in fade-in slide-in-from-bottom-1 duration-150 pointer-events-auto"
+                >
+                    <button
+                        onClick={async () => { await navigator.clipboard.writeText(selMenu.text); setSelMenu(null); }}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-xs font-medium transition-colors whitespace-nowrap"
+                    ><Copy size={11} /> Copiar</button>
+                    <div className="w-px h-4 bg-white/15 mx-0.5" />
+                    <span className="text-[10px] text-white/30 px-2 font-mono tabular-nums">
+                        {selMenu.text.split(/\s+/).filter(Boolean).length}w
+                    </span>
+                    <div className="w-px h-4 bg-white/15 mx-0.5" />
+                    <button onClick={() => setSelMenu(null)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 transition-colors"><X size={10} /></button>
+                </div>
+            )}
+
+            {/* ── TOC Outline panel ────────────────────────────────── */}
+            {showOutline && !isEditing && (
+                <div
+                    className="absolute left-0 bottom-0 w-60 z-20 bg-slate-950/95 backdrop-blur-xl border-r border-white/10 overflow-y-auto flex flex-col animate-in slide-in-from-left-2 duration-200"
+                    style={{ top: '73px' }}
+                >
+                    <div className="p-3 border-b border-white/10 flex items-center justify-between sticky top-0 bg-slate-950/95">
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40">
+                            <List size={11} /> Esquema
+                        </div>
+                        <button onClick={() => setShowOutline(false)} className="p-1 rounded-lg hover:bg-white/10 text-white/40 transition-colors"><X size={12} /></button>
+                    </div>
+                    <nav className="p-2 space-y-0.5 flex-1">
+                        {headings.length === 0 ? (
+                            <p className="text-xs text-white/25 text-center py-6">Sin encabezados</p>
+                        ) : headings.map((h, i) => (
+                            <button
+                                key={i}
+                                onClick={() => scrollToHeading(h.id)}
+                                className="w-full text-left rounded-lg hover:bg-white/8 text-xs transition-all group py-1.5 pr-2"
+                                style={{ paddingLeft: `${(h.level - 1) * 12 + 10}px` }}
+                            >
+                                <span className={`block truncate font-medium group-hover:text-indigo-300 transition-colors ${h.level === 1 ? 'text-white/80' : h.level === 2 ? 'text-white/55' : 'text-white/35'}`}>
+                                    {h.level > 1 && <span className="opacity-30 mr-1">{'·'.repeat(h.level - 1)}</span>}
+                                    {h.text}
+                                </span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+            )}
+
             {showStyleMenu && (
                 <div ref={menuRef} className="fixed top-14 right-10 z-[70] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl p-4 min-w-[220px] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center justify-between mb-3">
@@ -268,6 +410,14 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
                                 <span className="text-[9px] font-black text-violet-300 uppercase tracking-widest">AI Formatted</span>
                             </div>
                         )}
+                        {/* Word count + reading time */}
+                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--foreground)]/30 font-medium">
+                            <AlignLeft size={9} />
+                            <span>{wordCount.toLocaleString()}&nbsp;palabras</span>
+                            <span className="opacity-50">·</span>
+                            <Clock size={9} />
+                            <span>~{readingTime}&nbsp;min</span>
+                        </div>
                     </div>
                 </div>
 
@@ -330,67 +480,82 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
                             <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20">{isSaving ? '...' : 'Guardar Cambios'}</button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            {/* Grouping content actions */}
-                            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-white/5 dark:bg-white/5 rounded-2xl border border-white/10 shadow-sm">
-                                {onFormatProfessional && (
-                                    <button
-                                        onClick={onFormatProfessional}
-                                        className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r ${isFormatted ? 'from-slate-600 to-slate-700' : 'from-violet-600 to-indigo-600'} hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black shadow-lg ${isFormatted ? 'shadow-slate-500/10' : 'shadow-indigo-500/20'} transition-all transform hover:scale-105 active:scale-95 group/prof`}
-                                        title={isFormatted ? "Volver a refinar con IA" : "Refinar contenido con Inteligencia Artificial"}
-                                    >
-                                        <Sparkles size={12} className={`${isFormatted ? 'text-violet-300' : 'text-white'} group-hover/prof:rotate-12 transition-transform`} />
-                                        <span>IA Refine</span>
-                                    </button>
-                                )}
-                                <button onClick={() => setIsEditing(true)} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Editar"><Edit size={16} /></button>
+                        <div className="flex items-center gap-1.5 px-2 py-1.5 bg-white/5 rounded-2xl border border-white/10 shadow-sm">
+                            {/* TOC outline toggle */}
+                            <button
+                                onClick={() => setShowOutline(!showOutline)}
+                                className={`p-2 rounded-xl transition-all ${showOutline ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                title="Esquema del documento"
+                            ><BookOpen size={16} /></button>
 
-                                <div className="w-px h-4 bg-white/10 mx-0.5" />
+                            {/* Copy as Markdown */}
+                            <button
+                                onClick={() => copyContent('md')}
+                                className={`flex items-center gap-1 px-2 py-2 rounded-xl transition-all text-[10px] font-black ${copied === 'md' ? 'bg-emerald-500/20 text-emerald-400' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                title="Copiar como Markdown"
+                            >{copied === 'md' ? <Check size={13} /> : <Copy size={13} />}<span>MD</span></button>
 
-                                <button onClick={handleExportPdf} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Exportar PDF"><Download size={16} /></button>
+                            {/* Copy as plain text */}
+                            <button
+                                onClick={() => copyContent('plain')}
+                                className={`flex items-center gap-1 px-2 py-2 rounded-xl transition-all text-[10px] font-black ${copied === 'plain' ? 'bg-emerald-500/20 text-emerald-400' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                title="Copiar como texto plano"
+                            >{copied === 'plain' ? <Check size={13} /> : <Copy size={13} />}<span>TXT</span></button>
+
+                            {/* Focus / zen mode */}
+                            <button
+                                onClick={() => setFocusMode(!focusMode)}
+                                className={`p-2 rounded-xl transition-all ${focusMode ? 'bg-amber-500/20 text-amber-400' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                title={focusMode ? 'Salir del modo lectura (Esc)' : 'Modo lectura sin distracciones'}
+                            >{focusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
+
+                            <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+                            {onFormatProfessional && (
                                 <button
-                                    onClick={() => setShowStyleMenu(!showStyleMenu)}
-                                    className={`p-2 rounded-xl transition-all relative ${showStyleMenu ? 'bg-indigo-600 text-white shadow-lg' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
-                                    title="Personalizar Tipografía"
+                                    onClick={onFormatProfessional}
+                                    className={`flex items-center gap-2 px-3 py-2 bg-gradient-to-r ${isFormatted ? 'from-slate-600 to-slate-700' : 'from-violet-600 to-indigo-600'} hover:from-violet-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black shadow-lg ${isFormatted ? 'shadow-slate-500/10' : 'shadow-indigo-500/20'} transition-all transform hover:scale-105 active:scale-95 group/prof`}
+                                    title={isFormatted ? 'Volver a refinar con IA' : 'Refinar contenido con Inteligencia Artificial'}
                                 >
-                                    <Type size={16} />
+                                    <Sparkles size={12} className={`${isFormatted ? 'text-violet-300' : 'text-white'} group-hover/prof:rotate-12 transition-transform`} />
+                                    <span>IA</span>
                                 </button>
+                            )}
 
-                                {onDelete && (
-                                    <>
-                                        <div className="w-px h-4 bg-white/10 mx-0.5" />
-                                        <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-0.5 rounded-lg border border-rose-500/20' : 'gap-0'}`}>
-                                            {isConfirmingDelete && (
-                                                <button
-                                                    onClick={() => setIsConfirmingDelete(false)}
-                                                    className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md text-slate-400 transition-colors"
-                                                    title="Cancelar"
-                                                >
-                                                    <X size={14} />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={handleDelete}
-                                                className={`p-2 rounded-lg transition-all ${isConfirmingDelete
-                                                    ? 'bg-rose-500 text-white shadow-lg'
-                                                    : 'text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10'
-                                                    }`}
-                                                title={isConfirmingDelete ? "Confirmar eliminación" : "Eliminar clase"}
-                                            >
-                                                <Trash2 size={isConfirmingDelete ? 14 : 16} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            <button onClick={() => setIsEditing(true)} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Editar"><Edit size={16} /></button>
+
+                            <div className="w-px h-4 bg-white/10 mx-0.5" />
+
+                            <button onClick={handleExportPdf} className={`p-2 rounded-xl transition-all ${isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`} title="Exportar / Imprimir PDF"><Download size={16} /></button>
+                            <button
+                                onClick={() => setShowStyleMenu(!showStyleMenu)}
+                                className={`p-2 rounded-xl transition-all relative ${showStyleMenu ? 'bg-indigo-600 text-white shadow-lg' : isLight ? 'text-slate-900 hover:bg-slate-200' : 'text-slate-100 hover:bg-white/10'}`}
+                                title="Personalizar Tipografía"
+                            ><Type size={16} /></button>
+
+                            {onDelete && (
+                                <>
+                                    <div className="w-px h-4 bg-white/10 mx-0.5" />
+                                    <div className={`flex items-center transition-all duration-300 ${isConfirmingDelete ? 'gap-1 bg-rose-500/10 p-0.5 rounded-lg border border-rose-500/20' : 'gap-0'}`}>
+                                        {isConfirmingDelete && (
+                                            <button onClick={() => setIsConfirmingDelete(false)} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md text-slate-400 transition-colors" title="Cancelar"><X size={14} /></button>
+                                        )}
+                                        <button
+                                            onClick={handleDelete}
+                                            className={`p-2 rounded-lg transition-all ${isConfirmingDelete ? 'bg-rose-500 text-white shadow-lg' : 'text-rose-500/70 hover:text-rose-500 hover:bg-rose-500/10'}`}
+                                            title={isConfirmingDelete ? 'Confirmar eliminación' : 'Eliminar clase'}
+                                        ><Trash2 size={isConfirmingDelete ? 14 : 16} /></button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div ref={scrollRef} onScroll={handleScroll} onMouseUp={handleMouseUp} className="flex-1 overflow-y-auto">
                 {isEditing ? (
-                    <div data-color-mode="light" style={{ fontFamily }} className="h-full">
+                    <div data-color-mode="light" style={{ fontFamily }} className="h-full p-4">
                         <style jsx global>{`
                             .w-md-editor {
                                 background-color: transparent !important;
@@ -411,19 +576,50 @@ export function MarkdownViewer({ content, onSave, onDelete, onFormatProfessional
                         <MDEditor value={editedContent} onChange={(val) => setEditedContent(val || '')} height="100%" preview="edit" style={{ fontFamily, fontSize: `${fontSize * (zoomLevel / 100)}px` }} />
                     </div>
                 ) : (
-                    <div id="markdown-preview" style={{ fontFamily, fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="max-w-4xl mx-auto">
+                    <div
+                        id="markdown-preview"
+                        style={{ fontFamily, fontSize: `${fontSize * (zoomLevel / 100)}px` }}
+                        className={`max-w-3xl mx-auto px-8 py-8 transition-all duration-300 ${showOutline ? 'ml-64' : ''}`}
+                    >
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                                h1: ({ children, ...p }) => <h1 style={{ fontSize: `${Math.round(fontSize * 1.5 * (zoomLevel / 100))}px` }} className="font-bold mt-6 mb-4 text-[var(--foreground)]" {...p}>{highlightText(children)}</h1>,
-                                h2: ({ children, ...p }) => <h2 style={{ fontSize: `${Math.round(fontSize * 1.3 * (zoomLevel / 100))}px` }} className="font-bold mt-5 mb-3 text-[var(--foreground)]" {...p}>{highlightText(children)}</h2>,
-                                h3: ({ children, ...p }) => <h3 style={{ fontSize: `${Math.round(fontSize * 1.15 * (zoomLevel / 100))}px` }} className="font-bold mt-4 mb-2 text-[var(--foreground)]/90" {...p}>{highlightText(children)}</h3>,
-                                p: ({ children, ...p }) => <p style={{ fontSize: `${fontSize * (zoomLevel / 100)}px`, lineHeight: 1.6 }} className="text-[var(--foreground)]/70 mb-4 text-justify" {...p}>{highlightText(children)}</p>,
-                                ul: (p) => <ul style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-disc list-inside space-y-2 mb-4 text-[var(--foreground)]/70" {...p} />,
-                                ol: (p) => <ol style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-decimal list-inside space-y-2 mb-4 text-[var(--foreground)]/70" {...p} />,
-                                li: ({ children, ...p }) => <li className="ml-1" {...p}>{highlightText(children)}</li>,
+                                h1: ({ children, ...p }) => {
+                                    const id = makeSlug(String(children));
+                                    return <h1 id={`heading-${id}`} style={{ fontSize: `${Math.round(fontSize * 1.7 * (zoomLevel / 100))}px` }} className="font-black mt-8 mb-4 text-[var(--foreground)] scroll-mt-20 border-b border-white/10 pb-2" {...p}>{highlightText(children)}</h1>;
+                                },
+                                h2: ({ children, ...p }) => {
+                                    const id = makeSlug(String(children));
+                                    return <h2 id={`heading-${id}`} style={{ fontSize: `${Math.round(fontSize * 1.35 * (zoomLevel / 100))}px` }} className="font-bold mt-7 mb-3 text-[var(--foreground)] scroll-mt-20" {...p}>{highlightText(children)}</h2>;
+                                },
+                                h3: ({ children, ...p }) => {
+                                    const id = makeSlug(String(children));
+                                    return <h3 id={`heading-${id}`} style={{ fontSize: `${Math.round(fontSize * 1.15 * (zoomLevel / 100))}px` }} className="font-semibold mt-5 mb-2 text-[var(--foreground)]/90 scroll-mt-20" {...p}>{highlightText(children)}</h3>;
+                                },
+                                p: ({ children, ...p }) => <p style={{ fontSize: `${fontSize * (zoomLevel / 100)}px`, lineHeight: 1.75 }} className="text-[var(--foreground)]/70 mb-5 text-justify" {...p}>{highlightText(children)}</p>,
+                                ul: (p) => <ul style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-disc list-outside ml-5 space-y-2 mb-5 text-[var(--foreground)]/70" {...p} />,
+                                ol: (p) => <ol style={{ fontSize: `${fontSize * (zoomLevel / 100)}px` }} className="list-decimal list-outside ml-5 space-y-2 mb-5 text-[var(--foreground)]/70" {...p} />,
+                                li: ({ children, ...p }) => <li className="pl-1 leading-relaxed" {...p}>{highlightText(children)}</li>,
                                 strong: ({ children, ...p }) => <strong className="font-bold text-[var(--foreground)]" {...p}>{highlightText(children)}</strong>,
-                                blockquote: ({ children, ...p }) => <blockquote className="border-l-4 border-indigo-500/30 pl-6 italic text-[var(--foreground)]/60 my-6 bg-indigo-500/5 py-4 rounded-r-xl" {...p}>{highlightText(children)}</blockquote>,
+                                em: ({ children, ...p }) => <em className="italic text-[var(--foreground)]/80" {...p}>{children}</em>,
+                                blockquote: ({ children, ...p }) => (
+                                    <blockquote className="border-l-[3px] border-indigo-500/40 pl-5 italic text-[var(--foreground)]/60 my-6 bg-indigo-500/5 py-3 rounded-r-xl pr-4" {...p}>
+                                        {highlightText(children)}
+                                    </blockquote>
+                                ),
+                                code: ({ children, className, ...p }) => {
+                                    const isBlock = !!className?.includes('language-');
+                                    return isBlock
+                                        ? <code className="block bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono text-[var(--foreground)]/80 overflow-x-auto my-4" {...p}>{children}</code>
+                                        : <code className="bg-black/20 border border-white/10 rounded px-1.5 py-0.5 text-[0.85em] font-mono text-indigo-300/90" {...p}>{children}</code>;
+                                },
+                                pre: ({ children, ...p }) => <pre className="bg-black/30 border border-white/10 rounded-xl px-4 py-3 overflow-x-auto my-4 text-sm" {...p}>{children}</pre>,
+                                table: (p) => <div className="overflow-x-auto my-6 rounded-xl border border-white/10"><table className="w-full text-sm" {...p} /></div>,
+                                thead: (p) => <thead className="bg-white/5 border-b border-white/10" {...p} />,
+                                th: (p) => <th className="px-4 py-2.5 text-left font-bold text-[var(--foreground)]/80 text-xs uppercase tracking-wide" {...p} />,
+                                td: (p) => <td className="px-4 py-2.5 border-b border-white/5 text-[var(--foreground)]/65" {...p} />,
+                                a: ({ children, href, ...p }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors" {...p}>{children}</a>,
+                                hr: () => <hr className="my-8 border-white/10" />,
                             }}
                         >
                             {content}

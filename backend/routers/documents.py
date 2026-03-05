@@ -1,5 +1,5 @@
 """
-Documents API Router - Exposes document content from MongoDB for AI consumption
+Documents API Router - Exposes document content for AI consumption
 """
 
 import sys
@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from bson import ObjectId
 from src.database import MongoManager
 import logging
 
@@ -38,21 +37,22 @@ class DocumentMetadata(BaseModel):
 @router.get("/{doc_id}/content", response_model=DocumentContent)
 async def get_document_content(doc_id: str):
     """
-    Get the plain text content of a document by its MongoDB ObjectId.
-    
-    This endpoint is designed for AI consumption - it returns the best 
-    available content in order of preference:
+    Get the plain text content of a document by its ID.
+
+    Returns the best available content in order of preference:
     1. edited_content (if user has edited)
     2. formatted_content (AI-formatted version)
     3. raw_content (original transcription)
     """
     try:
-        # Validate ObjectId format
-        if not ObjectId.is_valid(doc_id):
-            raise HTTPException(status_code=400, detail="Invalid document ID format")
-        
-        doc = db.transcriptions.find_one({"_id": ObjectId(doc_id)})
-        
+        if not doc_id or not doc_id.strip():
+            raise HTTPException(status_code=400, detail="Invalid document ID")
+
+        doc = db.transcriptions.find_one({"_id": doc_id})
+        if not doc:
+            # Fallback: maybe doc_id is actually a filename
+            doc = db.transcriptions.find_one({"filename": doc_id})
+
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found")
         

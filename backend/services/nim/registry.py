@@ -110,13 +110,39 @@ class NIMRegistry:
             client_type=NIMClientType.HTTP_OPENAI,
         ))
 
-        # ── ASR: Parakeet TDT 0.6B v2 ────────────────────────────────
+        # ── ASR: Whisper via Riva gRPC (English) ────────────────────────
+        # integrate.api.nvidia.com does NOT support /audio/transcriptions.
+        # Whisper hosted on NVCF via Riva gRPC is the correct endpoint.
+        riva_server = _g("RIVA_SERVER") or "grpc.nvcf.nvidia.com:443"
+        riva_host, _, riva_port_str = riva_server.rpartition(":")
+        riva_port = int(riva_port_str) if riva_port_str.isdigit() else 443
+        if not riva_host:
+            riva_host = riva_server
+            riva_port = 443
+        riva_func_id = _g("RIVA_FUNCTION_ID_WHISPER") or ""
+
         self._register(NIMConfig(
             name="asr",
-            api_key=_g("NVIDIA_API_KEY_ASR") or _g("NVIDIA_API_KEY") or "",
-            base_url=base_url,
-            model_id=_g("ASR_MODEL") or "nvidia/parakeet-tdt-0.6b-v2",
-            client_type=NIMClientType.HTTP_OPENAI,
+            api_key=_g("NVIDIA_API_KEY_ASR") or _g("API_KEY") or _g("NVIDIA_API_KEY") or "",
+            base_url="",  # unused for gRPC
+            model_id="whisper",
+            client_type=NIMClientType.RIVA_ASR,
+            grpc_host=riva_host,
+            grpc_port=riva_port,
+            grpc_function_id=riva_func_id,
+        ))
+
+        # ── ASR: Whisper via Riva gRPC (Spanish & multilingual) ──────────
+        # Same Whisper function, different language_code passed at runtime.
+        self._register(NIMConfig(
+            name="asr_es",
+            api_key=_g("NVIDIA_API_KEY_ASR_ES") or _g("NVIDIA_API_KEY_ASR") or _g("API_KEY") or _g("NVIDIA_API_KEY") or "",
+            base_url="",  # unused for gRPC
+            model_id="whisper",
+            client_type=NIMClientType.RIVA_ASR,
+            grpc_host=riva_host,
+            grpc_port=riva_port,
+            grpc_function_id=riva_func_id,
         ))
 
         # ── Audio Enhancement: BNR (gRPC) ─────────────────────────────
@@ -159,6 +185,14 @@ class NIMRegistry:
             from backend.services.nim.grpc_client import BNRGrpcClient
             return BNRGrpcClient(config)
 
+        if config.client_type == NIMClientType.RIVA_ASR:
+            from backend.services.nim.riva_asr_client import RivaWhisperASRClient
+            return RivaWhisperASRClient(config)
+
+        if config.client_type == NIMClientType.GROQ_ASR:
+            from backend.services.nim.groq_client import GroqASRClient
+            return GroqASRClient(config)
+
         # Default: HTTP OpenAI-compatible
         # Use ThinkingClient for models that have enable_thinking
         from backend.services.nim.openai_client import OpenAINIMClient, ThinkingNIMClient
@@ -172,8 +206,14 @@ class NIMRegistry:
     def get_text(self, name: str = "thinking") -> TextGenerationPort:
         return self.get(name)  # type: ignore[return-value]
 
-    def get_asr(self) -> AudioTranscriptionPort:
-        return self.get("asr")  # type: ignore[return-value]
+    def get_asr(self, language: str | None = None) -> AudioTranscriptionPort:
+        """Return the ASR client for the given language.
+
+        - ``'es'`` → ``asr_es`` (Whisper via Riva gRPC, es-ES locale)
+        - anything else → ``asr`` (Whisper via Riva gRPC, en-US locale)
+        """
+        name = "asr_es" if language and language.startswith("es") else "asr"
+        return self.get(name)  # type: ignore[return-value]
 
     def get_bnr(self) -> AudioEnhancementPort:
         return self.get("bnr")  # type: ignore[return-value]

@@ -33,9 +33,9 @@ export function useRecording() {
 
     // Settings
     const [gainValue, setGainValue] = useState(1.0);
-    const [voiceThreshold, setVoiceThreshold] = useState(100);
-    const [silenceThreshold, setSilenceThreshold] = useState(60);
-    const [language, setLanguage] = useState<'en' | 'es'>('en');
+    const [voiceThreshold, setVoiceThreshold] = useState(50);
+    const [silenceThreshold, setSilenceThreshold] = useState(25);
+    const [language, setLanguage] = useState<'auto' | 'en' | 'es'>('auto');
 
     // Refs for cleanup and persistence
     const audioGraphRef = useRef<AudioGraph | null>(null);
@@ -57,7 +57,13 @@ export function useRecording() {
             console.log('[Socket] Transcription:', data);
             setMessages(prev => [...prev, data]);
         };
-        const handleError = (data: any) => console.error('[Socket] Error:', data);
+        const handleError = (data: any) => {
+            // Log as warning to prevent triggering Next.js dev overlay for business logic 'errors'
+            console.warn('[Socket] Backend Error:', data?.message || JSON.stringify(data));
+            if (data instanceof Error) {
+                console.warn('[Socket] Error details:', data.message, data.stack);
+            }
+        };
 
         socket.on('connected', handleConnected);
         socket.on('recording_started', handleStarted);
@@ -95,9 +101,8 @@ export function useRecording() {
             // Initialize AudioGraph (Adapter/Builder)
             // Pass a callback to emit data (Observer)
             const graph = new AudioGraph((audioData) => {
-                if (socket.connected) {
-                    socket.emit('audio_chunk_pcm', audioData);
-                }
+                // socket.io buffers emits automatically when not yet connected
+                socket.emit('audio_chunk_pcm', audioData);
             });
 
             await graph.initialize();
@@ -132,7 +137,7 @@ export function useRecording() {
             console.error('Error starting recording:', error);
             alert('Error al acceder al micrófono. Verifique los permisos.');
         }
-    }, [gainValue, voiceThreshold, silenceThreshold]);
+    }, [gainValue, voiceThreshold, silenceThreshold, language]);
 
     const stopRecordingInternal = useCallback(() => {
         // Cleanup AudioGraph

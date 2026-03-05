@@ -123,28 +123,29 @@ class OpenAINIMClient(TextGenerationPort, AudioTranscriptionPort):
         language: Optional[str] = None,
     ) -> TranscriptionResult:
         """
-        Transcribe audio using the OpenAI-compatible audio/transcriptions
-        endpoint.  Parakeet-TDT-0.6B-v2 is exposed via this route.
+        Transcribe audio using NVIDIA Parakeet NIM.
+
+        Uses the OpenAI-compatible /audio/transcriptions endpoint
+        exposed by NVIDIA NIM (integrate.api.nvidia.com).
 
         Args:
             audio_bytes: Raw WAV (PCM 16-bit, 16kHz, mono) bytes.
             sample_rate: Source sample rate (informational).
-            language:    BCP-47 language hint e.g. "en". None = auto.
+            language:    BCP-47 language hint e.g. "en". None = auto-detect.
         """
         import io
 
-        # The SDK expects a file-like object with a .name attribute
-        # so it can infer the MIME type from the extension.
-        audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = "audio.wav"
+        transcription = await self._client.audio.transcriptions.create(
+            file=("audio.wav", io.BytesIO(audio_bytes)),
+            model=self._cfg.model_id,
+            language=language or "",
+            response_format="text",
+        )
 
-        kwargs: dict = {"model": self._cfg.model_id, "file": audio_file}
-        if language:
-            kwargs["language"] = language
+        text = str(transcription).strip() if transcription else ""
 
-        response = await self._client.audio.transcriptions.create(**kwargs)
         return TranscriptionResult(
-            text=response.text,
+            text=text,
             language=language,
             confidence=1.0,
         )

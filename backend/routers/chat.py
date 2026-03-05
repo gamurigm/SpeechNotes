@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
-from bson import ObjectId
 import logging
 import json
+import re
 
 # Database
 import sys
@@ -35,9 +35,10 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[Message]
-    doc_id: Optional[str] = None  # MongoDB ObjectId - NEW: replaces active_file
+    doc_id: Optional[str] = None       # SQLite document id (uuid hex)
     active_file: Optional[str] = None  # Deprecated but kept for backwards compat
-    thinking: bool = True  # Whether to use the thinking/reasoning capability
+    doc_content: Optional[str] = None  # Pre-loaded content from frontend (avoids DB lookup)
+    thinking: bool = True              # Whether to use the thinking/reasoning capability
 
 
 class ChatResponse(BaseModel):
@@ -47,14 +48,17 @@ class ChatResponse(BaseModel):
 
 def load_document_context(doc_id: str) -> Optional[DocumentContext]:
     """
-    Load document content from MongoDB and create a DocumentContext.
+    Load document content from SQLite and create a DocumentContext.
+    doc_id is a plain string (uuid hex) or filename-based identifier.
     """
     try:
-        if not ObjectId.is_valid(doc_id):
-            logger.warning(f"Invalid doc_id format: {doc_id}")
+        if not doc_id or not doc_id.strip():
             return None
-            
-        doc = db.transcriptions.find_one({"_id": ObjectId(doc_id)})
+
+        doc = db.transcriptions.find_one({"_id": doc_id})
+        if not doc:
+            # Fallback: maybe doc_id is a filename
+            doc = db.transcriptions.find_one({"filename": doc_id})
         
         if not doc:
             logger.warning(f"Document not found: {doc_id}")
@@ -89,7 +93,6 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
         # Extract title
         title = doc.get("title")
         if not title and content:
-            import re
             heading_match = re.match(r'^#\s+(.+)$', content, re.MULTILINE)
             if heading_match:
                 title = heading_match.group(1).strip()
@@ -138,7 +141,7 @@ async def chat_stream(request: ChatRequest):
     Streaming chat endpoint with document context awareness.
     
     Priority for document context:
-    1. doc_id (MongoDB ObjectId) - preferred
+    1. doc_id (SQLite id) - preferred
     2. active_file (filename) - backwards compat
     3. Most recent document - fallback
     """
@@ -150,10 +153,27 @@ async def chat_stream(request: ChatRequest):
         
         query = user_messages[-1].content
         
-        # Load document context with priority: doc_id > active_file > latest
+        # Load document context with priority:
+        # 0. doc_content (pre-loaded content from frontend) — fastest, no DB needed
+        # 1. doc_id (SQLite uuid)
+        # 2. active_file (filename) — backwards compat
+        # 3. most recent document — fallback
         document: Optional[DocumentContext] = None
-        
-        if request.doc_id:
+
+        if request.doc_content and len(request.doc_content.strip()) > 20:
+            logger.info("Using pre-loaded doc_content from frontend (bypassing DB lookup)")
+            # Derive a display name from doc_id or active_file
+            doc_label = request.doc_id or request.active_file or "documento-activo"
+            heading_match = re.match(r'^#\s+(.+)$', request.doc_content, re.MULTILINE)
+            title = heading_match.group(1).strip() if heading_match else None
+            document = DocumentContext(
+                doc_id=doc_label,
+                filename=request.active_file,
+                title=title,
+                content=request.doc_content,
+                content_type="frontend"
+            )
+        elif request.doc_id:
             logger.info(f"Loading document by doc_id: {request.doc_id}")
             document = load_document_context(request.doc_id)
         elif request.active_file:
@@ -161,13 +181,20 @@ async def chat_stream(request: ChatRequest):
             document = load_document_by_filename(request.active_file)
         
         if not document:
-            # Fallback to most recent — include unprocessed docs too, they still
-            # have raw_content which is perfectly usable for chat context.
+            # Fallback to most recent document
             logger.info("No document specified, loading most recent")
+            # First try with ingested_at
             latest = db.transcriptions.find_one(
                 {"is_deleted": {"$ne": True}},
                 sort=[("ingested_at", -1)]
             )
+            # If not found, try any document (some docs might miss ingested_at)
+            if not latest:
+                latest = db.transcriptions.find_one(
+                    {"is_deleted": {"$ne": True}},
+                    sort=[("_id", -1)]
+                )
+            
             if latest:
                 document = load_document_context(str(latest["_id"]))
         
