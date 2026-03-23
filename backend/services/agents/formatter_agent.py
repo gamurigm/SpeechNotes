@@ -192,22 +192,23 @@ class FormatterAgent:
                 full_path = self.project_root / file_path
 
                 if not full_path.exists():
-                    # Try common fallback: maybe the original was backed up as .md.original
-                    try:
-                        backup_path = full_path.with_suffix(full_path.suffix + '.original')
-                        if backup_path.exists():
-                            print(f"[FORMATTER] Original file missing, using backup: {backup_path}")
-                            full_path = backup_path
+                    # Fallback 1: check inside "notas" using only the base filename
+                    alt = self.project_root / "notas" / Path(file_path).name
+                    if alt.exists():
+                        full_path = alt
+                    else:
+                        # Fallback 2: look for .md.original (correct) or .md.md.original (legacy bug)
+                        stem = alt.stem  # e.g. 'transcripcion_20260323_115240'
+                        backup_correct = alt.parent / (stem + ".md.original")
+                        backup_legacy  = alt.parent / (alt.name + ".md.original")
+                        if backup_correct.exists():
+                            print(f"[FORMATTER] Using backup: {backup_correct}")
+                            full_path = backup_correct
+                        elif backup_legacy.exists():
+                            print(f"[FORMATTER] Using legacy backup: {backup_legacy}")
+                            full_path = backup_legacy
                         else:
-                            # Also try removing any leading 'notas/' if double-prefixed
-                            alt = self.project_root / Path(file_path).name
-                            if alt.exists():
-                                print(f"[FORMATTER] Using alternate path without folder: {alt}")
-                                full_path = alt
-                            else:
-                                raise FileNotFoundError(f"File not found: {file_path}")
-                    except Exception:
-                        raise FileNotFoundError(f"File not found: {file_path}")
+                            raise FileNotFoundError(f"File not found: {file_path}")
                 
                 content = full_path.read_text(encoding='utf-8')
                 
@@ -243,35 +244,23 @@ class FormatterAgent:
     
     async def _format_step(self, file_data: Dict, max_retries: int = 3) -> str:
         """Step: Format content using a Thinking Model for professional results"""
-        system_prompt = """Actúa como un asistente de IA de élite especializado en redacción académica y síntesis de alto nivel. 
-Tu tarea es tomar una transcripción bruta y REESCRIBIRLA COMPLETAMENTE como un documento profesional.
+        system_prompt = """Eres un asistente de transcripción académica. Tu trabajo es tomar una transcripción de clase y producir un documento limpio, organizado y fácil de leer.
 
-ESTRUCURA OBLIGATORIA:
+REGLAS ESTRICTAS:
 
-# Título del Documento (Sin etiquetas, claro y profesional)
+1. **CORRECCIÓN**: Corrige errores de habla (muletillas, repeticiones, frases incompletas). No cambies el vocabulario ni el estilo del hablante.
 
-## 🎯 Introducción y Contexto
-Un resumen ejecutivo de alto nivel que sitúe al lector en el tema tratado (mínimo 6 líneas).
+2. **ORGANIZACIÓN**: Agrupa el contenido por tema usando encabezados `##`. Los encabezados deben reflejar exactamente los temas discutidos, no etiquetas genéricas.
 
-## 🧩 Ejes Temáticos Principales
-Identifica y desarrolla los temas clave del contenido. NO uses la estructura de la transcripción original.
-- Cada tema debe tener su propio encabezado (## o ###).
-- Sintetiza la información de forma coherente, eliminando repeticiones.
-- Usa **negritas** para términos técnicos.
+3. **EXPANSIÓN DE DETALLE**: Si el hablante mencionó un concepto de forma breve o incompleta, explícalo con más claridad basándote SOLO en lo que dijo. No inventes información que no esté implícita en el texto.
 
-## 📝 Glosario de Conceptos Clave
-Una sección dedicada a definir los términos más importantes mencionados durante la sesión.
+4. **FIDELIDAD**: Conserva el orden y la esencia de lo que se dijo. No reorganices el contenido de forma que cambie el sentido.
 
-## 🏁 Síntesis y Conclusiones
-Un cierre profesional que resuma los aprendizajes y mencione próximos pasos o áreas de estudio relacionadas.
+5. **FORMATO**: Markdown limpio. Usa listas cuando el hablante enumere cosas. Resalta con **negrita** los términos técnicos o conceptos clave que el hablante mencionó explícitamente.
 
-REGLAS CRÍTICAS DE FORMATO:
-1. **PROHIBIDO**: No incluyas marcas de tiempo (00:00:00).
-2. **PROHIBIDO**: No menciones "Tema 1", "Segmento X" o etiquetas similares de la transcripción original.
-3. **SÍNTESIS TOTAL**: Tu objetivo no es "limpiar" el texto, sino **RAZONAR** sobre él y generar un documento nuevo y estructurado.
-4. **LIMPIEZA**: Elimina cualquier muletilla, duda o error de habla presente en el audio original.
-5. **MARKDOWN**: Usa Markdown fluido y profesional.
-6. **IDIOMA**: Español."""
+PROHIBIDO: No uses secciones de "Introducción", "Conclusiones" o "Glosario" a menos que el hablante haya tratado esos temas explícitamente.
+
+IDIOMA: Español. Respeta el registro y tono del hablante."""
 
         user_content = f"""Metadata:
 - Fecha: {file_data['metadata'].get('fecha', 'N/A')}
@@ -401,9 +390,9 @@ tipo: Profesional
                 output_path = self.project_root / output_dir
                 output_path.mkdir(parents=True, exist_ok=True)
                 
-                # Backup original if not already backed up
-                backup_path = original_path.with_suffix('.md.original')
-                if not backup_path.exists():
+                # Backup original — use stem to avoid double extension (e.g. 'file.md' -> 'file.md.original', NOT 'file.md.md.original')
+                backup_path = original_path.parent / (original_path.stem + ".md.original")
+                if not backup_path.exists() and original_path.exists():
                     original_path.rename(backup_path)
                 
                 # Save formatted version

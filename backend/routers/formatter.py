@@ -165,8 +165,8 @@ async def start_format_job(request: FormatRequest, api_ok: bool = Depends(requir
         # Create job
         job_id = formatter_agent.create_job(request.files, request.output_dir)
         
-        # Start job in background
-        asyncio.create_task(run_job_background(job_id))
+        # NOTE: Do NOT start in background here. The WebSocket endpoint will run the job
+        # when the client connects to receive progress dynamically.
         
         return FormatJobResponse(
             job_id=job_id,
