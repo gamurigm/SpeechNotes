@@ -35,13 +35,14 @@ class VectorStore:
         self.base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
         
         if not self.api_key:
-            raise ValueError("NVIDIA_EMBEDDING_API_KEY not found in environment variables")
-        
-        # Initialize OpenAI client for embeddings
-        self.client = OpenAI(
-            base_url=self.base_url,
-            api_key=self.api_key
-        )
+            print("WARNING: NVIDIA_EMBEDDING_API_KEY not found. Vector store will be inactive.")
+            self.client = None
+        else:
+            # Initialize OpenAI client for embeddings
+            self.client = OpenAI(
+                base_url=self.base_url,
+                api_key=self.api_key
+            )
         
         # Storage
         self.documents: List[str] = []

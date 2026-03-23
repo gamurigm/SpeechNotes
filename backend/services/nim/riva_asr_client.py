@@ -169,25 +169,17 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
 
     @staticmethod
     def _normalize_language(lang: Optional[str]) -> str:
-        """Convert short BCP-47 to full locale (e.g. 'es' → 'es-ES').
+        """Convert language input to a code accepted by Whisper on Riva/NVCF.
 
-        Returns empty string when lang is None or 'auto', which tells
-        Whisper to auto-detect the spoken language.
+        The Triton model accepts short codes: en, es, fr, de, etc.
+        Use 'multi' for auto-detection (do NOT send empty string).
         """
         if not lang or lang.lower() == "auto":
-            return ""  # Whisper auto-detects — transcribes in original language
-        mapping = {
-            "es": "es-ES",
-            "en": "en-US",
-            "fr": "fr-FR",
-            "de": "de-DE",
-            "pt": "pt-BR",
-            "it": "it-IT",
-            "ja": "ja-JP",
-            "zh": "zh-CN",
-            "ko": "ko-KR",
-        }
-        return mapping.get(lang.lower(), f"{lang}-{lang.upper()}")
+            return "multi"
+        # Strip region suffix if present (e.g. 'es-ES' → 'es')
+        short = lang.split("-")[0].lower()
+        return short
+
 
     @staticmethod
     def _wav_to_pcm(wav_bytes: bytes) -> bytes:

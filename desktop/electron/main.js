@@ -1,11 +1,5 @@
 /**
- * SpeechNotes Desktop - Electron Main Process
- *
- * Responsibilities:
- * 1. Launch the Python backend (PyInstaller binary) on startup
- * 2. Serve the Next.js standalone frontend
- * 3. Create the main BrowserWindow
- * 4. Kill all child processes on quit
+ * SpeechNotes Desktop - Electron Main Process (CJS)
  */
 
 const { app, BrowserWindow, dialog, safeStorage, net: electronNet } = require('electron');
@@ -116,7 +110,7 @@ function startFrontend() {
 
     // In dev, we use the Next.js dev server directly instead
     if (isDev) {
-        // Frontend is started via `pnpm dev` externally
+        // Frontend is started via `npm run dev` externally
         frontendProcess = null;
     } else {
         frontendProcess.stdout.on('data', d => console.log(`[Frontend] ${d}`));

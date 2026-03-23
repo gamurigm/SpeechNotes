@@ -6,7 +6,7 @@
   "author": "SpeechNotes Team",
   "license": "MIT",
   "scripts": {
-    "electron:dev": "electron electron/main.js",
+    "electron:dev": ".\\node_modules\\.bin\\electron electron/main.js",
     "electron:build": "electron-builder",
     "backend:build": "python -m PyInstaller --noconfirm ../backend.spec",
     "dist": "npm run backend:build && npm run electron:build",

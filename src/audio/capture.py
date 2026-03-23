@@ -2,7 +2,20 @@
 Audio Capture Module - Single Responsibility Principle
 Handles microphone recording and Voice Activity Detection
 """
-import pyaudio
+try:
+    import pyaudio
+except ImportError:
+    class MockPyAudio:
+        paInt16 = 8
+        def PyAudio(self): return self
+        def __init__(self, *args, **kwargs): pass
+        def open(self, *args, **kwargs): return self
+        def read(self, *args, **kwargs): return b''
+        def stop_stream(self, *args, **kwargs): pass
+        def close(self, *args, **kwargs): pass
+        def terminate(self, *args, **kwargs): pass
+        def get_sample_size(self, *args, **kwargs): return 2
+    pyaudio = MockPyAudio()
 import wave
 import numpy as np
 import tempfile

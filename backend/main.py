@@ -6,6 +6,32 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Patch audioop for Python 3.13+ compatibility
+try:
+    import audioop
+except ImportError:
+    try:
+        import audioop_lts
+        sys.modules["audioop"] = audioop_lts
+    except ImportError:
+        pass
+
+# Suppress Pydantic V1 / Python 3.14 deprecation warning from langchain_core
+import warnings
+warnings.filterwarnings("ignore", message=".*Pydantic V1.*Python 3.14.*")
+
+# Configure pydub to use the ffmpeg binary bundled with imageio-ffmpeg
+# Must suppress the warning AND set the converter before any other module imports pydub
+warnings.filterwarnings("ignore", message=".*ffmpeg.*avconv.*")
+try:
+    import imageio_ffmpeg
+    _ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+    os.environ["PATH"] = os.path.dirname(_ffmpeg_path) + os.pathsep + os.environ.get("PATH", "")
+    from pydub import AudioSegment
+    AudioSegment.converter = _ffmpeg_path
+except ImportError:
+    pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import socketio

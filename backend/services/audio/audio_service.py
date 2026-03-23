@@ -86,6 +86,11 @@ class WebMAudioAdapter(AudioProcessorPort):
             return b""
         try:
             from pydub import AudioSegment
+            import imageio_ffmpeg
+            
+            # Explicitly set the ffmpeg executable to the one bundled with imageio-ffmpeg.
+            # This fixes the "Couldn't find ffmpeg" RuntimeWarning on Windows.
+            AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
 
             with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
                 tmp.write(raw_data)
