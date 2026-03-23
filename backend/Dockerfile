@@ -27,19 +27,19 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/ /app/backend/
 COPY src/ /app/src/
 
-# Create directory for notes and knowledge base
-RUN mkdir -p /app/notas /app/knowledge_base
+# Create directories for notes, knowledge base, and SQLite data
+RUN mkdir -p /app/notas /app/knowledge_base /app/data
 
 # Add a non-root user for security
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
-EXPOSE 8001
+# Expose port (matches backend default; overridable via PORT env var)
+EXPOSE 9443
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8001/docs || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-9443}/health || exit 1
 
 # Command to run the application
 CMD ["python", "backend/main.py"]

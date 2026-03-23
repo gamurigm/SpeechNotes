@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:6.0
@@ -23,16 +21,17 @@ services:
       dockerfile: backend/Dockerfile
     container_name: speechnotes-backend
     ports:
-      - "8001:8001"
+      - "9443:9443"
+    env_file:
+      - .env
     environment:
+      - PORT=9443
       - MONGO_URI=mongodb://mongodb:27017/
       - MONGO_DB_NAME=agent_knowledge_base
-      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
-      - NVIDIA_EMBEDDING_API_KEY=${NVIDIA_EMBEDDING_API_KEY}
-      - LOGFIRE_TOKEN=${LOGFIRE_TOKEN}
     volumes:
       - ./notas:/app/notas
       - ./knowledge_base:/app/knowledge_base
+      - backend_data:/app/data
     depends_on:
       mongodb:
         condition: service_healthy
@@ -40,25 +39,26 @@ services:
       - speechnotes-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8001/docs" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9443/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
 
   frontend:
     build:
       context: ./web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8001
+        NEXT_PUBLIC_API_URL: http://localhost:9443
     container_name: speechnotes-frontend
     ports:
       - "3006:3006"
     environment:
-      - API_URL=http://backend:8001
+      - API_URL=http://backend:9443
       - DATABASE_URL=file:/app/prisma/dev.db
-    volumes:
-      - web_prisma_data:/app/prisma
+      - NEXTAUTH_URL=http://localhost:3006
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-speechnotes-dev-secret-2024}
     depends_on:
       backend:
         condition: service_healthy
@@ -72,4 +72,4 @@ networks:
 
 volumes:
   mongodb_data:
-  web_prisma_data:
+  backend_data:

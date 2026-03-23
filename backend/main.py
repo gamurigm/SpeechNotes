@@ -136,5 +136,5 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    # Running on port 9443 to avoid common port collisions
-    uvicorn.run(socket_app, host="0.0.0.0", port=9443, reload=False)
+    port = int(os.environ.get("PORT", 9443))
+    uvicorn.run(socket_app, host="0.0.0.0", port=port, reload=False)
