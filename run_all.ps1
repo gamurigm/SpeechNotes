@@ -43,9 +43,9 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location -Lit
 Write-Host "[*] Iniciando Frontend en puerto 3006..." -ForegroundColor Blue
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location -LiteralPath '$RootDir\web'; npm run dev" -WindowStyle Normal
 
-# 4. Start Desktop App
+# 4. Start Desktop App (Tauri)
 Write-Host "[*] Iniciando Desktop App..." -ForegroundColor Magenta
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location -LiteralPath '$RootDir\desktop'; npm run electron:dev" -WindowStyle Normal
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location -LiteralPath '$RootDir\web'; pnpm tauri dev" -WindowStyle Normal
 Write-Host "Services started!"
 
 

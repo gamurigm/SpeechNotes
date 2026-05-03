@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+import os
 
 block_cipher = None
 
@@ -29,7 +30,6 @@ hiddenimports = [
 
     # AI / LLM
     'pydantic_ai',
-    'logfire',
     'openai',
     'smolagents',
 
@@ -51,6 +51,9 @@ hiddenimports = [
 hiddenimports += collect_submodules('pydantic')
 # Only collect chromadb sub-modules (not the whole langchain universe)
 hiddenimports += collect_submodules('chromadb')
+# Collect all backend and src sub-modules so `from backend.xxx` resolves
+hiddenimports += collect_submodules('backend')
+hiddenimports += collect_submodules('src')
 
 # ---------------------------------------------------------------------------
 # Data files
@@ -121,8 +124,10 @@ excludes = [
     'faiss_cpu',
     'sympy',
     'lxml',
-    'pygments',
     'psutil',
+
+    # logfire Pydantic plugin calls inspect.getsource() which fails in frozen bundles
+    'logfire',
 ]
 
 a = Analysis(
@@ -133,7 +138,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[os.path.join(SPECPATH, 'desktop', 'pyi_rth_paths.py')],
     excludes=excludes,
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

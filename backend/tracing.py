@@ -3,8 +3,12 @@ Logfire Observability setup for SpeechNotes.
 Centralized configuration for tracing and logging.
 """
 import os
-import logfire
 from typing import Optional
+
+try:
+    import logfire
+except ImportError:
+    logfire = None
 
 def init_tracing(service_name: Optional[str] = None):
     """
@@ -15,6 +19,10 @@ def init_tracing(service_name: Optional[str] = None):
     token = _cfg.get("LOGFIRE_TOKEN")
     project_name = _cfg.get("LOGFIRE_PROJECT_NAME", "speechnotes")
     service_name = service_name or _cfg.get("OTEL_SERVICE_NAME", "speechnotes-backend")
+
+    if logfire is None:
+        print("⚠️ Logfire not installed. Tracing disabled.")
+        return
 
     if not token:
         print("⚠️ Logfire token not found. Tracing will be disabled.")
@@ -41,6 +49,8 @@ def instrument_fastapi(app):
     """
     Instrument the FastAPI app with Logfire.
     """
+    if logfire is None:
+        return
     try:
         logfire.instrument_fastapi(app)
     except Exception as e:

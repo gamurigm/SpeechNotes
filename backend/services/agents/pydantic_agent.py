@@ -18,7 +18,11 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 
-import logfire
+try:
+    import logfire
+except ImportError:
+    logfire = None
+
 logger = logging.getLogger(__name__)
 
 

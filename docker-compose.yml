@@ -54,6 +54,8 @@ services:
     container_name: speechnotes-frontend
     ports:
       - "3006:3006"
+    env_file:
+      - .env
     environment:
       - API_URL=http://backend:9443
       - DATABASE_URL=file:/app/prisma/dev.db

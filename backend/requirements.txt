@@ -19,5 +19,7 @@ sentence-transformers
 tf-keras
 pydub
 imageio-ffmpeg
+pydantic-ai
 grpcio>=1.62.0
 grpcio-tools>=1.62.0
+faiss-cpu

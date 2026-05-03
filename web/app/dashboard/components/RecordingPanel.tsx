@@ -29,6 +29,8 @@ export function RecordingPanel() {
         setSilenceThreshold,
         language,
         setLanguage,
+        diarization,
+        setDiarization,
     } = useRecording();
 
     const { themeType } = useBackground();
@@ -173,7 +175,24 @@ export function RecordingPanel() {
                                 <p className="text-xs text-gray-500 mt-1">Nivel mínimo para considerar "voz" (visual).</p>
                             </div>
 
-                            {/* Voice and silence thresholds moved to Calibrate Audio in dashboard toolbar */}
+                            <div className="space-y-2 col-span-1 md:col-span-2">
+                                <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/10 dark:border-white/10">
+                                    <div>
+                                        <p className="text-sm font-bold title-semi-neon flex items-center gap-2">
+                                            👥 Identificar Locutores (Diarización)
+                                            <span className="px-1.5 py-0.5 text-[9px] bg-amber-500/20 text-amber-500 rounded border border-amber-500/30 uppercase tracking-widest font-black">Beta</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-1">Separa el texto indicando [Locutor 1], [Locutor 2]. Requiere más recursos del servidor.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setDiarization(!diarization)}
+                                        disabled={isRecording}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${isRecording ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${diarization ? 'bg-indigo-500' : 'bg-gray-400 dark:bg-gray-600'}`}
+                                    >
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${diarization ? 'translate-x-6' : 'translate-x-1'}`} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </CardBody>
                 </Card>

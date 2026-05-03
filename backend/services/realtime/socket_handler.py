@@ -68,7 +68,7 @@ _webm_adapter: AudioProcessorPort = WebMAudioAdapter()
 _pcm_adapter: AudioProcessorPort = PCMPassthroughAdapter()
 
 
-async def _parakeet_transcribe(pcm_bytes: bytes, language: str = "en") -> str:
+async def _parakeet_transcribe(pcm_bytes: bytes, language: str = "en", diarize: bool = False) -> str:
     """
     Transcribe raw 16kHz mono 16-bit PCM via NVIDIA Parakeet TDT 0.6B v2 NIM.
 
@@ -92,6 +92,7 @@ async def _parakeet_transcribe(pcm_bytes: bytes, language: str = "en") -> str:
             audio_bytes=wav_bytes,
             sample_rate=16000,
             language=language,
+            diarize=diarize
         ))
         return result.text.strip() if result.text else ""
     except Exception as e:
@@ -188,6 +189,12 @@ def register_socket_events(sio):
                 if "language" in data:
                     session["language"] = str(data["language"])
                     print(f"[Socket.IO] Language set to '{session['language']}' for {sid}")
+                
+                # Extract diarization flag
+                if "diarization" in data:
+                    session["diarization"] = bool(data["diarization"])
+                    print(f"[Socket.IO] Diarization Enabled: {session['diarization']} for {sid}")
+
                 vad_cfg = ServiceVADConfig(
                     voice_threshold=int(data.get('voiceThreshold', 80)),
                     silence_threshold=int(data.get('silenceThreshold', 40)),
@@ -320,37 +327,66 @@ def register_socket_events(sio):
         should_transcribe = False
         if result.phrase_ended and session.get("speech_buffer"):
             should_transcribe = True
-        elif buffer_len_sec >= 4.0:
+        elif buffer_len_sec >= 8.0:
             should_transcribe = True
-            print("[BUFFER] Periodic trigger: 4s reached")
+            print("[BUFFER] Periodic trigger: 8s reached")
 
         if should_transcribe:
             buffer_to_send = session["speech_buffer"]
-            session["speech_buffer"] = b""
+            
+            # Si cortamos a los 8s pero no ha terminado la frase, retenemos 1 segundo (~32000 bytes) 
+            # de overlap para no cortar las palabras, y reiniciamos el VAD
+            if not result.phrase_ended and len(buffer_to_send) > 32000:
+                session["speech_buffer"] = buffer_to_send[-32000:]
+                vad.reset()
+            else:
+                session["speech_buffer"] = b""
 
-            try:
-                lang = session.get("language", "en")
-                text = await _parakeet_transcribe(buffer_to_send, lang)
+            # Usamos asyncio.create_task (concurrencia estilo hilos) para no bloquear la recepción de audio
+            async def _bg_transcribe(audio_buf, lang, current_timestamp, enable_diarize):
+                try:
+                    text = await _parakeet_transcribe(audio_buf, lang, diarize=enable_diarize)
 
-                if text and text.strip():
-                    session["transcription_buffer"].append({
-                        "timestamp": timestamp,
-                        "text": text,
-                    })
+                    if text:
+                        # Filtro anti-alucinaciones comunes en Whisper/Architectures para silencios
+                        import re
+                        text_clean = re.sub(r'[^\w\s]', '', text.lower()).strip()
+                        hallucinations = {
+                            "gracias", "amen", "amén", "concierto", 
+                            "gracias por ver el video", "gracias por ver", 
+                            "suscribete", "suscríbete", "dale like",
+                            "no", "y", "que hacemos", "qué hacemos", "que", "subtitulos"
+                        }
+                        if text_clean in hallucinations or text_clean == "":
+                            print(f"[ASR Filter] Ignorando alucinación de silencio: '{text}'")
+                            text = ""
 
-                    try:
-                        await sio_inst.emit('transcription', {
-                            "timestamp": timestamp,
+                    if text and text.strip():
+                        session["transcription_buffer"].append({
+                            "timestamp": current_timestamp,
                             "text": text,
-                        }, room=sid)
-                    except Exception as e_emit:
-                        print(f"[Socket.IO] emit error: {e_emit}")
+                        })
 
-                    print(f"[Socket.IO] Full Phrase for {sid}: {text[:100]}...")
+                        try:
+                            await sio_inst.emit('transcription', {
+                                "timestamp": current_timestamp,
+                                "text": text,
+                            }, room=sid)
+                        except Exception as e_emit:
+                            print(f"[Socket.IO] emit error: {e_emit}")
 
-            except Exception as e:
-                print(f"[Socket.IO] Error transcribing buffered segment: {e}")
-                traceback.print_exc()
+                        print(f"[Socket.IO] Full Phrase for {sid}: {text[:100]}...")
+
+                except Exception as e:
+                    print(f"[Socket.IO] Error transcribing buffered segment: {e}")
+                    traceback.print_exc()
+
+            asyncio.create_task(_bg_transcribe(
+                buffer_to_send, 
+                session.get("language", "en"), 
+                timestamp,
+                session.get("diarization", False)
+            ))
 
     # ── Observer: stop_recording ──
 

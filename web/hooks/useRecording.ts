@@ -36,6 +36,7 @@ export function useRecording() {
     const [voiceThreshold, setVoiceThreshold] = useState(50);
     const [silenceThreshold, setSilenceThreshold] = useState(25);
     const [language, setLanguage] = useState<'auto' | 'en' | 'es'>('auto');
+    const [diarization, setDiarization] = useState(false);
 
     // Refs for cleanup and persistence
     const audioGraphRef = useRef<AudioGraph | null>(null);
@@ -125,6 +126,7 @@ export function useRecording() {
                 voiceThreshold,
                 silenceThreshold,
                 language,
+                diarization,
             });
 
             // Start timer
@@ -137,7 +139,7 @@ export function useRecording() {
             console.error('Error starting recording:', error);
             alert('Error al acceder al micrófono. Verifique los permisos.');
         }
-    }, [gainValue, voiceThreshold, silenceThreshold, language]);
+    }, [gainValue, voiceThreshold, silenceThreshold, language, diarization]);
 
     const stopRecordingInternal = useCallback(() => {
         // Cleanup AudioGraph
@@ -180,5 +182,7 @@ export function useRecording() {
         setSilenceThreshold,
         language,
         setLanguage,
+        diarization,
+        setDiarization,
     };
 }

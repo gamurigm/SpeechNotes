@@ -166,6 +166,14 @@ class ThresholdVADStrategy(VADStrategy):
                     phrase_ended = True
                     self._state = VADState.IDLE
                     self._silence_counter = 0
+            else:
+                # RMS is between silence_threshold and voice_threshold (Ambiguous zone)
+                # Treat as silence to prevent getting permanently stuck
+                self._silence_counter += 1
+                if self._silence_counter >= self.config.silence_chunks_to_end:
+                    phrase_ended = True
+                    self._state = VADState.IDLE
+                    self._silence_counter = 0
 
         return VADResult(
             state=self._state,

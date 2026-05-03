@@ -8,7 +8,7 @@
   "scripts": {
     "electron:dev": ".\\node_modules\\.bin\\electron electron/main.js",
     "electron:build": "electron-builder",
-    "backend:build": "python -m PyInstaller --noconfirm ../backend.spec",
+    "backend:build": "..\\.venv\\Scripts\\python.exe -m PyInstaller --noconfirm ../backend.spec",
     "dist": "npm run backend:build && npm run electron:build",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -33,7 +33,7 @@
     ],
     "extraResources": [
       {
-        "from": "../dist/speechnotes-backend/",
+        "from": "./dist/speechnotes-backend/",
         "to": "backend",
         "filter": ["**/*"]
       },
