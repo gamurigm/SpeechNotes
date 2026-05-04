@@ -177,3 +177,25 @@ docs/report/*
 # ── GitHub ──────────────────────────────────────────────────
 .github/instructions/
 
+# ── Custom Exclusions (Safety first) ────────────────────────
+# Logs and temporary execution artifacts
+*.log
+*.tmp
+*.bak
+*.swp
+debug.txt
+error.txt
+output.txt
+
+# Sensitive Configs (already handled by .env, but adding more)
+config.local.json
+secrets.json
+auth.json
+*.p12
+*.jks
+
+# Junk files
+11.12.0
+desktop/pyi_rth_paths.py
+pyi_rth_*.py
+
