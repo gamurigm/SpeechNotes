@@ -2,23 +2,40 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ApiClient } from '@/services/ApiClient';
 import { getSocket } from '@/utils/socket';
 
+type TranscriptionSummary = {
+    id: string | null;
+    filename?: string | null;
+    date?: string | null;
+    is_formatted?: boolean;
+};
+
+type TranscriptionDocument = {
+    id: string;
+    content: string;
+};
+
+type TranscriptionsResponse = {
+    items?: TranscriptionSummary[];
+};
+
 export function useTranscriptionService() {
     const [latestContent, setLatestContent] = useState('');
     const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
-    const [transcriptions, setTranscriptions] = useState<Array<{ id: string | null, filename?: string | null, date?: any, is_formatted?: boolean }>>([]);
+    const [transcriptions, setTranscriptions] = useState<TranscriptionSummary[]>([]);
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(true);
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+    const pendingRecordingJobIdRef = useRef<string | null>(null);
 
     const loadTranscriptionById = useCallback(async (id: string) => {
         setIsLoading(true);
         try {
-            const data = await ApiClient.getInstance().getTranscription(id);
+            const data = await ApiClient.getInstance().getTranscription(id) as TranscriptionDocument;
             setLatestContent(data.content);
             setTranscriptionId(data.id);
         } catch (e) {
             console.error('Error loading transcription by id', e);
-            setLatestContent('[Error cargando transcripción — reintenta o revisa el backend]');
+            setLatestContent('[Error cargando transcripcion - reintenta o revisa el backend]');
             setTranscriptionId(null);
         } finally {
             setIsLoading(false);
@@ -28,21 +45,21 @@ export function useTranscriptionService() {
     const loadTranscriptionsList = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res: any = await ApiClient.getInstance().listTranscriptions();
+            const res = await ApiClient.getInstance().listTranscriptions() as TranscriptionsResponse;
             const items = res?.items || [];
             setTranscriptions(items);
 
             const savedId = localStorage.getItem('sn-last-doc-id');
-            const targetId = savedId && items.find((item: any) => item.id === savedId)
+            const targetId = savedId && items.find((item) => item.id === savedId)
                 ? savedId
                 : (items.length > 0 ? items[0].id : null);
 
             if (targetId) {
-                const index = items.findIndex((item: any) => item.id === targetId);
+                const index = items.findIndex((item) => item.id === targetId);
                 setSelectedIndex(index >= 0 ? index : 0);
                 await loadTranscriptionById(targetId);
             } else if (items.length === 0) {
-                const latest: any = await ApiClient.getInstance().getLatestTranscription();
+                const latest = await ApiClient.getInstance().getLatestTranscription() as TranscriptionDocument | null;
                 if (latest) {
                     setLatestContent(latest.content);
                     setTranscriptionId(latest.id);
@@ -80,41 +97,52 @@ export function useTranscriptionService() {
         const socket = getSocket();
 
         const handleRecordingStopped = () => {
-            // Give immediate feedback that something is happening
             const jobFakeId = `temp-${Date.now()}`;
+            pendingRecordingJobIdRef.current = jobFakeId;
             setProcessingIds(prev => new Set(prev).add(jobFakeId));
-
-            // Still do an early refresh to catch the file if it was ingested quickly
-            setTimeout(async () => {
-                await loadTranscriptionsList();
-                setProcessingIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(jobFakeId);
-                    return next;
-                });
-            }, 1000);
         };
 
-        const handleProcessingComplete = async (data: any) => {
+        const handleProcessingComplete = async (data: unknown) => {
             console.log('[Socket.IO] Processing complete:', data);
-            // Full refresh when backend is totally done
             await loadTranscriptionsList();
-
-            // If the completed file is the newest one, it will be selected by loadTranscriptionsList
+            const pendingId = pendingRecordingJobIdRef.current;
+            if (pendingId) {
+                setProcessingIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(pendingId);
+                    return next;
+                });
+                pendingRecordingJobIdRef.current = null;
+            }
+        };
+        const handleRecordingWarning = () => {
+            const pendingId = pendingRecordingJobIdRef.current;
+            if (!pendingId) return;
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(pendingId);
+                return next;
+            });
+            pendingRecordingJobIdRef.current = null;
         };
 
         socket.on('recording_stopped', handleRecordingStopped);
         socket.on('processing_complete', handleProcessingComplete);
+        socket.on('warning', handleRecordingWarning);
 
         return () => {
             socket.off('recording_stopped', handleRecordingStopped);
             socket.off('processing_complete', handleProcessingComplete);
+            socket.off('warning', handleRecordingWarning);
         };
     }, [loadTranscriptionsList]);
 
     // Initial load
     useEffect(() => {
-        loadTranscriptionsList();
+        const timer = window.setTimeout(() => {
+            void loadTranscriptionsList();
+        }, 0);
+        return () => window.clearTimeout(timer);
     }, [loadTranscriptionsList]);
 
     // Persistence

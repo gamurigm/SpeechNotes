@@ -1,12 +1,12 @@
 """
-Riva Whisper ASR Client — Infrastructure Layer
+Riva ASR Client — Infrastructure Layer
 
-Concrete adapter for NVIDIA Riva's Whisper Large V3 endpoint
+Concrete adapter for NVIDIA Riva ASR endpoints
 hosted on NVIDIA Cloud Functions (NVCF) via gRPC.
 
 This client uses the official ``nvidia-riva-client`` SDK to call
 the Riva ASR service on ``grpc.nvcf.nvidia.com:443``, authenticating
-with an NVIDIA API key and routing to the Whisper NVCF function via
+with an NVIDIA API key and routing to the selected NVCF function via
 the ``function-id`` gRPC metadata header.
 
 Design Patterns:
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 class RivaWhisperASRClient(AudioTranscriptionPort):
     """
-    gRPC adapter for Whisper Large V3 hosted on NVIDIA Riva / NVCF.
+    gRPC adapter for ASR models hosted on NVIDIA Riva / NVCF.
 
     Uses ``riva.client.ASRService.offline_recognize`` for batch
     (non-streaming) transcription of short audio chunks.
@@ -47,7 +47,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         - ``api_key``          → Bearer token for NVCF
         - ``grpc_host``        → e.g. ``grpc.nvcf.nvidia.com``
         - ``grpc_port``        → e.g. ``443``
-        - ``grpc_function_id`` → NVCF function UUID for Whisper
+        - ``grpc_function_id`` → NVCF function UUID for the ASR model
     """
 
     def __init__(self, config: NIMConfig) -> None:
@@ -56,8 +56,9 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         self._host = f"{config.grpc_host}:{config.grpc_port}"
 
         logger.info(
-            "[Riva:ASR] Initialized Whisper client '%s' → host='%s'  function_id='%s'",
+            "[Riva:ASR] Initialized client '%s' model='%s' host='%s' function_id='%s'",
             config.name,
+            config.model_id,
             self._host,
             self._function_id,
         )
@@ -72,7 +73,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         language: Optional[str] = None,
     ) -> TranscriptionResult:
         """
-        Transcribe audio using Riva Whisper (gRPC, NVCF).
+        Transcribe audio using Riva ASR (gRPC, NVCF).
 
         The gRPC call is blocking, so we offload it to a thread pool
         via ``run_in_executor`` to keep the asyncio loop responsive.
@@ -100,7 +101,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
             )
         except Exception as exc:
             logger.error(
-                "[Riva:ASR] Whisper transcription error: %s — %s",
+                "[Riva:ASR] Transcription error: %s — %s",
                 type(exc).__name__,
                 exc,
                 exc_info=True,
@@ -133,8 +134,11 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
 
         asr_service = riva.client.ASRService(auth)
 
-        # Map short BCP-47 codes to full locale codes expected by Riva
+        # Map short BCP-47 codes to full locale codes expected by Riva.
+        # Canary offline ASR rejects language_code=multi, so default auto to Spanish.
         lang_code = self._normalize_language(language)
+        if lang_code == "multi" and "canary" in self._cfg.model_id.lower():
+            lang_code = "es-ES"
 
         config = riva.client.RecognitionConfig(
             encoding=riva.client.AudioEncoding.LINEAR_PCM,
@@ -144,6 +148,8 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
             enable_automatic_punctuation=True,
             audio_channel_count=1,
         )
+        if lang_code != "multi":
+            config.custom_configuration["source_language"] = lang_code
 
         # Extract raw PCM from WAV container
         pcm = self._wav_to_pcm(audio_bytes)
@@ -158,7 +164,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
 
         transcript = " ".join(texts).strip()
         logger.info(
-            "[Riva:ASR] Whisper transcribed %d bytes → %d chars (lang=%s)",
+            "[Riva:ASR] Transcribed %d bytes -> %d chars (lang=%s, source_language=%s)",
             len(audio_bytes),
             len(transcript),
             lang_code,
@@ -169,16 +175,23 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
 
     @staticmethod
     def _normalize_language(lang: Optional[str]) -> str:
-        """Convert language input to a code accepted by Whisper on Riva/NVCF.
-
-        The Triton model accepts short codes: en, es, fr, de, etc.
-        Use 'multi' for auto-detection (do NOT send empty string).
-        """
+        """Convert UI language values to Riva locale codes."""
         if not lang or lang.lower() == "auto":
             return "multi"
-        # Strip region suffix if present (e.g. 'es-ES' → 'es')
-        short = lang.split("-")[0].lower()
-        return short
+
+        normalized = lang.replace("_", "-").lower()
+        locale_by_short_code = {
+            "en": "en-US",
+            "es": "es-ES",
+            "fr": "fr-FR",
+            "de": "de-DE",
+            "pt": "pt-BR",
+            "it": "it-IT",
+        }
+        if "-" in normalized:
+            lang_part, region_part = normalized.split("-", 1)
+            return f"{lang_part.lower()}-{region_part.upper()}"
+        return locale_by_short_code.get(normalized, normalized)
 
 
     @staticmethod

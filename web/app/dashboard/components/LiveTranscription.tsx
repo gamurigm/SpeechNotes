@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRecording } from '../providers/RecordingProvider';
-import { Mic, Waves, Sparkles, Volume2, Zap } from 'lucide-react';
+import { Mic, Waves, Sparkles, Zap } from 'lucide-react';
 import { useBackground } from '../../providers';
 
 export function LiveTranscription() {
-    const { messages, isRecording } = useRecording();
+    const { messages, isRecording, liveStatus } = useRecording();
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
     const scrollRef = useRef<HTMLDivElement>(null);
     const [animatedCount, setAnimatedCount] = useState(0);
-    const [showWave, setShowWave] = useState(false);
+    const showWave = messages.length > animatedCount;
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -24,14 +24,13 @@ export function LiveTranscription() {
 
     // Animate counter with wave effect
     useEffect(() => {
-        if (messages.length > animatedCount) {
-            setShowWave(true);
-            const timer = setTimeout(() => {
-                setAnimatedCount(messages.length);
-                setShowWave(false);
-            }, 150);
-            return () => clearTimeout(timer);
-        }
+        if (messages.length === animatedCount) return;
+
+        const timer = setTimeout(() => {
+            setAnimatedCount(messages.length);
+        }, messages.length > animatedCount ? 150 : 0);
+
+        return () => clearTimeout(timer);
     }, [messages.length, animatedCount]);
 
     // Particle animation for recording state
@@ -181,11 +180,24 @@ export function LiveTranscription() {
                         </div>
                         <div className="space-y-2">
                             <p className="text-theme-primary text-lg font-semibold">
-                                Listo para transcribir
+                                {isRecording ? 'Escuchando audio...' : 'Listo para transcribir'}
                             </p>
                             <p className="text-theme-secondary text-sm max-w-xs">
-                                Presiona el botón de grabación para comenzar a capturar audio en tiempo real
+                                {isRecording
+                                    ? 'Si hay voz, el backend encola audio hasta cada 8 segundos. Revisa el estado abajo.'
+                                    : 'Presiona el boton de grabacion para comenzar a capturar audio en tiempo real'}
                             </p>
+                            {isRecording && liveStatus && (
+                                <div className="mt-4 px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-left max-w-sm">
+                                    <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Estado tecnico</p>
+                                    <p className="text-sm text-theme-primary mt-1">{liveStatus.label}</p>
+                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-theme-secondary">
+                                        {liveStatus.rms !== undefined && <span>RMS {liveStatus.rms}</span>}
+                                        {liveStatus.bufferSeconds !== undefined && <span>Buffer {liveStatus.bufferSeconds}s</span>}
+                                        {liveStatus.queueSize !== undefined && <span>Cola {liveStatus.queueSize}</span>}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="flex gap-2 mt-2">
                             <div className="w-2 h-2 rounded-full bg-cyan-500/50 animate-bounce" style={{ animationDelay: '0s' }} />

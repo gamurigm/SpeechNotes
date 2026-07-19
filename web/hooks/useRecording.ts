@@ -1,154 +1,198 @@
-/**
- * useRecording Hook - Facade & Observer Pattern
- * 
- * Orchestrates the recording process by coordinating:
- * 1. AudioGraph (Builder/Adapter): Handles Web Audio API complexity.
- * 2. Socket.IO (Observer): Handles real-time communication.
- * 3. React State (Observer): Updates UI based on events.
- * 
- * Refactoring:
- * - Extracted low-level audio logic to AudioGraph.
- * - simplified component state management.
- */
-
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { getSocket, connectSocket } from '@/utils/socket';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AudioGraph } from '@/services/AudioGraph';
+import { connectSocket, getSocket } from '@/utils/socket';
+
+type Language = 'auto' | 'en' | 'es';
+
+export interface AudioInputDevice {
+    deviceId: string;
+    label: string;
+}
 
 interface TranscriptionMessage {
     timestamp: string;
     text: string;
 }
 
+interface AudioLevelPayload {
+    rms?: number;
+    gain?: number;
+    timestamp?: string;
+}
+
+interface TranscriptionStatusPayload {
+    event?: string;
+    rms?: number;
+    buffer_seconds?: number;
+    queue_size?: number;
+    segment_id?: number;
+    timestamp?: string;
+    reason?: string;
+    chars?: number;
+    max_segment_seconds?: number;
+}
+
+export interface LiveTranscriptionStatus {
+    event: string;
+    label: string;
+    rms?: number;
+    bufferSeconds?: number;
+    queueSize?: number;
+    segmentId?: number;
+    updatedAt: number;
+}
+
+type RecordingSocket = ReturnType<typeof getSocket>;
+
+function toFiniteNumber(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function waitForSocketConnection(socket: RecordingSocket, timeoutMs = 5000): Promise<void> {
+    if (socket.connected) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+            cleanup();
+            reject(new Error('Timeout conectando al backend'));
+        }, timeoutMs);
+
+        const cleanup = () => {
+            window.clearTimeout(timeout);
+            socket.off('connect', handleConnect);
+            socket.off('connect_error', handleError);
+        };
+        const handleConnect = () => {
+            cleanup();
+            resolve();
+        };
+        const handleError = (error: Error) => {
+            cleanup();
+            reject(error);
+        };
+
+        socket.once('connect', handleConnect);
+        socket.once('connect_error', handleError);
+    });
+}
+
+function waitForRecordingStarted(socket: RecordingSocket, timeoutMs = 7000): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+            cleanup();
+            reject(new Error('Timeout iniciando grabacion en backend'));
+        }, timeoutMs);
+
+        const cleanup = () => {
+            window.clearTimeout(timeout);
+            socket.off('recording_started', handleStarted);
+            socket.off('error', handleError);
+        };
+        const handleStarted = () => {
+            cleanup();
+            resolve();
+        };
+        const handleError = (data: unknown) => {
+            const message = typeof data === 'object' && data !== null && 'message' in data
+                ? String((data as { message?: unknown }).message)
+                : 'Error iniciando grabacion';
+            cleanup();
+            reject(new Error(message));
+        };
+
+        socket.once('recording_started', handleStarted);
+        socket.once('error', handleError);
+    });
+}
+
+function statusFromBackend(data: TranscriptionStatusPayload): LiveTranscriptionStatus {
+    const event = data.event || 'status';
+    const rms = toFiniteNumber(data.rms);
+    const bufferSeconds = toFiniteNumber(data.buffer_seconds);
+    const queueSize = toFiniteNumber(data.queue_size);
+    const segmentId = toFiniteNumber(data.segment_id);
+    const segmentText = segmentId ? ` #${segmentId}` : '';
+
+    const labels: Record<string, string> = {
+        recording_started: `Backend listo; corte maximo ${data.max_segment_seconds || 8}s`,
+        capturing: bufferSeconds && bufferSeconds > 0
+            ? `Audio recibido: ${bufferSeconds.toFixed(1)}s acumulados${rms !== undefined ? `, RMS ${rms}` : ''}`
+            : `Audio llegando${rms !== undefined ? `, RMS ${rms}` : ''}`,
+        segment_queued: `Segmento${segmentText} en cola ASR`,
+        asr_started: `ASR procesando segmento${segmentText}`,
+        segment_discarded: `Segmento${segmentText} sin texto util`,
+        transcription_received: `Texto recibido del segmento${segmentText}`,
+    };
+
+    return {
+        event,
+        label: labels[event] || 'Procesando audio',
+        rms,
+        bufferSeconds,
+        queueSize,
+        segmentId,
+        updatedAt: Date.now(),
+    };
+}
+
+function statusFromAudioLevel(data: AudioLevelPayload): LiveTranscriptionStatus {
+    const rms = toFiniteNumber(data.rms);
+    return {
+        event: 'audio_level',
+        label: `Audio recibido${rms !== undefined ? `, RMS ${rms}` : ''}`,
+        rms,
+        updatedAt: Date.now(),
+    };
+}
+
 export function useRecording() {
-    // UI State
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
     const [messages, setMessages] = useState<TranscriptionMessage[]>([]);
-
-    // Audio Visualization
+    const [liveStatus, setLiveStatus] = useState<LiveTranscriptionStatus | null>(null);
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-
-    // Settings
     const [gainValue, setGainValue] = useState(1.0);
-    const [voiceThreshold, setVoiceThreshold] = useState(50);
-    const [silenceThreshold, setSilenceThreshold] = useState(25);
-    const [language, setLanguage] = useState<'auto' | 'en' | 'es'>('auto');
+    const [voiceThreshold, setVoiceThreshold] = useState(500);
+    const [silenceThreshold, setSilenceThreshold] = useState(200);
+    const [language, setLanguage] = useState<Language>('es');
     const [diarization, setDiarization] = useState(false);
+    const [audioDevices, setAudioDevices] = useState<AudioInputDevice[]>([]);
+    const [selectedDeviceId, setSelectedDeviceId] = useState('');
 
-    // Refs for cleanup and persistence
     const audioGraphRef = useRef<AudioGraph | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // ──────────────────────────────────────────────
-    //  Socket.IO Observer Setup
-    // ──────────────────────────────────────────────
-    useEffect(() => {
-        const socket = getSocket();
-
-        const handleConnected = (data: any) => console.log('[Socket] Connected:', data);
-        const handleStarted = (data: any) => console.log('[Socket] Started:', data);
-        const handleStopped = (data: any) => {
-            console.log('[Socket] Stopped:', data);
-            stopRecordingInternal(); // Ensure local state is consistent
-        };
-        const handleTranscription = (data: TranscriptionMessage) => {
-            console.log('[Socket] Transcription:', data);
-            setMessages(prev => [...prev, data]);
-        };
-        const handleError = (data: any) => {
-            // Log as warning to prevent triggering Next.js dev overlay for business logic 'errors'
-            console.warn('[Socket] Backend Error:', data?.message || JSON.stringify(data));
-            if (data instanceof Error) {
-                console.warn('[Socket] Error details:', data.message, data.stack);
-            }
-        };
-
-        socket.on('connected', handleConnected);
-        socket.on('recording_started', handleStarted);
-        socket.on('transcription', handleTranscription);
-        socket.on('recording_stopped', handleStopped);
-        socket.on('error', handleError);
-
-        return () => {
-            socket.off('connected', handleConnected);
-            socket.off('recording_started', handleStarted);
-            socket.off('transcription', handleTranscription);
-            socket.off('recording_stopped', handleStopped);
-            socket.off('error', handleError);
-        };
+    const setStatus = useCallback((event: string, label: string) => {
+        setLiveStatus({ event, label, updatedAt: Date.now() });
+    }, []);
+    const refreshAudioDevices = useCallback(async () => {
+        if (!navigator.mediaDevices?.enumerateDevices) return;
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const inputs = devices
+                .filter(device => device.kind === 'audioinput')
+                .map((device, index) => ({
+                    deviceId: device.deviceId,
+                    label: device.label || `Microfono ${index + 1}`,
+                }));
+            setAudioDevices(inputs);
+            setSelectedDeviceId(current => (
+                current && inputs.some(device => device.deviceId === current) ? current : ''
+            ));
+        } catch (error) {
+            console.warn('[Audio] Could not enumerate input devices:', error);
+        }
     }, []);
 
-    // ──────────────────────────────────────────────
-    //  Gain Control (Observer)
-    // ──────────────────────────────────────────────
-    useEffect(() => {
-        if (audioGraphRef.current) {
-            audioGraphRef.current.setGain(gainValue);
-        }
-    }, [gainValue]);
-
-    // ──────────────────────────────────────────────
-    //  Actions (Facade)
-    // ──────────────────────────────────────────────
-
-    const startRecording = useCallback(async () => {
-        try {
-            connectSocket();
-            const socket = getSocket();
-
-            // Initialize AudioGraph (Adapter/Builder)
-            // Pass a callback to emit data (Observer)
-            const graph = new AudioGraph((audioData) => {
-                // socket.io buffers emits automatically when not yet connected
-                socket.emit('audio_chunk_pcm', audioData);
-            });
-
-            await graph.initialize();
-
-            // Build the graph and get analyser for visualization
-            const analyserNode = graph.createGraph({
-                sampleRate: 16000,
-                fftSize: 256,
-                gain: gainValue
-            });
-
-            audioGraphRef.current = graph;
-            setAnalyser(analyserNode);
-            setIsRecording(true);
-            setMessages([]);
-            setDuration(0);
-
-            // Notify server with VAD settings and language
-            socket.emit('start_recording', {
-                voiceThreshold,
-                silenceThreshold,
-                language,
-                diarization,
-            });
-
-            // Start timer
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            intervalRef.current = setInterval(() => {
-                setDuration(d => d + 1);
-            }, 1000);
-
-        } catch (error) {
-            console.error('Error starting recording:', error);
-            alert('Error al acceder al micrófono. Verifique los permisos.');
-        }
-    }, [gainValue, voiceThreshold, silenceThreshold, language, diarization]);
 
     const stopRecordingInternal = useCallback(() => {
-        // Cleanup AudioGraph
         if (audioGraphRef.current) {
             audioGraphRef.current.dispose();
             audioGraphRef.current = null;
         }
 
-        // Cleanup Timer
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -159,18 +203,167 @@ export function useRecording() {
         setDuration(0);
     }, []);
 
+    useEffect(() => {
+        const socket = getSocket();
+
+        const handleConnected = (data: unknown) => {
+            console.log('[Socket] Connected:', data);
+            setStatus('connected', 'Socket conectado');
+        };
+        const handleStarted = (data: unknown) => {
+            console.log('[Socket] Started:', data);
+            setStatus('recording_started', 'Backend listo; capturando audio');
+        };
+        const handleStopped = (data: unknown) => {
+            console.log('[Socket] Stopped:', data);
+            setStatus('recording_stopped', 'Grabacion detenida; esperando cierre del ASR');
+            stopRecordingInternal();
+        };
+        const handleAudioLevel = (data: AudioLevelPayload) => {
+            setLiveStatus(statusFromAudioLevel(data));
+        };
+        const handleTranscriptionStatus = (data: TranscriptionStatusPayload) => {
+            setLiveStatus(statusFromBackend(data));
+        };
+        const handleTranscription = (data: TranscriptionMessage) => {
+            console.log('[Socket] Transcription:', data);
+            setMessages(prev => [...prev, data]);
+            setStatus('transcription_received', 'Texto recibido');
+        };
+        const handleError = (data: unknown) => {
+            const message = typeof data === 'object' && data !== null && 'message' in data
+                ? String((data as { message?: unknown }).message)
+                : JSON.stringify(data);
+            console.warn('[Socket] Backend Error:', message);
+            setStatus('error', message || 'Error del backend');
+        };
+
+        socket.on('connected', handleConnected);
+        socket.on('recording_started', handleStarted);
+        socket.on('audio_level', handleAudioLevel);
+        socket.on('transcription_status', handleTranscriptionStatus);
+        socket.on('transcription', handleTranscription);
+        socket.on('recording_stopped', handleStopped);
+        socket.on('error', handleError);
+
+        return () => {
+            socket.off('connected', handleConnected);
+            socket.off('recording_started', handleStarted);
+            socket.off('audio_level', handleAudioLevel);
+            socket.off('transcription_status', handleTranscriptionStatus);
+            socket.off('transcription', handleTranscription);
+            socket.off('recording_stopped', handleStopped);
+            socket.off('error', handleError);
+        };
+    }, [setStatus, stopRecordingInternal]);
+
+    useEffect(() => {
+        const refreshSoon = () => window.setTimeout(() => void refreshAudioDevices(), 0);
+        const timeoutIds = new Set<number>();
+        const scheduleRefresh = () => {
+            const timeoutId = refreshSoon();
+            timeoutIds.add(timeoutId);
+        };
+
+        scheduleRefresh();
+        const mediaDevices = navigator.mediaDevices;
+        if (!mediaDevices?.addEventListener) {
+            return () => timeoutIds.forEach(timeoutId => window.clearTimeout(timeoutId));
+        }
+
+        const handleDeviceChange = () => scheduleRefresh();
+        mediaDevices.addEventListener('devicechange', handleDeviceChange);
+        return () => {
+            timeoutIds.forEach(timeoutId => window.clearTimeout(timeoutId));
+            mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+        };
+    }, [refreshAudioDevices]);
+    useEffect(() => {
+        let cancelled = false;
+
+        fetch('/api/config/vad')
+            .then(res => (res.ok ? res.json() : null))
+            .then(data => {
+                if (cancelled || !data) return;
+                if (typeof data.voice_threshold === 'number') setVoiceThreshold(data.voice_threshold);
+                if (typeof data.silence_threshold === 'number') setSilenceThreshold(data.silence_threshold);
+            })
+            .catch(error => console.warn('[VAD] Could not load saved config:', error));
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (audioGraphRef.current) audioGraphRef.current.setGain(gainValue);
+    }, [gainValue]);
+
+    const startRecording = useCallback(async () => {
+        let graph: AudioGraph | null = null;
+
+        try {
+            const socket = getSocket();
+            setMessages([]);
+            setDuration(0);
+            setStatus('connecting', 'Conectando al backend');
+            connectSocket();
+            await waitForSocketConnection(socket);
+
+            graph = new AudioGraph((audioData) => {
+                socket.emit('audio_chunk_pcm', audioData);
+            });
+
+            setStatus('microphone', 'Solicitando microfono');
+            await graph.initialize(16000, selectedDeviceId || undefined);
+            await refreshAudioDevices();
+
+            setStatus('starting_backend', 'Iniciando ASR en backend');
+            const recordingStarted = waitForRecordingStarted(socket);
+            socket.emit('start_recording', {
+                voiceThreshold,
+                silenceThreshold,
+                language,
+                diarization,
+            });
+            await recordingStarted;
+
+            const analyserNode = graph.createGraph({
+                sampleRate: 16000,
+                fftSize: 256,
+                gain: gainValue,
+            });
+
+            audioGraphRef.current = graph;
+            setAnalyser(analyserNode);
+            setIsRecording(true);
+            setStatus('recording', 'Grabando; esperando audio');
+
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            intervalRef.current = setInterval(() => {
+                setDuration(current => current + 1);
+            }, 1000);
+        } catch (error) {
+            if (graph) graph.dispose();
+            console.error('Error starting recording:', error);
+            const message = error instanceof Error ? error.message : 'Error al acceder al microfono';
+            setStatus('error', message);
+            alert(`${message}. Verifique permisos y conexion del backend.`);
+        }
+    }, [diarization, gainValue, language, refreshAudioDevices, selectedDeviceId, setStatus, silenceThreshold, voiceThreshold]);
+
     const stopRecording = useCallback(() => {
         const socket = getSocket();
-        socket.emit('stop_recording');
-        // We wait for 'recording_stopped' event to call stopRecordingInternal
-        // But we can also force it locally to be responsive
+        setStatus('stopping', 'Enviando ultimo audio al backend');
         stopRecordingInternal();
-    }, [stopRecordingInternal]);
+        socket.emit('stop_recording');
+    }, [setStatus, stopRecordingInternal]);
 
     return {
         isRecording,
         duration,
         messages,
+        liveStatus,
         startRecording,
         stopRecording,
         analyser,
@@ -184,5 +377,9 @@ export function useRecording() {
         setLanguage,
         diarization,
         setDiarization,
+        audioDevices,
+        selectedDeviceId,
+        setSelectedDeviceId,
+        refreshAudioDevices,
     };
 }
