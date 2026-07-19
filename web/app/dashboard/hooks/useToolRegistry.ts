@@ -56,7 +56,8 @@ export function useToolRegistry({
                 const data = JSON.parse(event.data);
                 if (data.status === 'job_completed' || data.status === 'completed') {
                     setNotification({ message: 'Formateo completado con éxito', type: 'success' });
-                    if (transcriptionId === currentId) await loadTranscriptionById(currentId);
+                    // Always reload the formatted content — avoids stale closure issue
+                    await loadTranscriptionById(currentId);
                     await loadTranscriptionsList();
                     setProcessingIds(prev => {
                         const next = new Set(prev);

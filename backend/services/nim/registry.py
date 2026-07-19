@@ -77,6 +77,9 @@ class NIMRegistry:
         except Exception:
             _g = os.environ.get  # type: ignore
 
+        def _env_first(key: str, default: str = "") -> str:
+            return os.environ.get(key) or _g(key) or default
+
         base_url = _g("NVIDIA_BASE_URL") or "https://integrate.api.nvidia.com/v1"
 
         # ── Chat: Qwen 3.5 (thinking) ─────────────────────────────────
@@ -113,17 +116,17 @@ class NIMRegistry:
         # ── ASR: Whisper via Riva gRPC (English) ────────────────────────
         # integrate.api.nvidia.com does NOT support /audio/transcriptions.
         # Whisper hosted on NVCF via Riva gRPC is the correct endpoint.
-        riva_server = _g("RIVA_SERVER") or "grpc.nvcf.nvidia.com:443"
+        riva_server = _env_first("RIVA_SERVER", "grpc.nvcf.nvidia.com:443")
         riva_host, _, riva_port_str = riva_server.rpartition(":")
         riva_port = int(riva_port_str) if riva_port_str.isdigit() else 443
         if not riva_host:
             riva_host = riva_server
             riva_port = 443
-        riva_func_id = _g("RIVA_FUNCTION_ID_WHISPER") or ""
+        riva_func_id = _env_first("RIVA_FUNCTION_ID_WHISPER")
 
         self._register(NIMConfig(
             name="asr",
-            api_key=_g("NVIDIA_API_KEY_ASR") or _g("API_KEY") or _g("NVIDIA_API_KEY") or "",
+            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("API_KEY") or _env_first("NVIDIA_API_KEY"),
             base_url="",  # unused for gRPC
             model_id="whisper",
             client_type=NIMClientType.RIVA_ASR,
@@ -132,19 +135,23 @@ class NIMRegistry:
             grpc_function_id=riva_func_id,
         ))
 
-        # ── ASR: Whisper via Riva gRPC (Spanish & multilingual) ──────────
-        # Same Whisper function, different language_code passed at runtime.
+        # ASR: Canary via Riva gRPC (Spanish & multilingual).
+        # NVIDIA Build documents canary-1b-asr as a Riva gRPC model with this function ID.
+        canary_func_id = (
+            _env_first("RIVA_FUNCTION_ID_CANARY")
+            or _env_first("RIVA_FUNCTION_ID_ASR_ES")
+            or "b0e8b4a5-217c-40b7-9b96-17d84e666317"
+        )
         self._register(NIMConfig(
             name="asr_es",
-            api_key=_g("NVIDIA_API_KEY_ASR_ES") or _g("NVIDIA_API_KEY_ASR") or _g("API_KEY") or _g("NVIDIA_API_KEY") or "",
+            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("NVIDIA_API_KEY_ASR_ES") or _env_first("API_KEY") or _env_first("NVIDIA_API_KEY"),
             base_url="",  # unused for gRPC
-            model_id="whisper",
+            model_id="nvidia/canary-1b-asr",
             client_type=NIMClientType.RIVA_ASR,
             grpc_host=riva_host,
             grpc_port=riva_port,
-            grpc_function_id=riva_func_id,
+            grpc_function_id=canary_func_id,
         ))
-
         # ── Audio Enhancement: BNR (gRPC) ─────────────────────────────
         self._register(NIMConfig(
             name="bnr",
@@ -209,7 +216,7 @@ class NIMRegistry:
     def get_asr(self, language: str | None = None) -> AudioTranscriptionPort:
         """Return the ASR client for the given language.
 
-        - ``'es'`` → ``asr_es`` (Whisper via Riva gRPC, es-ES locale)
+        - ``'es'`` → ``asr_es`` (Canary via Riva gRPC, es-ES locale)
         - anything else → ``asr`` (Whisper via Riva gRPC, en-US locale)
         """
         name = "asr_es" if language and language.startswith("es") else "asr"
