@@ -1,8 +1,9 @@
+
 # Persona D - QA Manual y Diseno de Pruebas
 
-Proyecto: SpeechNotes  
-Rama de trabajo: `planning-SQA`  
-Responsable: Persona D - QA Manual  
+Proyecto: SpeechNotes
+Rama de trabajo: `planning-SQA`
+Responsable: Persona D - QA Manual
 Ambiente base: Windows, frontend `http://localhost:3006`, backend `http://localhost:9443`, Jira Software, navegador Chromium/Chrome.
 
 ## Objetivo
@@ -51,18 +52,18 @@ Fuera de alcance:
 
 ## B.a Matriz de Rastreabilidad
 
-| ID Req | Requisito | Caso asociado | Prioridad | Modulo | Criterio de aceptacion |
-|---|---|---|---|---|---|
-| RF-01 | El usuario puede iniciar sesion | CP-01 | Alta | Auth | El usuario demo accede al dashboard sin error de login. |
-| RF-02 | El usuario puede probar el microfono | CP-02 | Alta | Audio / Frontend | El panel de prueba muestra actividad cuando el usuario habla. |
-| RF-03 | El usuario puede iniciar/detener grabacion | CP-03 | Critica | Audio / Backend | La UI cambia a grabando, el contador avanza y al detener se procesa la grabacion. |
-| RF-04 | El sistema muestra transcripcion en vivo | CP-04 | Critica | Realtime ASR | El panel en vivo agrega segmentos durante la grabacion. |
-| RF-05 | El usuario puede subir un audio para transcribir | CP-05 | Alta | Upload / Backend | El archivo se procesa y aparece una transcripcion nueva. |
-| RF-06 | El usuario puede consultar transcripciones guardadas | CP-06 | Alta | Transcripciones | La lista carga documentos y el visor muestra el contenido seleccionado. |
-| RF-07 | El usuario puede editar y guardar una transcripcion | CP-07 | Media | Editor | Los cambios persisten despues de recargar o reabrir la nota. |
-| RF-08 | El usuario puede buscar dentro de transcripciones | CP-08 | Media | Busqueda | Una palabra existente retorna resultados y permite abrir la nota. |
-| RF-09 | El usuario puede formatear una transcripcion con IA | CP-09 | Media | IA / Formatter | El proceso termina y actualiza el contenido/estado formateado. |
-| RF-10 | El usuario puede usar chat contextual sobre una nota | CP-10 | Media | Chat / RAG | El chat responde usando el contenido de la transcripcion seleccionada. |
+| ID Req | Requisito                                            | Caso asociado | Prioridad | Modulo           | Criterio de aceptacion                                                            |
+| ------ | ---------------------------------------------------- | ------------- | --------- | ---------------- | --------------------------------------------------------------------------------- |
+| RF-01  | El usuario puede iniciar sesion                      | CP-01         | Alta      | Auth             | El usuario demo accede al dashboard sin error de login.                           |
+| RF-02  | El usuario puede probar el microfono                 | CP-02         | Alta      | Audio / Frontend | El panel de prueba muestra actividad cuando el usuario habla.                     |
+| RF-03  | El usuario puede iniciar/detener grabacion           | CP-03         | Critica   | Audio / Backend  | La UI cambia a grabando, el contador avanza y al detener se procesa la grabacion. |
+| RF-04  | El sistema muestra transcripcion en vivo             | CP-04         | Critica   | Realtime ASR     | El panel en vivo agrega segmentos durante la grabacion.                           |
+| RF-05  | El usuario puede subir un audio para transcribir     | CP-05         | Alta      | Upload / Backend | El archivo se procesa y aparece una transcripcion nueva.                          |
+| RF-06  | El usuario puede consultar transcripciones guardadas | CP-06         | Alta      | Transcripciones  | La lista carga documentos y el visor muestra el contenido seleccionado.           |
+| RF-07  | El usuario puede editar y guardar una transcripcion  | CP-07         | Media     | Editor           | Los cambios persisten despues de recargar o reabrir la nota.                      |
+| RF-08  | El usuario puede buscar dentro de transcripciones    | CP-08         | Media     | Busqueda         | Una palabra existente retorna resultados y permite abrir la nota.                 |
+| RF-09  | El usuario puede formatear una transcripcion con IA  | CP-09         | Media     | IA / Formatter   | El proceso termina y actualiza el contenido/estado formateado.                    |
+| RF-10  | El usuario puede usar chat contextual sobre una nota | CP-10         | Media     | Chat / RAG       | El chat responde usando el contenido de la transcripcion seleccionada.            |
 
 ---
 
@@ -400,12 +401,12 @@ Estado:
 
 ### Defectos preliminares a registrar en Jira
 
-| ID Bug | Titulo | Severidad | Prioridad | Modulo | Caso relacionado | Estado |
-|---|---|---|---|---|---|---|
-| BUG-01 | [Dashboard] Timeout al cargar lista de transcripciones despues de detener grabacion | Major | Alta | Frontend / API | CP-03, CP-06 | Pendiente de Jira |
-| BUG-02 | [Realtime ASR] El panel de transcripcion en vivo no muestra segmentos durante grabacion | Critical | Alta | Audio / Realtime | CP-04 | Pendiente de Jira |
-| BUG-03 | [Transcripciones] Al detener grabacion, la nota generada no se carga automaticamente en el visor | Major | Alta | Frontend / Transcripciones | CP-03, CP-06 | Pendiente de Jira |
-| BUG-04 | [Auth] Error OAuthSignin durante inicio de sesion | Major | Alta | Auth | CP-01 | Pendiente de Jira |
+| ID Bug | Titulo                                                                                           | Severidad | Prioridad | Modulo                     | Caso relacionado | Estado            |
+| ------ | ------------------------------------------------------------------------------------------------ | --------- | --------- | -------------------------- | ---------------- | ----------------- |
+| BUG-01 | [Dashboard] Timeout al cargar lista de transcripciones despues de detener grabacion              | Major     | Alta      | Frontend / API             | CP-03, CP-06     | Pendiente de Jira |
+| BUG-02 | [Realtime ASR] El panel de transcripcion en vivo no muestra segmentos durante grabacion          | Critical  | Alta      | Audio / Realtime           | CP-04            | Pendiente de Jira |
+| BUG-03 | [Transcripciones] Al detener grabacion, la nota generada no se carga automaticamente en el visor | Major     | Alta      | Frontend / Transcripciones | CP-03, CP-06     | Pendiente de Jira |
+| BUG-04 | [Auth] Error OAuthSignin durante inicio de sesion                                                | Major     | Alta      | Auth                       | CP-01            | Pendiente de Jira |
 
 ### Formato obligatorio de bug en Jira
 
@@ -589,10 +590,10 @@ Guion recomendado:
 
 ## Checklist Final Persona D
 
-- [x] Los 10 casos tienen resultado obtenido.
-- [x] Los 10 casos tienen estado final: Pendiente / Paso / Fallo.
+- [X] Los 10 casos tienen resultado obtenido.
+- [X] Los 10 casos tienen estado final: Pendiente / Paso / Fallo.
 - [ ] Cada bug encontrado existe en Jira.
 - [ ] Cada bug tiene evidencia.
 - [ ] Cada bug corregido tiene evidencia de re-testing.
-- [x] La matriz refleja el resultado final de cada requisito.
+- [X] La matriz refleja el resultado final de cada requisito.
 - [ ] El video o guion final esta listo para Persona A.
