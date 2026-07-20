@@ -23,3 +23,7 @@ pydantic-ai
 grpcio>=1.62.0
 grpcio-tools>=1.62.0
 faiss-cpu
+
+# ── Testing (QA automation suite) ──
+pytest>=7.4.0
+requests>=2.31.0

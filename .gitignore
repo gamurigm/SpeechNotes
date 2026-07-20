@@ -80,7 +80,8 @@ hypothesis/
 
 # ── Directory Exclusions (User Requested) ──────────────────
 # Re-exclude directories that might have been matched by !/src/ etc if they were inside
-scripts/
+# scripts/ is now allowed; only its demo subdir stays excluded
+scripts/demos/
 legacy/
 knowledge_base/
 temporal_docs/
@@ -96,6 +97,8 @@ docs/internal/
 tests/
 !/web/tests/
 !/web/tests/**
+!/backend/tests/
+!/backend/tests/**
 
 # ── Build output / PyInstaller ─────────────────────────────
 dist/
