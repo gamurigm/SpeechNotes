@@ -22,3 +22,11 @@ npm run test:frontend
 ```
 
 Las capturas de Cypress se guardan en `tests/evidence/screenshots/`. El backend simulado escucha únicamente durante Cypress en `127.0.0.1:9443`; por ello el puerto debe estar libre y no hace falta iniciar la API Python real. La autenticación usa una base temporal en `.next/e2e.db`, por lo que `web/dev.db` no se modifica.
+
+## Evidencias manuales de ejecución
+
+Las capturas tomadas desde PowerShell se encuentran en `tests/evidence/screenshots/manual/`:
+
+- `Jest_4_Pruebas_Aprobadas.png`: dos suites y cuatro pruebas unitarias aprobadas.
+- `Cypress_Inicio_Ejecucion.png`: inicialización del runner y ejecución de `recording.cy.ts`.
+- `Cypress_2_Pruebas_Aprobadas.png`: dos pruebas E2E aprobadas y mensaje `All specs passed!`.
