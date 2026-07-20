@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
 
       - name: Run backend tests with coverage
-        if: hashFiles('backend/tests/**').path != ''
+        if: hashFiles('backend/tests/**/*.py') != ''
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
