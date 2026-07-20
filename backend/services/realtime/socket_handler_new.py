@@ -16,13 +16,12 @@ import math
 load_dotenv()
 
 from src.database import MongoManager
-from src.agent.transcription_ingestor import TranscriptionIngestor
 from src.agent.transcription_analyzer import TranscriptionAnalyzer
 from src.agent.document_generator import DocumentGenerator
 
 # Import realtime.py components
 from src.core.environment_factory import TranscriptionEnvironmentFactoryProvider
-from src.transcription import FormatterFactory, OutputWriter
+from src.transcription import FormatterFactory
 
 # Store active sessions
 active_sessions = {}
@@ -252,7 +251,7 @@ def register_socket_events(sio):
     
     @sio.event
     async def stop_recording(sid):
-        """Stop recording and save transcription (realtime.py workflow)"""
+        """Stop recording and save transcription directly to database (no file I/O)."""
         print(f"[Socket.IO] Stop recording: {sid}")
         
         if sid not in active_sessions:
@@ -264,7 +263,7 @@ def register_socket_events(sio):
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
-            # 1. Save audio as WAV (like realtime.py does)
+            # 1. Save audio as WAV (still needed for reference)
             audio_filename = f"audio_{timestamp}.wav"
             audio_path = Path(f"notas/{audio_filename}")
             audio_path.parent.mkdir(exist_ok=True)
@@ -272,51 +271,49 @@ def register_socket_events(sio):
             if session["audio_chunks"]:
                 save_audio_as_wav(session["audio_chunks"], audio_path)
             
-            # 2. Create markdown transcription (like realtime.py)
+            # 2. Build transcription content from buffer
             all_transcripts = [
                 (datetime.now(), item['text'])
                 for item in session["transcription_buffer"]
             ]
             
-            # Use realtime.py's formatter
             formatter = FormatterFactory.create_markdown_formatter()
-            formatted_content = formatter.format(all_transcripts)
+            raw_content = formatter.format(all_transcripts)
             
-            # 3. Save markdown file
-            md_filename = f"transcripcion_{timestamp}.md"
-            md_path = Path(f"notas/{md_filename}")
-            
-            # Use realtime.py's OutputWriter
-            writer = OutputWriter(md_path)
-            writer.write(formatted_content)
-            
-            print(f"[Socket.IO] Saved transcription: {md_filename}")
-            print(f"[Socket.IO] Saved audio: {audio_filename}")
-            
-            # 4. Ingest into MongoDB
+            # 3. Insert directly into database (no intermediary file)
             try:
                 db = MongoManager()
-                ingestor = TranscriptionIngestor()
-                ingestor._ingest_file(md_path)
-                print(f"[Socket.IO] Ingested to MongoDB")
                 
-                # 5. Analyze with LLM
+                doc = {
+                    "filename": f"transcripcion_{timestamp}.md",
+                    "raw_content": raw_content,
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "time": datetime.now().strftime("%H:%M:%S"),
+                    "word_count": len(raw_content.split()),
+                    "source_type": "live_recording",
+                    "processed": False,
+                    "ingested_at": datetime.now()
+                }
+                result = db.transcriptions.insert_one(doc)
+                transcription_id = result.inserted_id
+                print(f"[Socket.IO] Inserted transcription {transcription_id} into DB")
+                
+                # 4. Analyze with LLM
                 analyzer = TranscriptionAnalyzer()
                 analyzer.analyze_pending()
                 print(f"[Socket.IO] Analyzed with LLM")
                 
-                # 6. Generate formatted document
+                # 5. Generate formatted document
                 generator = DocumentGenerator()
                 generator.generate_all()
                 print(f"[Socket.IO] Generated formatted document")
                 
             except Exception as e:
                 print(f"[Socket.IO] Warning: Post-processing error: {e}")
-                # Continue anyway, files were saved
             
             await sio.emit('recording_stopped', {
                 'message': 'Transcription saved and processed',
-                'filename': md_filename,
+                'filename': f"transcripcion_{timestamp}.md",
                 'audio_file': audio_filename,
                 'segments': len(session["transcription_buffer"])
             }, room=sid)

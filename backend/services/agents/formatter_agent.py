@@ -1,6 +1,7 @@
 """
 Durable Formatter Agent
-Handles formatting of markdown transcriptions using Minimax M2
+Handles formatting of transcriptions using Kimi K2-Thinking
+Reads content from database and writes formatted content back to database (no file I/O).
 """
 
 import os
@@ -92,13 +93,13 @@ class FormatterAgent:
         else:
             self.client = None
     
-    def create_job(self, files: List[str], output_dir: str = "notas") -> str:
-        """Create a new formatting job"""
+    def create_job(self, transcription_ids: List[str]) -> str:
+        """Create a new formatting job with transcription IDs instead of file paths"""
         job_id = str(uuid.uuid4())
         job = FormatterJob(
             job_id=job_id,
-            files=files,
-            output_dir=output_dir
+            files=transcription_ids,
+            output_dir=""
         )
         self.jobs[job_id] = job
         return job_id
@@ -109,8 +110,8 @@ class FormatterAgent:
     
     async def run_job(self, job_id: str) -> AsyncGenerator[FormatterProgress, None]:
         """
-        Run formatting job with progress updates
-        Yields progress updates as they happen
+        Run formatting job reading from and writing to the database (no file I/O).
+        Yields progress updates as they happen.
         """
         job = self.jobs.get(job_id)
         if not job:
@@ -118,63 +119,61 @@ class FormatterAgent:
         
         job.status = "running"
         
-        for idx, file_path in enumerate(job.files, 1):
-            file_name = Path(file_path).name
-            
+        for idx, doc_id in enumerate(job.files, 1):
             try:
-                # Step 1: Read file
+                # Step 1: Read from database
                 yield FormatterProgress(
                     job_id=job_id,
                     current=idx,
                     total=len(job.files),
-                    file_name=file_name,
+                    file_name=doc_id,
                     status="reading"
                 )
                 
-                file_data = await self._read_file_step(file_path)
+                file_data = await self._read_db_step(doc_id)
                 
-                # Step 2: Format with Minimax
+                # Step 2: Format with AI
                 yield FormatterProgress(
                     job_id=job_id,
                     current=idx,
                     total=len(job.files),
-                    file_name=file_name,
+                    file_name=file_data["file_name"],
                     status="formatting"
                 )
                 
                 formatted_content = await self._format_step(file_data)
                 
-                # Step 3: Save formatted file
+                # Step 3: Save formatted content to database
                 yield FormatterProgress(
                     job_id=job_id,
                     current=idx,
                     total=len(job.files),
-                    file_name=file_name,
+                    file_name=file_data["file_name"],
                     status="saving"
                 )
                 
-                output_path = await self._save_file_step(file_data, formatted_content, job.output_dir)
+                await self._save_db_step(doc_id, formatted_content)
                 
                 # Success
                 progress = FormatterProgress(
                     job_id=job_id,
                     current=idx,
                     total=len(job.files),
-                    file_name=file_name,
+                    file_name=file_data["file_name"],
                     status="completed",
-                    output_path=str(output_path)
+                    output_path=f"db://transcriptions/{doc_id}"
                 )
                 job.progress.append(progress)
                 job.successful += 1
                 yield progress
                 
             except Exception as e:
-                # Error
+                error_id = doc_id if 'doc_id' in locals() else f"index-{idx}"
                 progress = FormatterProgress(
                     job_id=job_id,
                     current=idx,
                     total=len(job.files),
-                    file_name=file_name,
+                    file_name=error_id,
                     status="error",
                     error=str(e)
                 )
@@ -185,60 +184,49 @@ class FormatterAgent:
         job.status = "completed"
         job.completed_at = datetime.now()
     
-    async def _read_file_step(self, file_path: str, max_retries: int = 2) -> Dict:
-        """Step: Read and parse markdown file with retry logic"""
+    async def _read_db_step(self, doc_id: str, max_retries: int = 2) -> Dict:
+        """Step: Read transcription from database by document ID (no file I/O)."""
+        loop = asyncio.get_running_loop()
         for attempt in range(max_retries + 1):
             try:
-                full_path = self.project_root / file_path
-
-                if not full_path.exists():
-                    # Fallback 1: check inside "notas" using only the base filename
-                    alt = self.project_root / "notas" / Path(file_path).name
-                    if alt.exists():
-                        full_path = alt
-                    else:
-                        # Fallback 2: look for .md.original (correct) or .md.md.original (legacy bug)
-                        stem = alt.stem  # e.g. 'transcripcion_20260323_115240'
-                        backup_correct = alt.parent / (stem + ".md.original")
-                        backup_legacy  = alt.parent / (alt.name + ".md.original")
-                        if backup_correct.exists():
-                            print(f"[FORMATTER] Using backup: {backup_correct}")
-                            full_path = backup_correct
-                        elif backup_legacy.exists():
-                            print(f"[FORMATTER] Using legacy backup: {backup_legacy}")
-                            full_path = backup_legacy
-                        else:
-                            raise FileNotFoundError(f"File not found: {file_path}")
+                db = await loop.run_in_executor(None, MongoManager)
+                doc = await loop.run_in_executor(
+                    None, lambda: db.transcriptions.find_one({"_id": doc_id})
+                )
                 
-                content = full_path.read_text(encoding='utf-8')
+                if not doc:
+                    raise FileNotFoundError(f"Transcription not found in database: {doc_id}")
                 
-                # Extract YAML frontmatter metadata
-                metadata = {}
-                yaml_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-                if yaml_match:
-                    yaml_content = yaml_match[1]
-                    for line in yaml_content.split('\n'):
-                        if ':' in line:
-                            key, value = line.split(':', 1)
-                            metadata[key.strip()] = value.strip()
+                content = doc.get("raw_content") or doc.get("edited_content") or ""
+                if not content:
+                    raise ValueError(f"Transcription {doc_id} has no content")
                 
-                # Extract clean text (remove timestamps, metadata sections)
-                clean_content = re.sub(r'^---\n.*?\n---\n', '', content, flags=re.DOTALL)
-                clean_content = re.sub(r'## 📋 (Metadata|Tabla de Contenidos).*?---', '', clean_content, flags=re.DOTALL)
-                clean_content = re.sub(r'\*\*\[\d{2}:\d{2}:\d{2}\]\*\*\s*', '', clean_content)
+                # Extract metadata from document fields
+                metadata = {
+                    "fecha": doc.get("date", "N/A"),
+                    "palabras": str(doc.get("word_count", "N/A")),
+                    "filename": doc.get("filename", ""),
+                    "tipo": doc.get("source_type", "desconocido")
+                }
+                
+                # Clean content (remove timestamp markers)
+                clean_content = re.sub(r'\*\*\[\d{2}:\d{2}:\d{2}\]\*\*\s*', '', content)
+                clean_content = re.sub(r'\*\*\d{2}:\d{2}:\d{2}\*\*\s*', '', clean_content)
+                clean_content = re.sub(r'\[\d{2}:\d{2}:\d{2}\]\s*', '', clean_content)
                 clean_content = re.sub(r'\n{3,}', '\n\n', clean_content).strip()
                 
                 return {
-                    "file_path": str(full_path),
-                    "file_name": full_path.name,
+                    "doc_id": doc_id,
+                    "file_name": doc.get("filename", f"doc_{doc_id}"),
                     "original_content": content,
                     "clean_content": clean_content,
-                    "metadata": metadata
+                    "metadata": metadata,
+                    "doc": doc
                 }
                 
             except Exception as e:
                 if attempt < max_retries:
-                    await asyncio.sleep(1 * (2 ** attempt))  # Exponential backoff
+                    await asyncio.sleep(1 * (2 ** attempt))
                     continue
                 raise
     
@@ -269,34 +257,40 @@ IDIOMA: Español. Respeta el registro y tono del hablante."""
 Contenido base para procesar:
 {file_data['clean_content'][:18000]}"""
         
-        # Use a thinking model if configured
-        thinking_model = os.getenv("FORMATTER_MODEL", "moonshotai/kimi-k2-thinking")
-        thinking_key = os.getenv("NVIDIA_API_KEY_THINKING") or os.getenv("MINIMAX_API_KEY")
+        # Use the agent-configured model and key (from ConfigService, not os.getenv)
+        thinking_model = self.model
+        thinking_key = self.api_key
 
         if not thinking_key:
              return self._local_format(file_data) # Fallback
 
         client = OpenAI(
-            base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
-            api_key=thinking_key
+            base_url=self.base_url,
+            api_key=thinking_key,
+            timeout=180.0
         )
+
+        loop = asyncio.get_running_loop()
 
         for attempt in range(max_retries + 1):
             try:
                 print(f"[FORMATTER] Using Thinking Model ({thinking_model}) for {file_data['file_name']}...")
-                completion = client.chat.completions.create(
-                    model=thinking_model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_content}
-                    ],
-                    temperature=0.7, # Balanced for creativity and structure
-                    top_p=0.9,
-                    max_tokens=16384,
-                    extra_body={
-                        "min_thinking_tokens": 1024,
-                        "max_thinking_tokens": 4096
-                    } if "thinking" in thinking_model or "kimi" in thinking_model else {}
+                completion = await loop.run_in_executor(
+                    None,
+                    lambda: client.chat.completions.create(
+                        model=thinking_model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_content}
+                        ],
+                        temperature=0.7,
+                        top_p=0.9,
+                        max_tokens=16384,
+                        extra_body={
+                            "min_thinking_tokens": 1024,
+                            "max_thinking_tokens": 4096
+                        } if "thinking" in thinking_model or "kimi" in thinking_model else {}
+                    )
                 )
 
                 formatted_content = completion.choices[0].message.content.strip()
@@ -382,72 +376,52 @@ tipo: Profesional
 
         return '\n\n'.join(md)
     
-    async def _save_file_step(self, file_data: Dict, formatted_content: str, output_dir: str, max_retries: int = 2) -> Path:
-        """Step: Save formatted file and backup original with retry logic"""
+    async def _save_db_step(self, doc_id: str, formatted_content: str, max_retries: int = 2) -> None:
+        """Step: Save formatted content to database (no file I/O)."""
+        loop = asyncio.get_running_loop()
         for attempt in range(max_retries + 1):
             try:
-                original_path = Path(file_data["file_path"])
-                output_path = self.project_root / output_dir
-                output_path.mkdir(parents=True, exist_ok=True)
-                
-                # Backup original — use stem to avoid double extension (e.g. 'file.md' -> 'file.md.original', NOT 'file.md.md.original')
-                backup_path = original_path.parent / (original_path.stem + ".md.original")
-                if not backup_path.exists() and original_path.exists():
-                    original_path.rename(backup_path)
-                
-                # Save formatted version
-                formatted_file = output_path / f"{original_path.stem}_formatted.md"
-                formatted_file.write_text(formatted_content, encoding='utf-8')
+                db = await loop.run_in_executor(None, MongoManager)
 
-                # Ingest formatted content into original MongoDB document
-                try:
-                    db = MongoManager()
-                    # Find the original document
-                    # The original filename is in file_data["file_name"] (e.g., "clase1.md")
-                    original_filename = file_data["file_name"]
-                    
-                    # Also try without extension just in case
-                    filename_stem = Path(original_filename).stem
-                    
-                    doc = db.transcriptions.find_one({
-                        "$or": [
-                            {"filename": original_filename},
-                            {"filename": {"$regex": f"^{filename_stem}", "$options": "i"}}
-                        ]
-                    })
-                    
-                    if doc:
-                        # Update existing document
-                        db.transcriptions.update_one(
-                            {"_id": doc["_id"]},
-                            {
-                                "$set": {
-                                    "formatted_content": formatted_content,
-                                    "formatted_at": datetime.now(),
-                                    "is_formatted": True,
-                                    "formatter_model": self.model
-                                }
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: db.transcriptions.update_one(
+                        {"_id": doc_id},
+                        {
+                            "$set": {
+                                "formatted_content": formatted_content,
+                                "formatted_at": datetime.now(),
+                                "is_formatted": True,
+                                "formatter_model": self.model
                             }
-                        )
-                        print(f"[FORMATTER] Updated original document in MongoDB: {original_filename}")
+                        }
+                    )
+                )
+                
+                if result.modified_count > 0:
+                    print(f"[FORMATTER] Updated formatted_content for {doc_id}")
+                else:
+                    doc = await loop.run_in_executor(
+                        None, lambda: db.transcriptions.find_one({"_id": doc_id})
+                    )
+                    if doc:
+                        print(f"[FORMATTER] Document {doc_id} found but content unchanged")
                     else:
-                        # If not found, create a new one (as fallback)
                         formatted_doc = {
-                            "filename": formatted_file.name,
-                            "original_filename": original_filename,
+                            "_id": doc_id,
+                            "filename": f"formatted_{doc_id}.md",
                             "formatted_content": formatted_content,
                             "formatted_at": datetime.now(),
                             "word_count": len(formatted_content.split()),
-                            "source_path": str(formatted_file),
                             "processed": True,
                             "is_formatted": True
                         }
-                        db.transcriptions.insert_one(formatted_doc)
-                        print(f"[FORMATTER] Original not found. Inserted new formatted document: {formatted_file.name}")
-                except Exception as e:
-                    print(f"[FORMATTER] Warning: failed to ingest formatted file into MongoDB: {e}")
-
-                return formatted_file
+                        await loop.run_in_executor(
+                            None, lambda: db.transcriptions.insert_one(formatted_doc)
+                        )
+                        print(f"[FORMATTER] Created new formatted document: {doc_id}")
+                
+                return None
                 
             except Exception as e:
                 if attempt < max_retries:

@@ -126,14 +126,27 @@ export function useTranscriptionService() {
             pendingRecordingJobIdRef.current = null;
         };
 
+        const handleRecordingError = () => {
+            const pendingId = pendingRecordingJobIdRef.current;
+            if (!pendingId) return;
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(pendingId);
+                return next;
+            });
+            pendingRecordingJobIdRef.current = null;
+        };
+
         socket.on('recording_stopped', handleRecordingStopped);
         socket.on('processing_complete', handleProcessingComplete);
         socket.on('warning', handleRecordingWarning);
+        socket.on('error', handleRecordingError);
 
         return () => {
             socket.off('recording_stopped', handleRecordingStopped);
             socket.off('processing_complete', handleProcessingComplete);
             socket.off('warning', handleRecordingWarning);
+            socket.off('error', handleRecordingError);
         };
     }, [loadTranscriptionsList]);
 

@@ -29,13 +29,12 @@ export function useToolRegistry({
     };
 
     const handleAutoFormat = async () => {
-        if (!transcriptionId || !transcriptions[selectedIndex]?.filename) return;
+        if (!transcriptionId) return;
 
         const currentId = transcriptionId;
         setProcessingIds(prev => new Set(prev).add(currentId));
 
         try {
-            const filename = transcriptions[selectedIndex].filename;
             const res = await fetch('/api/format/start', {
                 method: 'POST',
                 headers: {
@@ -43,8 +42,7 @@ export function useToolRegistry({
                     'x-api-key': 'dev-secret-api-key'
                 },
                 body: JSON.stringify({
-                    files: [`notas/${filename}`],
-                    output_dir: 'notas'
+                    file_ids: [currentId]
                 })
             });
 
@@ -52,6 +50,13 @@ export function useToolRegistry({
             const { job_id, ws_url } = await res.json();
 
             const ws = new WebSocket(`ws://127.0.0.1:9443/api/format${ws_url}`);
+            const clearProcessingId = () => {
+                setProcessingIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(currentId);
+                    return next;
+                });
+            };
             ws.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                 if (data.status === 'job_completed' || data.status === 'completed') {
@@ -59,21 +64,24 @@ export function useToolRegistry({
                     // Always reload the formatted content — avoids stale closure issue
                     await loadTranscriptionById(currentId);
                     await loadTranscriptionsList();
-                    setProcessingIds(prev => {
-                        const next = new Set(prev);
-                        next.delete(currentId);
-                        return next;
-                    });
+                    clearProcessingId();
                     if (activeTool === 'format') setActiveTool(null);
                     ws.close();
                 } else if (data.status === 'error') {
                     setNotification({ message: `Error: ${data.error}`, type: 'error' });
-                    setProcessingIds(prev => {
-                        const next = new Set(prev);
-                        next.delete(currentId);
-                        return next;
-                    });
+                    clearProcessingId();
                     ws.close();
+                }
+            };
+            ws.onerror = () => {
+                console.error('[Format] WebSocket error');
+                setNotification({ message: 'Error de conexión al formatear', type: 'error' });
+                clearProcessingId();
+            };
+            ws.onclose = (event) => {
+                if (!event.wasClean) {
+                    console.warn('[Format] WebSocket closed unexpectedly');
+                    clearProcessingId();
                 }
             };
         } catch (e) {

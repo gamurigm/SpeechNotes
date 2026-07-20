@@ -940,16 +940,44 @@ def register_socket_events(sio):
             }
 
             formatter = FormatterFactory.create('segmented_markdown')
-            formatted_content = await asyncio.to_thread(formatter.format, all_transcripts, metadata)
+            raw_content = await asyncio.to_thread(formatter.format, all_transcripts, metadata)
 
             md_filename = f"transcripcion_{timestamp}.md"
-            md_path = await asyncio.to_thread(repo.save_transcription_file, formatted_content, md_filename)
 
+            # Insert directly into database (no file I/O)
             try:
-                await asyncio.to_thread(repo.post_process_file, md_path)
-                print(f"[Socket.IO] Post-processing completed for {sid}")
+                from src.database.mongo_manager import MongoManager
+                from src.agent.transcription_analyzer import TranscriptionAnalyzer
+                from src.agent.document_generator import DocumentGenerator
+
+                db = MongoManager()
+                doc = {
+                    "filename": md_filename,
+                    "raw_content": raw_content,
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "time": datetime.now().strftime("%H:%M:%S"),
+                    "word_count": len(raw_content.split()),
+                    "source_type": "live_recording",
+                    "processed": False,
+                    "ingested_at": datetime.now(),
+                    "audio_file": audio_filename or "N/A",
+                    "duration_seconds": stop_elapsed,
+                    "language": session.get("language", "es"),
+                }
+                result = db.transcriptions.insert_one(doc)
+                print(f"[Socket.IO] Inserted transcription {result.inserted_id} into DB")
+
+                # Post-processing: analyze and generate
+                try:
+                    analyzer = TranscriptionAnalyzer()
+                    analyzer.analyze_pending()
+                    generator = DocumentGenerator()
+                    generator.generate_all()
+                    print(f"[Socket.IO] Post-processing completed for {sid}")
+                except Exception as e:
+                    print(f"[Socket.IO] Warning: Post-processing error: {e}")
             except Exception as e:
-                print(f"[Socket.IO] Warning: Post-processing error: {e}")
+                print(f"[Socket.IO] Error during DB insert: {e}")
 
             try:
                 await sio.emit('processing_complete', {

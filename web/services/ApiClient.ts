@@ -33,7 +33,7 @@ export class ApiClient {
         let lastError;
         for (let i = 0; i < retries; i++) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
             try {
                 const response = await fetch(url, {
@@ -64,6 +64,9 @@ export class ApiClient {
         }
 
         console.error(`[ApiClient] All ${retries} attempts failed for ${url}`);
+        if (lastError?.name === 'AbortError') {
+            throw new Error(`Request timeout after ${retries} attempts`);
+        }
         throw lastError;
     }
 

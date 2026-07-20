@@ -2,18 +2,14 @@
 
 import { useState, useEffect } from 'react';
 
-interface FileMetadata {
-  fecha?: string;
-  palabras?: string;
-  temas?: string;
-}
-
 interface FileInfo {
+  id: string;
   name: string;
-  path: string;
-  size: number;
-  modified: string;
-  metadata: FileMetadata;
+  fecha: string;
+  palabras: string;
+  tipo: string;
+  tiene_contenido: boolean;
+  ya_formateado: boolean;
 }
 
 interface FormatterProgress {
@@ -29,7 +25,7 @@ interface FormatterProgress {
 
 export default function FormatterPage() {
   const [files, setFiles] = useState<FileInfo[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<FormatterProgress[]>([]);
@@ -73,26 +69,26 @@ export default function FormatterPage() {
     }
   };
 
-  const toggleFile = (path: string) => {
-    const newSelected = new Set(selectedFiles);
-    if (newSelected.has(path)) {
-      newSelected.delete(path);
+  const toggleFile = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
     } else {
-      newSelected.add(path);
+      newSelected.add(id);
     }
-    setSelectedFiles(newSelected);
+    setSelectedIds(newSelected);
   };
 
   const selectAll = () => {
-    if (selectedFiles.size === files.length) {
-      setSelectedFiles(new Set());
+    if (selectedIds.size === files.length) {
+      setSelectedIds(new Set());
     } else {
-      setSelectedFiles(new Set(files.map(f => f.path)));
+      setSelectedIds(new Set(files.map(f => f.id)));
     }
   };
 
   const startFormatting = async () => {
-    if (selectedFiles.size === 0) return;
+    if (selectedIds.size === 0) return;
 
     setIsRunning(true);
     setProgress([]);
@@ -100,11 +96,10 @@ export default function FormatterPage() {
     setCompletedFiles(0);
 
     try {
-      // Start formatting job
       let res = await fetch('http://localhost:9443/api/format/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
-        body: JSON.stringify({ files: Array.from(selectedFiles), output_dir: 'notas' })
+        body: JSON.stringify({ file_ids: Array.from(selectedIds) })
       });
 
       if (!res.ok) {
@@ -169,13 +164,9 @@ export default function FormatterPage() {
 
   const totalFiles = progress.length > 0
     ? progress[progress.length - 1].total
-    : selectedFiles.size || files.length || 0;
+    : selectedIds.size || files.length || 0;
 
   const isJobDone = !!summary || (!isRunning && totalFiles > 0 && completedFiles >= totalFiles);
-
-  const formatFileSize = (bytes: number) => {
-    return (bytes / 1024).toFixed(1) + ' KB';
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -225,44 +216,46 @@ export default function FormatterPage() {
               onClick={selectAll}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
-              {selectedFiles.size === files.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+              {selectedIds.size === files.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
             </button>
           </div>
 
           {files.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p>No hay archivos disponibles para formatear</p>
-              <p className="text-sm mt-2">Los archivos deben estar en el directorio `notas/`</p>
+              <p>No hay transcripciones disponibles para formatear</p>
+              <p className="text-sm mt-2">Graba o sube una transcripción primero</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {files.map(file => (
                 <label
-                  key={file.path}
+                  key={file.id}
                   className={`flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedFiles.has(file.path)
+                    selectedIds.has(file.id)
                       ? 'bg-blue-50 border-blue-300'
                       : 'hover:bg-gray-50 border-gray-200'
-                  }`}
+                  } ${file.ya_formateado ? 'opacity-50' : ''}`}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedFiles.has(file.path)}
-                    onChange={() => toggleFile(file.path)}
+                    checked={selectedIds.has(file.id)}
+                    onChange={() => toggleFile(file.id)}
                     className="mt-1 mr-3 h-4 w-4"
+                    disabled={file.ya_formateado}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{file.name}</div>
                     <div className="text-xs text-gray-600 mt-1">
-                      {file.metadata.fecha && (
-                        <span className="mr-3">📅 {file.metadata.fecha}</span>
+                      {file.fecha && (
+                        <span className="mr-3">📅 {file.fecha}</span>
                       )}
-                      {file.metadata.palabras && (
-                        <span className="mr-3">📝 {file.metadata.palabras} palabras</span>
+                      {file.palabras && (
+                        <span className="mr-3">📝 {file.palabras} palabras</span>
                       )}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {formatFileSize(file.size)}
+                      <span className="mr-3">📁 {file.tipo}</span>
+                      {file.ya_formateado && (
+                        <span className="text-green-600">✅ Ya formateado</span>
+                      )}
                     </div>
                   </div>
                 </label>
@@ -272,16 +265,16 @@ export default function FormatterPage() {
 
           <button
             onClick={startFormatting}
-            disabled={selectedFiles.size === 0 || isRunning}
+            disabled={selectedIds.size === 0 || isRunning}
             className={`mt-6 w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-              selectedFiles.size === 0 || isRunning
+              selectedIds.size === 0 || isRunning
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
             {isRunning
               ? '⏳ Procesando...'
-              : `✨ Formatear ${selectedFiles.size} archivo${selectedFiles.size !== 1 ? 's' : ''}`
+              : `✨ Formatear ${selectedIds.size} transcripción${selectedIds.size !== 1 ? 'es' : ''}`
             }
           </button>
         </div>
@@ -337,7 +330,7 @@ export default function FormatterPage() {
                   setSummary(null);
                   setJobId(null);
                   setCompletedFiles(0);
-                  setSelectedFiles(new Set());
+                  setSelectedIds(new Set());
                 }}
               >
                 🔁 Nuevo trabajo
@@ -367,9 +360,9 @@ export default function FormatterPage() {
                 <div className="flex items-center text-sm">
                   <span className="mr-2">{getStatusIcon(p.status)}</span>
                   <span>
-                    {p.status === 'reading' && 'Leyendo archivo...'}
-                    {p.status === 'formatting' && 'Formateando con Minimax M2...'}
-                    {p.status === 'saving' && 'Guardando archivo...'}
+                    {p.status === 'reading' && 'Leyendo transcripción...'}
+                    {p.status === 'formatting' && 'Formateando con IA...'}
+                    {p.status === 'saving' && 'Guardando en base de datos...'}
                     {p.status === 'completed' && 'Completado exitosamente'}
                     {p.status === 'error' && `Error: ${p.error}`}
                   </span>

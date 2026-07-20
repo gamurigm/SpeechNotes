@@ -9,15 +9,6 @@ class TranscriptionRepository:
     """
     def __init__(self):
         self.db = MongoManager()
-        self._generator = None  # Lazy — only initialized when post_process_file is called
-
-    @property
-    def generator(self):
-        """Lazy-initialize DocumentGenerator to avoid slow startup on every list request."""
-        if self._generator is None:
-            from src.agent.document_generator import DocumentGenerator
-            self._generator = DocumentGenerator()
-        return self._generator
 
     def get_latest(self) -> Optional[Dict]:
         # Try by ingested_at first; fall back to _id (creation order) if missing
@@ -69,7 +60,7 @@ class TranscriptionRepository:
         return result.matched_count > 0
 
     def save_audio(self, pcm_data: bytes, filename: str) -> str:
-        """Save raw PCM as WAV file"""
+        """Save raw PCM as WAV file (kept for audio storage, not transcription)."""
         from pathlib import Path
         import wave
         
@@ -82,28 +73,6 @@ class TranscriptionRepository:
             wav_file.setframerate(16000)
             wav_file.writeframes(pcm_data)
         return str(output_path)
-
-    def save_transcription_file(self, content: str, filename: str):
-        """Save formatted markdown to disk"""
-        from pathlib import Path
-        output_path = Path(f"notas/{filename}")
-        output_path.parent.mkdir(exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        return str(output_path)
-
-    def post_process_file(self, filepath: str):
-        """Run the ingestion, analysis and generation pipeline"""
-        from src.agent.transcription_ingestor import TranscriptionIngestor
-        from src.agent.transcription_analyzer import TranscriptionAnalyzer
-        
-        ingestor = TranscriptionIngestor()
-        ingestor._ingest_file(filepath)
-        
-        analyzer = TranscriptionAnalyzer()
-        analyzer.analyze_pending()
-        
-        self.generator.generate_all()
 
     def search(self, query_str: str, limit_docs: int = 20, limit_segs: int = 30) -> Dict:
         regex_query = {"$regex": query_str, "$options": "i"}
