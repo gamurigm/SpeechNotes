@@ -49,6 +49,52 @@ confuso.
 
 ---
 
+## Quick start (flujo de 2 terminales)
+
+Si quieres correr la suite rapidamente sin levantar todo el stack de
+SpeechNotes (frontend, desktop app, etc.), usa **dos terminales**:
+
+```powershell
+# Terminal 1: arrancar SOLO Mongo + Backend (sin frontend, sin Tauri)
+.\scripts\run_backend_only.ps1
+
+# Terminal 2: una vez que el script anterior reporta "Servicios listos"
+.\scripts\run_backend_tests.ps1
+```
+
+`run_backend_only.ps1`:
+1. Libera el puerto 9443
+2. Levanta MongoDB via `docker compose up -d mongodb`
+3. Espera a que Mongo responda a ping
+4. Lanza el backend en una nueva ventana PowerShell
+5. Espera a que `/health` responda 200
+6. Imprime las instrucciones para correr tests
+
+**Exit codes del script:**
+
+| Codigo | Significado |
+|--------|-------------|
+| 0 | Mongo + Backend listos |
+| 1 | Docker no disponible |
+| 2 | Mongo no respondio a tiempo |
+| 3 | Backend no respondio a tiempo |
+| 4 | Python no encontrado |
+
+**Flags utiles:**
+
+```powershell
+.\scripts\run_backend_only.ps1 -SkipDocker    # si ya tienes Mongo en otro host
+.\scripts\run_backend_only.ps1 -BackendOnly   # solo lanza el backend, asume Mongo externo
+```
+
+Para detener el backend al terminar, cierra su ventana o ejecuta:
+
+```powershell
+Get-Process python | Where-Object { $_.CommandLine -like '*backend/main.py*' } | Stop-Process
+```
+
+---
+
 ## Como correr la suite
 
 ### Opcion A: script PowerShell (recomendado para Windows)
@@ -245,6 +291,7 @@ backend/tests/
 pytest.ini                           # config raiz (descubrimiento)
 requirements-test.txt                # pytest, requests, pymongo
 scripts/run_backend_tests.ps1        # wrapper con pre-flight checks
+scripts/run_backend_only.ps1         # levanta Mongo + Backend (sin frontend)
 ```
 
 ---
