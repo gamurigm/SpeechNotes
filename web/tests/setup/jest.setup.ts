@@ -20,9 +20,9 @@ Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
 });
 
 class ResizeObserverMock {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe = jest.fn();
+    unobserve = jest.fn();
+    disconnect = jest.fn();
 }
 
 global.ResizeObserver = ResizeObserverMock;

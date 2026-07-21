@@ -26,6 +26,7 @@ services:
       - .env
     environment:
       - PORT=9443
+      - HOST=0.0.0.0
       - MONGO_URI=mongodb://mongodb:27017/
       - MONGO_DB_NAME=agent_knowledge_base
     volumes:

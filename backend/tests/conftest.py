@@ -215,12 +215,13 @@ _TEST_SETTINGS_PREFIX = "qa_test_"
 
 
 @pytest.fixture(autouse=True)
-def _test_settings_cleanup(request, http_client: BackendHttpClient) -> Iterator[None]:
+def _test_settings_cleanup(request) -> Iterator[None]:
     """Remove any settings that start with the QA test prefix after the run."""
     if request.node.fspath.basename != "test_settings.py":
         yield
         return
 
+    http_client: BackendHttpClient = request.getfixturevalue("http_client")
     yield
 
     # Cleanup: list all settings and delete the ones we created
