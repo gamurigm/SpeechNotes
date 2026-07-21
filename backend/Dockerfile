@@ -9,7 +9,6 @@ ENV PYTHONPATH="/app:/app/backend"
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ffmpeg \
-  build-essential \
   curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,4 @@
+-r requirements.txt
+
+pytest>=7.4.0,<10
+requests>=2.31.0,<3
