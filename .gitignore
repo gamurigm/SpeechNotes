@@ -100,6 +100,11 @@ tests/
 !/backend/tests/
 !/backend/tests/**
 
+# Re-ignore __pycache__ under backend/tests/ (overrides the !/backend/tests/** whitelist above)
+backend/tests/__pycache__/
+backend/tests/**/__pycache__/
+backend/tests/helpers/__pycache__/
+
 # ── Build output / PyInstaller ─────────────────────────────
 dist/
 build/

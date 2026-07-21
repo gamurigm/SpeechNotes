@@ -2,30 +2,34 @@
 conftest.py - Shared fixtures for the SpeechNotes backend test suite.
 
 All fixtures are designed for *integration* tests against a running backend.
-The backend is expected to be reachable at BACKEND_URL (default localhost:9443)
-and MongoDB at MONGO_URI (default localhost:27017).
+The backend is expected to be reachable at BACKEND_URL (default localhost:9443).
 
-Set TEST_AUTH=1 to enable the auth test module (test_auth.py).
+Note: The SpeechNotes backend uses SQLite (via src.database.sqlite_manager)
+for its data store, not MongoDB. The fixtures in this file use SQLite
+accordingly. SQLite is essentially always available as a local file, so
+the `db_client` fixture is rarely skipped.
 """
 
 from __future__ import annotations
 
 import os
 import shutil
+import sqlite3
 import uuid
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Iterator
 
 import pytest
 
 # Make the helpers package importable from test files.
 from backend.tests.helpers.http_client import BackendHttpClient
 from backend.tests.helpers.seed import (
+    connect_db,
     cleanup_test_transcriptions,
-    connect_mongo,
     delete_transcription,
     insert_transcription,
-    mongo_available,
+    db_available,
+    default_db_path,
 )
 
 
@@ -35,8 +39,7 @@ from backend.tests.helpers.seed import (
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:9443")
 API_KEY = os.environ.get("API_KEY", "dev-secret-api-key")
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
-MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "agent_knowledge_base")
+SQLITE_DB_DIR = os.environ.get("SQLITE_DB_DIR", "data")
 RUN_AUTH_TESTS = os.environ.get("TEST_AUTH") == "1"
 
 # Path to the VAD config file (mirrors backend/routers/vad_config.py:11-12)
@@ -45,8 +48,6 @@ VAD_CONFIG_PATH = PROJECT_ROOT / "temporal_docs" / "configuracion" / ".vad_confi
 
 
 # Skip test_auth.py unless TEST_AUTH=1 is exported.
-# This is honoured by pytest's collection phase because collect_ignore_glob
-# is a module-level directive evaluated before tests are gathered.
 collect_ignore_glob: list[str] = [] if RUN_AUTH_TESTS else ["test_auth.py"]
 
 
@@ -56,24 +57,21 @@ collect_ignore_glob: list[str] = [] if RUN_AUTH_TESTS else ["test_auth.py"]
 
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    """Base URL of the running SpeechNotes backend."""
     return BACKEND_URL
 
 
 @pytest.fixture(scope="session")
 def api_key() -> str:
-    """API key expected by the backend (default = dev key, bypasses auth)."""
     return API_KEY
 
 
 @pytest.fixture(scope="session")
-def mongo_uri() -> str:
-    return MONGO_URI
-
-
-@pytest.fixture(scope="session")
-def mongo_db_name() -> str:
-    return MONGO_DB_NAME
+def db_path() -> str:
+    """Absolute path to the SQLite database the backend is using."""
+    p = default_db_path()
+    if not os.path.isabs(p):
+        p = str(PROJECT_ROOT / p)
+    return p
 
 
 @pytest.fixture(scope="session")
@@ -113,20 +111,23 @@ def http_client(base_url: str, api_key: str, backend_health) -> Iterator[Backend
 
 
 @pytest.fixture(scope="session")
-def mongo_client(mongo_uri: str, mongo_db_name: str):
-    """Mongo client. Skips the module if Mongo is not reachable."""
-    if not mongo_available(mongo_uri):
+def db_client(db_path: str) -> Iterator[sqlite3.Connection]:
+    """SQLite connection used by the test fixtures to seed/clean data.
+
+    Skips the test if the database file cannot be opened.
+    """
+    if not db_available(db_path):
         pytest.skip(
-            f"MongoDB no accesible en {mongo_uri}. "
-            "Levanta el servicio (docker compose up mongodb) y vuelve a correr pytest."
+            f"SQLite no accesible en {db_path}. "
+            "Asegurate de que la ruta sea escribible."
         )
-    client = connect_mongo(mongo_uri, mongo_db_name)
-    yield client
+    conn = connect_db(db_path)
+    yield conn
+    # Belt-and-braces: cleanup any leftover test rows after the run
     try:
-        # Belt-and-braces: remove any leftover test docs after the run
-        cleanup_test_transcriptions(client, mongo_db_name)
+        cleanup_test_transcriptions(conn)
     finally:
-        client.close()
+        conn.close()
 
 
 # ──────────────────────────────────────────────────────────────
@@ -134,14 +135,13 @@ def mongo_client(mongo_uri: str, mongo_db_name: str):
 # ──────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def seed_transcription(mongo_client, mongo_db_name) -> Iterator[str]:
+def seed_transcription(db_client: sqlite3.Connection) -> Iterator[str]:
     """Insert a sample transcription and remove it after the test.
 
-    Returns the inserted _id.
+    Returns the inserted id.
     """
     doc_id = insert_transcription(
-        mongo_client,
-        mongo_db_name,
+        db_client,
         raw_content="Esta es una transcripcion de prueba para tests automatizados.",
         formatted_content="# Test\n\nContenido formateado de prueba.",
         edited_content="",
@@ -149,18 +149,17 @@ def seed_transcription(mongo_client, mongo_db_name) -> Iterator[str]:
     try:
         yield doc_id
     finally:
-        delete_transcription(mongo_client, mongo_db_name, doc_id)
+        delete_transcription(db_client, doc_id)
 
 
 @pytest.fixture
-def seed_document(mongo_client, mongo_db_name) -> Iterator[str]:
+def seed_document(db_client: sqlite3.Connection) -> Iterator[str]:
     """Insert a transcription suitable for /api/documents/{id}/content tests.
 
-    Sets processed=True so the document is listed by GET /api/documents.
+    Sets processed=1 so the document is listed by GET /api/documents.
     """
     doc_id = insert_transcription(
-        mongo_client,
-        mongo_db_name,
+        db_client,
         filename=f"{uuid.uuid4().hex[:10]}_qa.md",
         raw_content="Contenido en bruto del documento de prueba QA.",
         formatted_content="# Documento QA\n\nEste es un documento de prueba para el endpoint /content.",
@@ -169,7 +168,7 @@ def seed_document(mongo_client, mongo_db_name) -> Iterator[str]:
     try:
         yield doc_id
     finally:
-        delete_transcription(mongo_client, mongo_db_name, doc_id)
+        delete_transcription(db_client, doc_id)
 
 
 @pytest.fixture
@@ -205,7 +204,6 @@ def _vad_config_backup(request) -> Iterator[None]:
             elif VAD_CONFIG_PATH.exists():
                 VAD_CONFIG_PATH.unlink()
         except OSError:
-            # Best-effort: if we can't restore, leave a warning in the test output
             print(f"\n[WARN] Could not restore {VAD_CONFIG_PATH}")
 
 
@@ -236,5 +234,4 @@ def _test_settings_cleanup(request, http_client: BackendHttpClient) -> Iterator[
             if key.startswith(_TEST_SETTINGS_PREFIX):
                 http_client.delete(f"/api/settings/{key}")
     except Exception:
-        # Cleanup is best-effort; do not fail tests on cleanup errors
         pass

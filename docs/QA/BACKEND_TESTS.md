@@ -26,6 +26,77 @@ respuestas JSON, y previene regresiones en los servicios web expuestos.
 
 ---
 
+## Limitacion importante: backend de testing vs backend real
+
+El backend de testing que arranca la suite (`backend/main_test.py`) **no es
+identico** al backend de produccion (`backend/main.py`). Hay dos diferencias
+clave que debes tener en cuenta al interpretar resultados:
+
+### 1. Storage: SQLite vs MongoDB
+
+El backend real usa **dos bases de datos** dependiendo del archivo:
+
+| Import en el codigo | Resuelve a | Routers que lo usan |
+|--------------------|------------|---------------------|
+| `from src.database import MongoManager` | **SQLite** (es un alias) | `chat.py`, `documents.py`, `transcribe.py`, `transcription_repository.py`, `socket_handler_new.py`, `src/agent/*` |
+| `from src.database.mongo_manager import MongoManager` | **Mongo real** | `admin.py`, `formatter_agent.py` |
+
+Esto se origina en `src/database/__init__.py:12`:
+```python
+MongoManager = SQLiteManager  # alias de compatibilidad
+```
+
+**Implicacion para los tests:** los 4 routers que la suite ejercita
+(`transcriptions`, `documents`, `settings`, `vad_config`) usan el alias, por
+lo que las fixtures pueden sembrar directamente en SQLite
+(`data/speechnotes.db`) y el backend los ve. **No necesitas MongoDB corriendo
+para que la suite pase** (58/58 tests verifican esto).
+
+**Lo que NO se valida:** los routers `admin` y `formatter_agent` que SI usan
+Mongo real **no estan en `main_test.py`** (se excluyeron a proposito para
+evitar la dependencia de Mongo). Si tocas `admin.py` o `formatter_agent.py`,
+debes probarlos manualmente contra el `main.py` real con Mongo arriba.
+
+### 2. Routers cargados
+
+`main_test.py` carga solo **6 routers** (los que la suite ejercita):
+
+```python
+# backend/main_test.py
+app.include_router(transcriptions.router, ...)
+app.include_router(documents.router, ...)
+app.include_router(settings.router, ...)
+app.include_router(vad_config.router, ...)
+app.include_router(admin.router, ...)       # NOTA: usa Mongo real si se incluye
+app.include_router(debug.router, ...)
+```
+
+`main.py` real carga **12 routers** incluyendo chat, formatter, transcribe,
+audio_processing, audio_format, translation, websocket. Esos dependen de
+NVIDIA NIM, Riva, LangChain y otros servicios externos, por eso se omitieron
+del `main_test.py`.
+
+**Como extender la suite a un nuevo router:**
+
+| Router nuevo | Que hacer |
+|--------------|-----------|
+| Solo lee/escribe datos simples (SQLite) | Agregar a `main_test.py` + agregar tests |
+| Usa Mongo real (ej. `admin`) | Mantener Mongo corriendo en CI + ajustar fixtures |
+| Depende de servicio externo (NIM, Riva) | Marcar esos tests como opt-in o mockear la respuesta |
+
+### Verificacion
+
+La limitacion fue validada con esta corrida real:
+
+```
+58 passed, 0 failed, 0 skipped in 8.40s
+```
+
+Si tocas codigo que rompe alguno de los routers excluidos, **la suite NO lo
+detectara** — esos cambios requieren prueba manual contra `main.py` real.
+
+---
+
 ## Prerrequisitos
 
 1. **Backend levantado y accesible** en `http://localhost:9443` (o el override
@@ -47,6 +118,15 @@ Si el backend o Mongo no estan disponibles, los tests **hacen skip limpio**
 mostrando un mensaje claro en la consola — no fallan con error de conexion
 confuso.
 
+### Entornos soportados
+
+| Entorno | Soporte | Notas |
+|---------|---------|-------|
+| **Windows + WSL** (recomendado) | ✅ Nativo | Docker corre en WSL, Python y backend en Windows. Los scripts detectan esto automaticamente. |
+| Windows + Docker Desktop nativo | ✅ | Usa `-UseWindowsDocker` en `run_backend_only.ps1` |
+| WSL puro (todo dentro de WSL) | ✅ | Usa `-UseWsl` en `run_backend_tests.ps1` |
+| Linux / macOS | ⚠️ Parcial | Los `.ps1` no funcionan directamente; considera crear `.sh` equivalentes |
+
 ---
 
 ## Quick start (flujo de 2 terminales)
@@ -63,12 +143,13 @@ SpeechNotes (frontend, desktop app, etc.), usa **dos terminales**:
 ```
 
 `run_backend_only.ps1`:
-1. Libera el puerto 9443
-2. Levanta MongoDB via `docker compose up -d mongodb`
-3. Espera a que Mongo responda a ping
-4. Lanza el backend en una nueva ventana PowerShell
-5. Espera a que `/health` responda 200
-6. Imprime las instrucciones para correr tests
+1. Verifica que WSL este disponible (o usa `-UseWindowsDocker`)
+2. Libera el puerto 9443
+3. Levanta MongoDB via `wsl docker compose up -d mongodb`
+4. Espera a que Mongo responda a ping
+5. Lanza el backend en una nueva ventana PowerShell
+6. Espera a que `/health` responda 200
+7. Imprime las instrucciones para correr tests
 
 **Exit codes del script:**
 
@@ -79,12 +160,14 @@ SpeechNotes (frontend, desktop app, etc.), usa **dos terminales**:
 | 2 | Mongo no respondio a tiempo |
 | 3 | Backend no respondio a tiempo |
 | 4 | Python no encontrado |
+| 5 | WSL no disponible |
 
 **Flags utiles:**
 
 ```powershell
-.\scripts\run_backend_only.ps1 -SkipDocker    # si ya tienes Mongo en otro host
-.\scripts\run_backend_only.ps1 -BackendOnly   # solo lanza el backend, asume Mongo externo
+.\scripts\run_backend_only.ps1 -SkipDocker        # si ya tienes Mongo en otro host
+.\scripts\run_backend_only.ps1 -BackendOnly       # solo lanza el backend, asume Mongo externo
+.\scripts\run_backend_only.ps1 -UseWindowsDocker  # si tienes Docker Desktop nativo
 ```
 
 Para detener el backend al terminar, cierra su ventana o ejecuta:
@@ -97,7 +180,7 @@ Get-Process python | Where-Object { $_.CommandLine -like '*backend/main.py*' } |
 
 ## Como correr la suite
 
-### Opcion A: script PowerShell (recomendado para Windows)
+### Opcion A: script PowerShell (recomendado para Windows / WSL)
 
 ```powershell
 # Suite completa
@@ -114,6 +197,9 @@ Get-Process python | Where-Object { $_.CommandLine -like '*backend/main.py*' } |
 
 # Saltar pre-flight checks
 .\scripts\run_backend_tests.ps1 -SkipChecks
+
+# Si tu Python vive dentro de WSL (no en Windows)
+.\scripts\run_backend_tests.ps1 -UseWsl
 ```
 
 El script:
