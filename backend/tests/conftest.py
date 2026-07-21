@@ -21,6 +21,13 @@ from typing import Iterator
 
 import pytest
 
+# Ensure the project root is on sys.path so "backend" is importable
+# regardless of the working directory from which pytest is launched.
+_project_root = Path(__file__).resolve().parents[2]
+import sys
+
+sys.path.insert(0, str(_project_root))
+
 # Make the helpers package importable from test files.
 from backend.tests.helpers.http_client import BackendHttpClient
 from backend.tests.helpers.seed import (
