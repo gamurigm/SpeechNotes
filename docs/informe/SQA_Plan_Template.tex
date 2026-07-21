@@ -1,0 +1,242 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{tocloft}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+\title{SOFTWARE QUALITY ASSURANCE PLAN\\ \large Proyecto: SpeechNotes}
+\author{Equipo SQA - SpeechNotes}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\section*{PREFACIO}
+Este documento constituye el Plan de Aseguramiento de Calidad de Software (SQA) integral para el proyecto \textbf{SpeechNotes}. Se ha elaborado utilizando la directriz proporcionada por la plantilla IEEE Std 730-1998, IEEE Standard for Software Quality Assurance Plans, y la guía IEEE Std 730.1-1995. Ha sido adaptado de forma estricta a un ciclo de desarrollo ágil acelerado (Sprint SQA del 18 al 21 de Julio), gestionado mediante la metodología Scrum y el uso de Jira Software. Este documento provee a la gerencia y al equipo de desarrollo la visibilidad apropiada sobre los procesos auditados y la calidad del producto final.
+
+\newpage
+\section*{REGISTRO DE CAMBIOS}
+\begin{longtable}{p{2cm} p{2cm} p{7cm} p{3cm}}
+\toprule
+\textbf{VERSIÓN} & \textbf{FECHA} & \textbf{DESCRIPCIÓN} & \textbf{AUTOR} \\
+\midrule
+1.0 & 21/07/2026 & Creación del plan completo, integración del sprint 18-21 Jul. & Denise (QA Lead) \\
+2.0 & 21/07/2026 & Expansión exhaustiva alineada estrictamente al estándar IEEE 730. & Denise (QA Lead) \\
+\bottomrule
+\end{longtable}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{PROPÓSITO Y ALCANCE}
+\subsection{Alcance}
+El presente plan establece y regula las actividades de Aseguramiento de Calidad de Software (SQA) que se aplicarán al ciclo de vida del proyecto \textbf{SpeechNotes}. Debido a la naturaleza acelerada del actual sprint de aseguramiento, el alcance de este plan se centrará en los flujos críticos de grabación, limpieza de ruido, transcripción y formateo de la versión web.
+
+\subsection{Identificación}
+\begin{itemize}
+    \item \textbf{Proyecto:} SpeechNotes
+    \item \textbf{Repositorio Principal:} \texttt{gamurigm/SpeechNotes}
+    \item \textbf{Componentes de Configuración (CIs):} API REST Backend (Python), Aplicación Web Frontend (Next.js), Servicios de Inferencia NVIDIA NIM.
+\end{itemize}
+
+\subsection{Visión General del Sistema}
+SpeechNotes convierte audio en notas estructuradas en tiempo real. Su arquitectura se basa en un pipeline modular de cinco modelos de IA: NVIDIA BNR (Limpieza de ruido), Parakeet (Transcripción), Gemma (Detección de idioma), Mistral (Traducción), y Qwen 3.5 (Formateo).
+
+\subsection{Visión General del Documento}
+Este documento define los roles del equipo, las tareas específicas de SQA, los métodos de evaluación, y los procesos formales de reporte de problemas, rigiéndose por los estándares de la plantilla base IEEE.
+
+\subsection{Relación con Otros Planes}
+Este Plan SQA complementa y audita el Plan de Desarrollo de Software (SDP). Está ligado al flujo de trabajo de Jira Software, a las historias de usuario y a las políticas de Integración Continua de GitHub Actions.
+
+\subsection{Documentos de Referencia}
+\begin{itemize}
+    \item IEEE Std 730-1998, \textit{IEEE Standard for SQA Plans}.
+    \item \texttt{docs/sqa/sqa-planning.md}: Plan Asincrónico Riguroso SQA.
+    \item \texttt{docs/sqa/guia-jira-setup.md}: Reglas y flujos de tickets.
+    \item \texttt{docs/sqa/guia-rol-a.md}, \texttt{persona-d-manual-testing.md}: Manuales de rol.
+    \item \texttt{docs/patrones\_diseno.md}: Estructuras de diseño.
+\end{itemize}
+
+\section{GESTIÓN}
+\subsection{Organización}
+Para garantizar la independencia requerida, el esfuerzo de calidad recae sobre roles claramente segmentados:
+\begin{itemize}
+    \item \textbf{Denise (QA Lead \& Test Manager):} Responsable del diseño metodológico, parametrización de Jira, métricas finales y redacción de este SQAP.
+    \item \textbf{Julio (QA Automation Backend \& CI/CD):} Evalúa los flujos del servidor, automatiza pruebas con Pytest y audita el código backend usando SonarCloud.
+    \item \textbf{Mesias (QA Automation Frontend):} Especialista de la interfaz de usuario, automatiza y ejecuta pruebas con Cypress/Jest.
+    \item \textbf{Gabriel (QA Manual \& Diseño de Pruebas):} Responsable del enfoque de caja negra, matriz de rastreabilidad, casos manuales, ejecución y validación final de bugs.
+\end{itemize}
+
+\subsection{Recursos}
+\subsubsection{Instalaciones y Equipamiento}
+Entornos locales de desarrollo orquestados a través de contenedores \texttt{Docker}, garantizando un alto grado de fidelidad respecto a los servidores de producción (MongoDB, ChromaDB, FastAPI).
+\subsubsection{Personal}
+Asignación completa de 4 ingenieros (Personas A, B, C, D) operando de forma asincrónica.
+
+\section{TAREAS DE SQA}
+\subsection{Tarea: Revisar Productos de Software (Review Software Products)}
+SQA evaluará los productos mediante inspecciones continuas del código (Pull Requests) sobre la rama \texttt{planning-SQA}. Se asistirá al proyecto identificando directrices de limpieza (\texttt{ESLint} para frontend, \texttt{PEP8} para backend).
+
+\subsection{Tarea: Evaluar Herramientas de Software (Evaluate Software Tools)}
+SQA auditará que las herramientas planificadas funcionen: Jira (gestión), GitHub Actions (CI/CD), Pytest/Cypress (testing automatizado) y SonarCloud (análisis estático). La Denise verifica su parametrización adecuada al inicio del sprint.
+
+\subsection{Tarea: Evaluar Instalaciones (Evaluate Facilities)}
+Se asegura de que el entorno de desarrollo (\texttt{docker-compose.yml}) provea correctamente los recursos necesarios (bases de datos vectoriales y relacionales) sin requerir configuraciones periféricas excesivas.
+
+\subsection{Tarea: Evaluar Proceso de Revisión de Productos (Evaluate Software Products Review Process)}
+Verifica que las revisiones estén operativas. Todo código fusionado debe pasar previamente por la validación exitosa de los \texttt{Workflows} de GitHub (donde SonarCloud funge como Quality Gate).
+
+\subsection{Tarea: Evaluar Procesos de Planificación y Seguimiento (Evaluate Project Planning, Tracking...)}
+Supervisión diaria (Denise) del flujo de trabajo en Jira. Se asegura de que todas las historias de usuario y bugs fluyan desde \texttt{To Do} hasta \texttt{Done}, garantizando transparencia.
+
+\subsection{Tarea: Evaluar Análisis de Requisitos del Sistema (Evaluate System Requirements Analysis...)}
+La Gabriel valida el entendimiento de los requisitos mapeando las historias de usuario hacia los 17 Casos de Prueba Manual en la Matriz de Rastreabilidad.
+
+\subsection{Tarea: Evaluar Diseño del Sistema (Evaluate System Design Process)}
+Auditar que la arquitectura implementada coincida con los documentos aprobados, particularmente la inyección de dependencias detallada en \texttt{docs/patrones\_diseno.md}.
+
+\subsection{Tarea: Evaluar Análisis de Requisitos de Software}
+Evaluar y aprobar los criterios de aceptación técnicos redactados en las historias de usuario antes del desarrollo (QA en etapas tempranas).
+
+\subsection{Tarea: Evaluar Proceso de Diseño de Software}
+La Julio evaluará que el diseño propuesto por el código no incurra en una Deuda Técnica alta, midiéndolo objetivamente a través del escáner de SonarCloud.
+
+\subsection{Tarea: Evaluar Implementación de Software y Pruebas Unitarias}
+Validación a cargo de la Julio mediante la ejecución de \texttt{pytest} para confirmar el comportamiento exacto de los endpoints de transcripción en \texttt{FastAPI}.
+
+\subsection{Tarea: Evaluar Integración y Pruebas del Sistema}
+Las pruebas End-to-End serán desarrolladas por la Mesias utilizando \texttt{Cypress} para simular el comportamiento humano sobre Next.js, conectándose con el backend.
+
+\subsection{Tarea: Evaluar Proceso de Entrega (Evaluate End-item delivery Process)}
+Asegurar que los artefactos construidos estén listos para entrega mediante la ejecución verde ininterrumpida de GitHub Actions y su posterior empaquetado.
+
+\subsection{Tarea: Evaluar Proceso de Acción Correctiva (Evaluate the Corrective Action Process)}
+Proceso riguroso de re-testing a cargo de la Gabriel. Todo bug corregido pasa a la columna \texttt{In Testing} y es re-evaluado con evidencia obligatoria antes de darse por solucionado (\texttt{Done}).
+
+\subsection{Tarea: Certificación de Medios (Media Certification)}
+Validar que las imágenes de Docker construidas (\texttt{Dockerfile}) contengan los requerimientos correctos y se construyan sin errores.
+
+\subsection{Tarea: Certificación de Software No Entregable}
+Verificación de los scripts de testeo en \texttt{tests/}. Se busca código de calidad incluso en los utilitarios internos.
+
+\subsection{Tarea: Evaluar Almacenamiento y Manejo}
+Comprobar políticas de retención de código fuente en GitHub; garantizar protección contra eliminación accidental de la rama principal.
+
+\subsection{Tarea: Evaluar Control de Subcontratistas/Proveedores}
+Pruebas exhaustivas al comportamiento de la aplicación cuando los proveedores externos (\texttt{NVIDIA NIM}) generen latencia extrema o errores \texttt{500}, exigiendo fallbacks correctos.
+
+\subsection{Tarea: Evaluar Desviaciones y Exenciones}
+Registro de cualquier historia de usuario que no haya podido culminarse en el tiempo previsto, requiriendo justificación y reasignación por parte de la Denise.
+
+\subsection{Tarea: Evaluar Gestión de la Configuración}
+Validación de las convenciones de nomenclatura en ramas y commits (e.g. \texttt{planning-SQA}) previniendo colisiones de código.
+
+\subsection{Tarea: Evaluar Biblioteca de Desarrollo}
+Auditoría de las versiones de dependencias (Node.js/Python) mediante escaneos de vulnerabilidad en \texttt{package.json} y \texttt{requirements.txt}.
+
+\subsection{Tarea: Evaluar Software No de Desarrollo}
+Verificar el correcto despliegue de las dependencias externas (MongoDB, FFmpeg).
+
+\subsection{Verificar Revisiones y Auditorías del Proyecto}
+\subsubsection{Verificar Revisiones Técnicas}
+SQA asegura que los Code Reviews se realicen antes de la consolidación del software.
+\subsubsection{Verificar Revisiones de Gestión}
+Monitoreo de hitos por parte de Denise respecto al cronograma (21 de Julio).
+\subsubsection{Realizar Auditorías de Proceso}
+Cierre e inspección formal que dará como resultado el informe de conclusiones del proyecto SQA.
+\subsubsection{Realizar Auditorías de Configuración}
+Verificación final de integridad de la rama principal y su correspondencia con la base de datos de Jira.
+
+\subsection{Verificar Aseguramiento de Calidad del Software}
+La Denise, en su rol de Test Manager, empaqueta todas las auditorías previas y las evidencias visuales en el informe final.
+
+\subsection{Responsabilidades}
+Detalladas según la asignación oficial (Personas A, B, C, D) bajo los parámetros expuestos en la Sección 2.1.
+
+\subsection{Cronograma}
+Acelerado, asincrónico: del 18 de Julio al 21 de Julio de 2026.
+
+\section{DOCUMENTACIÓN}
+La base documental verificable incluirá: Historias de Usuario, Casos de Prueba, Matriz de Rastreabilidad, Capturas de Pantalla (Logs de éxito y error) e Informes PDF emitidos desde SonarCloud y Jira.
+
+\section{ESTÁNDARES, PRÁCTICAS, CONVENCIONES Y MÉTRICAS}
+\subsection{Métricas}
+La medición de calidad se sustenta en tres pilares cuantitativos:
+\begin{itemize}
+    \item \textbf{Deuda Técnica (Technical Debt):} Minutos/horas requeridas para sanear problemas en SonarCloud. Analizada antes vs. después del sprint.
+    \item \textbf{Densidad de Defectos (Defect Density):} Frecuencia de aparición de bugs durante pruebas manuales en proporción a las historias cerradas.
+    \item \textbf{Cobertura de Pruebas (Test Pass Rate):} Relación de Casos de Prueba Exitosos vs Fallidos.
+\end{itemize}
+
+\section{PRUEBAS}
+Un esfuerzo multinivel (Pirámide de Testing): Análisis estático continuo (SonarCloud), Pruebas Unitarias de caja blanca (Pytest, Jest), Automatización End-to-End (Cypress), y pruebas exploratorias exhaustivas manuales (17 flujos críticos).
+
+\section{REPORTE DE PROBLEMAS Y RESOLUCIÓN SQA}
+\subsection{Informe de Auditoría de Procesos}
+\subsubsection{Envío y Disposición}
+Las métricas recabadas y este plan formarán el documento de entrega principal que avalará la confiabilidad del aplicativo.
+\subsubsection{Procedimiento de Escalada}
+Desacuerdos entre prioridades de bug se dirimen en comentarios de Jira bajo la supervisión de la Denise.
+
+\subsection{Registro de Problemas en Código o Documentos (Bug Reporting)}
+Todo fallo reportado por la Gabriel (o B/C) se levanta en Jira incluyendo obligatoriamente: \textbf{Severidad}, \textbf{Prioridad}, \textbf{Módulo}, \textbf{Pasos para reproducir}, \textbf{Comportamiento Esperado y Actual} y \textbf{Evidencia} fotográfica/log. Tras su corrección, el ticket se transfiere a \texttt{In Testing} para que la Gabriel confirme la resolución adjuntando evidencia nueva.
+
+\subsection{Informe de Evaluación de Herramientas}
+Se avalará el éxito de las herramientas mostrando su integración. (e.g., GitHub Actions terminando un CI exitosamente).
+
+\subsection{Informe de Evaluación de Instalaciones}
+Logs de compilación limpia y levantamiento de contenedores (\texttt{docker-compose up}).
+
+\section{HERRAMIENTAS, TÉCNICAS Y METODOLOGÍAS}
+Jira Software, GitHub (y Actions), SonarCloud, Cypress, Jest, Pytest, Docker, Metodología Ágil (Scrum).
+
+\section{CONTROL DE CÓDIGO}
+Todas las verificaciones corren en ramas aisladas; SonarCloud funge como Quality Gate para el bloqueo automático de malas integraciones.
+
+\section{CONTROL DE MEDIOS}
+Distribución digital a través del repositorio central unificado en GitHub.
+
+\section{CONTROL DE PROVEEDORES}
+Verificación meticulosa del tratamiento de errores en la respuesta de las APIs NVIDIA NIM para evitar exposición de excepciones críticas al usuario.
+
+\section{COLECCIÓN, MANTENIMIENTO Y RETENCIÓN DE REGISTROS}
+Conservación permanente de incidencias en Jira (inmutabilidad del historial de estados) y commits trazables en GitHub.
+
+\section{ENTRENAMIENTO}
+Capacitación asincrónica garantizada por la lectura obligatoria de las guías internas (e.g. \texttt{guia-jira-setup.md}, \texttt{persona-d-manual-testing.md}) previas al inicio del sprint.
+
+\section{GESTIÓN DE RIESGOS}
+Denise cataloga riesgos de disponibilidad tecnológica (caída de proveedores de IA) y riesgos temporales del sprint, aplicando contingencias detalladas (mocking, reducción de alcance periférico).
+
+\appendix
+\section{LISTA DE ACRÓNIMOS}
+\begin{itemize}
+    \item \textbf{SQA:} Software Quality Assurance (Aseguramiento de Calidad del Software).
+    \item \textbf{SQAP:} Software Quality Assurance Plan.
+    \item \textbf{CI/CD:} Continuous Integration / Continuous Deployment.
+    \item \textbf{NIM:} NVIDIA Inference Microservices.
+\end{itemize}
+
+\section{LISTAS DE VERIFICACIÓN (EVIDENCIAS)}
+Para el cierre final del SQAP, Denise debe incluir y verificar obligatoriamente:
+\begin{itemize}
+    \item Capturas de Deuda Técnica inicial vs final de SonarCloud.
+    \item Logs o pantalla verde confirmando el paso de las pruebas Cypress y Pytest.
+    \item Matriz de Rastreabilidad llena y documentada (Casos CP-01 a CP-17).
+    \item Capturas de los Bugs reportados en Jira y la evidencia (comentarios y pantallazos) de su Re-Testing exitoso.
+    \item Captura del flujo de estado final del tablero Kanban de Jira.
+    \item Link al Video Demostrativo final (5-7 mins).
+\end{itemize}
+
+\end{document}
