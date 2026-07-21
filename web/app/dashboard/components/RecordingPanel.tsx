@@ -102,6 +102,7 @@ function RecordingButton({ isRecording, onStart, onRequestStop }: RecordingButto
     return (
         <Button
             onPress={isRecording ? onRequestStop : onStart}
+            aria-label={isRecording ? 'Detener grabación' : 'Iniciar grabación'}
             isIconOnly
             size="lg"
             radius="full"

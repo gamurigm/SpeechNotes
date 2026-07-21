@@ -26,6 +26,7 @@ services:
       - .env
     environment:
       - PORT=9443
+      - HOST=0.0.0.0
       - MONGO_URI=mongodb://mongodb:27017/
       - MONGO_DB_NAME=agent_knowledge_base
     volumes:
@@ -57,6 +58,9 @@ services:
     env_file:
       - .env
     environment:
+      # Override the backend PORT inherited from the shared .env file.
+      - PORT=3006
+      - HOSTNAME=0.0.0.0
       - API_URL=http://backend:9443
       - DATABASE_URL=file:/app/prisma/dev.db
       - NEXTAUTH_URL=http://localhost:3006

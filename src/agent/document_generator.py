@@ -12,6 +12,7 @@ import os
 from openai import OpenAI
 from src.database import MongoManager
 from src.database.config_service import ConfigService
+from src.core.path_security import path_within, sanitize_filename
 
 
 class DocumentGenerator:
@@ -103,11 +104,15 @@ class DocumentGenerator:
 
     def _save_document(self, transcription: Dict, content: str):
         """Helper to save the generated markdown file."""
-        filename = transcription["filename"].replace("transcripcion_", "processed_")
+        source_filename = sanitize_filename(transcription.get("filename"), "transcription.md")
+        filename = source_filename.replace("transcripcion_", "processed_", 1)
         if not filename.startswith("processed_"):
             filename = f"processed_{filename}"
-            
-        output_path = self.output_dir / filename
+
+        if not filename.lower().endswith(".md"):
+            filename = f"{filename}.md"
+
+        output_path = path_within(self.output_dir, filename)
         output_path.write_text(content, encoding='utf-8')
         print(f"[INFO] Generated document: {output_path}")
 

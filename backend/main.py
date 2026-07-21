@@ -4,6 +4,7 @@ FastAPI Backend with Socket.IO for SpeechNotes
 
 import sys
 import os
+import shutil
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Patch audioop for Python 3.13+ compatibility
@@ -20,17 +21,12 @@ except ImportError:
 import warnings
 warnings.filterwarnings("ignore", message=".*Pydantic V1.*Python 3.14.*")
 
-# Configure pydub to use the ffmpeg binary bundled with imageio-ffmpeg
-# Must suppress the warning AND set the converter before any other module imports pydub
+# Configure pydub to use the system ffmpeg installed by the Docker image.
 warnings.filterwarnings("ignore", message=".*ffmpeg.*avconv.*")
-try:
-    import imageio_ffmpeg
-    _ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-    os.environ["PATH"] = os.path.dirname(_ffmpeg_path) + os.pathsep + os.environ.get("PATH", "")
+_ffmpeg_path = shutil.which("ffmpeg")
+if _ffmpeg_path:
     from pydub import AudioSegment
     AudioSegment.converter = _ffmpeg_path
-except ImportError:
-    pass
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,10 +50,8 @@ from routers import formatter
 from routers import chat
 from routers import vad_config
 from routers import documents
-from routers import transcribe
 from routers import audio_format
 from routers import settings
-from routers import audio_processing
 from routers import translation as translation_router
 
 # Create Socket.IO server
@@ -101,10 +95,11 @@ app.include_router(formatter.router, prefix="/api/format", tags=["formatter"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"], dependencies=[Depends(require_auth)])
 app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-config"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"], dependencies=[Depends(require_auth)])
-app.include_router(transcribe.router, prefix="/api", tags=["transcribe"], dependencies=[Depends(require_auth)])
 app.include_router(audio_format.router, prefix="/api/audio-format", tags=["audio-format"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
-app.include_router(audio_processing.router, prefix="/api/audio", tags=["audio-nim"], dependencies=[Depends(require_auth)])
+# The former transcribe and audio_processing routers referenced missing
+# audio factory/ASR/pipeline modules. Re-enable them only after those
+# implementations are restored and tested.
 app.include_router(translation_router.router, prefix="/api/translate", tags=["translation-nim"], dependencies=[Depends(require_auth)])
 
 
@@ -115,9 +110,16 @@ try:
 except Exception:
     pass
 
-# Socket.IO event handlers
-from services.realtime.socket_handler import register_socket_events
-register_socket_events(sio)
+# Socket.IO transcription handlers depend on ASR modules that are not present in
+# this checkout. Keep the HTTP API available and register realtime events only
+# when that optional implementation is restored.
+try:
+    from services.realtime.socket_handler import register_socket_events
+except ModuleNotFoundError as exc:
+    if exc.name != "backend.services.audio.asr":
+        raise
+else:
+    register_socket_events(sio)
 
 # Combine FastAPI and Socket.IO
 socket_app = socketio.ASGIApp(sio, app)
@@ -137,4 +139,5 @@ def health_check():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 9443))
-    uvicorn.run(socket_app, host="0.0.0.0", port=port, reload=False)
+    host = os.environ.get("HOST", "127.0.0.1")
+    uvicorn.run(socket_app, host=host, port=port, reload=False)

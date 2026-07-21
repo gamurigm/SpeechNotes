@@ -16,6 +16,8 @@ import asyncio
 from pydub import AudioSegment
 from pydub.utils import mediainfo
 
+from src.core.path_security import path_within, sanitize_filename, validate_path_within
+
 
 class FormatProfile(Enum):
     """Pre-configured format profiles for common use cases"""
@@ -454,7 +456,10 @@ class AudioFormatterService:
             total_files = len(job.files)
             
             for index, file_path_str in enumerate(job.files, start=1):
-                file_path = self.project_root / file_path_str
+                file_path = validate_path_within(
+                    self.project_root,
+                    self.project_root / file_path_str,
+                )
                 
                 progress_percent = ((index - 1) / total_files) * 100
                 
@@ -838,8 +843,11 @@ class AudioFormatterService:
             if output_filename is None:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_filename = f"merged_{timestamp}.wav"
-            
-            output_path = output_dir / output_filename
+
+            output_filename = sanitize_filename(output_filename, "merged_audio.wav")
+            if not output_filename.lower().endswith(".wav"):
+                output_filename = f"{output_filename}.wav"
+            output_path = path_within(output_dir, output_filename)
             combined.export(str(output_path), format="wav")
             
             formatted_size_mb = output_path.stat().st_size / (1024 * 1024)

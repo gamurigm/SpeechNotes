@@ -80,7 +80,8 @@ hypothesis/
 
 # ── Directory Exclusions (User Requested) ──────────────────
 # Re-exclude directories that might have been matched by !/src/ etc if they were inside
-scripts/
+# scripts/ is now allowed; only its demo subdir stays excluded
+scripts/demos/
 legacy/
 knowledge_base/
 temporal_docs/
@@ -94,6 +95,15 @@ docs/internal/
 # If user says "no incluyas cosas de la raiz", they might mean files.
 # But "scripts, tests" are dirs. I will exclude them from git to be safe/clean as requested.
 tests/
+!/web/tests/
+!/web/tests/**
+!/backend/tests/
+!/backend/tests/**
+
+# Re-ignore __pycache__ under backend/tests/ (overrides the !/backend/tests/** whitelist above)
+backend/tests/__pycache__/
+backend/tests/**/__pycache__/
+backend/tests/helpers/__pycache__/
 
 # ── Build output / PyInstaller ─────────────────────────────
 dist/

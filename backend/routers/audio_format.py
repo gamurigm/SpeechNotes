@@ -11,6 +11,7 @@ from pathlib import Path
 import asyncio
 
 from services.audio.audio_formatter import AudioFormatterService
+from src.core.path_security import validate_path_within
 
 try:
     from backend.utils.auth import require_auth
@@ -41,6 +42,14 @@ except RuntimeError as e:
 print(f"[INIT] Audio Format Router - Project root: {project_root.absolute()}")
 
 audio_formatter = AudioFormatterService(project_root)
+
+
+def resolve_project_path(file_path: str) -> Path:
+    """Resolve a client path while keeping access inside the project root."""
+    try:
+        return validate_path_within(project_root, project_root / file_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="La ruta solicitada no está permitida") from exc
 
 
 # ==================== Request/Response Models ====================
@@ -115,7 +124,7 @@ async def detect_audio_format(request: DetectFormatRequest, api_ok: bool = Depen
     Detect audio format and extract metadata
     """
     try:
-        file_path = project_root / request.file_path
+        file_path = resolve_project_path(request.file_path)
         
         if not file_path.exists():
             raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
@@ -146,7 +155,7 @@ async def convert_single_file(request: ConvertFileRequest, api_ok: bool = Depend
     Convert a single audio file
     """
     try:
-        input_path = project_root / request.input_path
+        input_path = resolve_project_path(request.input_path)
         
         if not input_path.exists():
             raise HTTPException(status_code=404, detail=f"File not found: {request.input_path}")
@@ -181,14 +190,16 @@ async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depen
             raise HTTPException(status_code=400, detail="No files provided")
         
         # Validate all files exist
+        safe_files = []
         for file_path_str in request.files:
-            file_path = project_root / file_path_str
+            file_path = resolve_project_path(file_path_str)
             if not file_path.exists():
                 raise HTTPException(status_code=404, detail=f"File not found: {file_path_str}")
+            safe_files.append(str(file_path.relative_to(project_root.resolve())))
         
         # Create job
         job_id = audio_formatter.create_job(
-            files=request.files,
+            files=safe_files,
             output_format=request.output_format,
             profile=request.profile
         )
@@ -277,13 +288,13 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
         print(f"[WS] Error in WebSocket for job {job_id}: {e}")
         try:
             await websocket.send_json({"error": str(e)})
-        except:
-            pass
+        except (RuntimeError, WebSocketDisconnect):
+            print(f"[WS] Could not report error because job {job_id} disconnected")
     finally:
         try:
             await websocket.close()
-        except:
-            pass
+        except (RuntimeError, WebSocketDisconnect):
+            print(f"[WS] Job {job_id} was already disconnected")
 
 
 @router.post("/cleanup")
@@ -313,7 +324,7 @@ async def download_formatted_file(file_path: str, api_ok: bool = Depends(require
     """
     try:
         # Construir ruta completa del archivo
-        full_path = project_root / file_path
+        full_path = resolve_project_path(file_path)
         
         # Verificar que el archivo existe
         if not full_path.exists():
@@ -360,7 +371,7 @@ async def normalize_audio_volume(
         target_loudness_db: Volumen objetivo en dB (-20 a -10 recomendado)
     """
     try:
-        input_path = project_root / file_path
+        input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
@@ -395,7 +406,7 @@ async def trim_audio_silence(
         silence_thresh_db: Umbral de silencio en dB (más negativo = más estricto)
     """
     try:
-        input_path = project_root / file_path
+        input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
@@ -432,7 +443,7 @@ async def extract_audio_segment(
         end_time_seconds: Tiempo de fin en segundos
     """
     try:
-        input_path = project_root / file_path
+        input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
             raise HTTPException(status_code=404, detail="Archivo no encontrado")
@@ -468,7 +479,7 @@ async def merge_audio_files(
         output_filename: Nombre del archivo de salida (opcional)
     """
     try:
-        input_files = [project_root / fp for fp in file_paths]
+        input_files = [resolve_project_path(file_path) for file_path in file_paths]
         
         result = await audio_formatter.merge_files(
             input_files=input_files,
@@ -500,7 +511,7 @@ async def change_audio_speed(
         speed_factor: Factor de velocidad (1.5 = 50% más rápido, 0.5 = 50% más lento)
     """
     try:
-        input_path = project_root / file_path
+        input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
             raise HTTPException(status_code=404, detail="Archivo no encontrado")

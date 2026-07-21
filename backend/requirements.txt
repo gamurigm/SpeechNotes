@@ -1,25 +1,24 @@
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-socketio>=5.10.0
-python-multipart>=0.0.6
-pymongo>=4.6.0
-python-dotenv>=1.0.0
-aiofiles>=23.0.0
-nvidia-riva-client>=2.14.0
-PyJWT>=2.8.0
-httpx>=0.24.1
-chromadb>=0.4.0,<0.6.0
-openai>=1.0.0
-smolagents
-langchain
-langchain-community
-langchain-huggingface
-langchain-chroma
-sentence-transformers
-tf-keras
-pydub
-imageio-ffmpeg
-pydantic-ai
-grpcio>=1.62.0
-grpcio-tools>=1.62.0
-faiss-cpu
+# Web API and realtime transport
+fastapi>=0.104.0,<1
+uvicorn[standard]>=0.24.0,<1
+python-socketio>=5.10.0,<6
+python-multipart>=0.0.6,<1
+
+# Configuration, authentication and HTTP clients
+python-dotenv>=1.0.0,<2
+PyJWT>=2.8.0,<3
+httpx>=0.24.1,<1
+aiofiles>=23.0.0,<26
+
+# Current persistence layer plus legacy admin/formatter compatibility
+pymongo>=4.6.0,<5
+
+# NVIDIA transcription and OpenAI-compatible NIM APIs
+nvidia-riva-client>=2.14.0,<3
+grpcio>=1.62.0,<2
+openai>=1.0.0,<3
+pydantic-ai-slim[openai]>=2.14.1,<3
+
+# Audio conversion and capture
+pydub>=0.25.1,<1
+numpy>=1.26.0,<3
