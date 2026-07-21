@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
+from src.core.path_security import path_within, sanitize_filename
+
 
 class OutputFormatter(ABC):
     """
@@ -200,10 +202,12 @@ class OutputWriter:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"transcripcion_{timestamp}{extension}"
         
+        filename = sanitize_filename(filename, f"transcription{extension}")
+
         if not filename.endswith(extension):
             filename += extension
         
-        file_path = self.output_dir / filename
+        file_path = path_within(self.output_dir, filename)
         
         with open(file_path, 'w', encoding='utf-8-sig') as f:
             f.write(content)

@@ -7,10 +7,12 @@ import os
 import shutil
 import tempfile
 import traceback
+import uuid
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
 import logfire
+import aiofiles
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from pydub import AudioSegment
@@ -21,8 +23,14 @@ from src.database import MongoManager
 from src.agent.transcription_ingestor import TranscriptionIngestor
 from src.agent.transcription_analyzer import TranscriptionAnalyzer
 from src.agent.document_generator import DocumentGenerator
+from src.core.path_security import sanitize_filename, validate_path_within
 
 router = APIRouter()
+
+ALLOWED_AUDIO_EXTENSIONS = {
+    ".aac", ".audio", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".webm"
+}
+NOTES_DIR = Path("notas")
 
 @logfire.instrument
 def process_audio_file(input_path: Path, output_path: Path):
@@ -88,18 +96,19 @@ async def full_transcription_pipeline(file_path: Path, output_name: str, temp_di
         temp_processed = temp_dir / "processed.wav"
         print(f"[Worker] Processing audio: {file_path.name}")
         if not process_audio_file(file_path, temp_processed):
-            print(f"[Worker] ❌ Failed to process audio with ffmpeg")
+            print("[Worker] ❌ Failed to process audio with ffmpeg")
             return
 
         # 2. Transcribe
         env_factory = TranscriptionEnvironmentFactoryProvider.get_riva_live()
         transcriber = env_factory.create_transcriber()
         formatter = FormatterFactory.create('markdown')
-        writer = OutputWriter(Path("notas"))
+        writer = OutputWriter(NOTES_DIR)
         service = TranscriptionService(transcriber, formatter, writer)
 
         print(f"[Worker] Starting transcription for {output_name}...")
-        md_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
+        generated_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
+        md_path = validate_path_within(NOTES_DIR, generated_path)
         
         # 2.5. Add header to markdown file indicating it's from uploaded file
         if md_path.exists() and original_filename:
@@ -126,10 +135,10 @@ async def full_transcription_pipeline(file_path: Path, output_name: str, temp_di
     finally:
         try:
             shutil.rmtree(temp_dir)
-        except:
-            pass
+        except OSError as cleanup_error:
+            print(f"[Worker] Could not remove temporary directory: {cleanup_error}")
 
-@router.post("/transcribe-file")
+@router.post("/transcribe-file", responses={500: {"description": "Upload could not be prepared"}})
 @logfire.instrument
 async def transcribe_uploaded_file(
     background_tasks: BackgroundTasks,
@@ -141,13 +150,16 @@ async def transcribe_uploaded_file(
     temp_dir = Path(tempfile.mkdtemp())
     try:
         # 1. Save upload to temp
-        input_ext = Path(file.filename).suffix or ".audio"
-        temp_input = temp_dir / f"upload_{datetime.now().strftime('%H%M%S')}{input_ext}"
+        original_filename = sanitize_filename(file.filename, fallback="audio-upload")
+        requested_extension = Path(original_filename).suffix.lower()
+        input_ext = requested_extension if requested_extension in ALLOWED_AUDIO_EXTENSIONS else ".audio"
+        temp_input = temp_dir / f"upload_{uuid.uuid4().hex}{input_ext}"
         
-        with open(temp_input, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        async with aiofiles.open(temp_input, "wb") as buffer:
+            while chunk := await file.read(1024 * 1024):
+                await buffer.write(chunk)
         
-        print(f"[Transcribe File] Received: {file.filename} -> {temp_input}")
+        print(f"[Transcribe File] Received: {original_filename} -> {temp_input}")
         
         # 2. Prepare metadata
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -159,13 +171,13 @@ async def transcribe_uploaded_file(
             temp_input, 
             output_name, 
             temp_dir,
-            file.filename  # Pass original filename for metadata
+            original_filename
         )
         
         return {
             "status": "success",
             "filename": output_name,
-            "original_filename": file.filename,
+            "original_filename": original_filename,
             "message": "Upload successful. Background processing started."
         }
             
@@ -173,6 +185,6 @@ async def transcribe_uploaded_file(
         print(f"[Transcribe File] Error: {e}")
         try:
             shutil.rmtree(temp_dir)
-        except:
-            pass
-        raise HTTPException(500, f"Failed to start background transcription: {str(e)}")
+        except OSError as cleanup_error:
+            print(f"[Transcribe File] Could not remove temporary directory: {cleanup_error}")
+        raise HTTPException(status_code=500, detail=f"Failed to start background transcription: {e}") from e

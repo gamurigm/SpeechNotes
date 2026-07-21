@@ -9,7 +9,6 @@ ENV PYTHONPATH="/app:/app/backend"
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ffmpeg \
-  build-essential \
   curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -39,7 +38,7 @@ EXPOSE 9443
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-9443}/health || exit 1
+  CMD curl -f "http://localhost:${PORT:-9443}/health" || exit 1
 
 # Command to run the application
 CMD ["python", "backend/main.py"]
