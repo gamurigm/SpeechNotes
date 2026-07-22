@@ -28,17 +28,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install pytest pytest-cov pytest-asyncio httpx fastapi requests coverage uvicorn
-          # Iniciar backend con coverage en segundo plano
-          coverage run --source=backend -m uvicorn backend.main:socket_app --port 9443 &
+          
+          # Iniciar backend con coverage desde su propio directorio
+          cd backend
+          coverage run --source=. -m uvicorn main:socket_app --port 9443 &
           SERVER_PID=$!
           sleep 5
+          cd ..
+          
           # Ejecutar pruebas contra el backend vivo
           pytest backend/tests/ || true
+          
           # Detener el servidor de forma segura para guardar .coverage
           kill -INT $SERVER_PID || true
           sleep 3
-          # Exportar XML
-          coverage xml -o coverage.xml
+          
+          # Exportar XML y ajustar rutas para SonarCloud
+          cd backend
+          coverage xml -o ../coverage.xml
+          cd ..
           sed -i 's/filename="/filename="backend\//g' coverage.xml
 
       - name: SonarCloud Scan
