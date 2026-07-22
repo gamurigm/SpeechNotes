@@ -64,31 +64,7 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
             logger.warning("Requested document was not found")
             return None
         
-        # Determine best content source
-        content = None
-        content_type = None
-        
-        if doc.get("edited_content"):
-            content = doc["edited_content"]
-            content_type = "edited"
-        elif doc.get("formatted_content"):
-            content = doc["formatted_content"]
-            content_type = "formatted"
-        elif doc.get("raw_content"):
-            content = doc["raw_content"]
-            content_type = "raw"
-        else:
-            # Try segments
-            segments = list(db.segments.find(
-                {"transcription_id": doc["_id"]}
-            ).sort("sequence", 1))
-            
-            if segments:
-                content = "\n\n".join(seg.get("text", "") for seg in segments)
-                content_type = "segments"
-            else:
-                content = "No content available."
-                content_type = "empty"
+        content, content_type = _document_content(doc)
         
         # Extract title
         title = doc.get("title")
@@ -110,6 +86,19 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
         return None
 
 
+def _document_content(doc: dict) -> tuple[str, str]:
+    """Select the best available content representation for a document."""
+    for field, content_type in (("edited_content", "edited"), ("formatted_content", "formatted"), ("raw_content", "raw")):
+        content = doc.get(field)
+        if content:
+            return content, content_type
+
+    segments = list(db.segments.find({"transcription_id": doc["_id"]}).sort("sequence", 1))
+    if segments:
+        return "\n\n".join(seg.get("text", "") for seg in segments), "segments"
+    return "No content available.", "empty"
+
+
 def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
     """
     Fallback: Load document by filename (backwards compat with active_file).
@@ -121,7 +110,7 @@ def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
         if not doc:
             # Try partial match
             doc = db.transcriptions.find_one({
-                "filename": {"$regex": filename.replace('.md', '').replace('.wav', ''), "$options": "i"}
+                "filename": {"$regex": re.escape(filename.replace('.md', '').replace('.wav', '')), "$options": "i"}
             })
         
         if not doc:
@@ -133,6 +122,43 @@ def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
     except Exception:
         logger.exception("Error loading requested document by filename")
         return None
+
+
+def _frontend_document(request: ChatRequest) -> Optional[DocumentContext]:
+    if not request.doc_content or len(request.doc_content.strip()) <= 20:
+        return None
+    doc_label = request.doc_id or request.active_file or "documento-activo"
+    heading_match = re.match(r'^#\s+(.+)$', request.doc_content, re.MULTILINE)
+    title = heading_match.group(1).strip() if heading_match else None
+    return DocumentContext(
+        doc_id=doc_label,
+        filename=request.active_file,
+        title=title,
+        content=request.doc_content,
+        content_type="frontend",
+    )
+
+
+def _latest_document() -> Optional[DocumentContext]:
+    latest = db.transcriptions.find_one({"is_deleted": {"$ne": True}}, sort=[("ingested_at", -1)])
+    if not latest:
+        latest = db.transcriptions.find_one({"is_deleted": {"$ne": True}}, sort=[("_id", -1)])
+    return load_document_context(str(latest["_id"])) if latest else None
+
+
+def _requested_document(request: ChatRequest) -> Optional[DocumentContext]:
+    document = _frontend_document(request)
+    if document:
+        logger.info("Using pre-loaded doc_content from frontend (bypassing DB lookup)")
+        return document
+    if request.doc_id:
+        logger.info("Loading document by identifier")
+        return load_document_context(request.doc_id)
+    if request.active_file:
+        logger.info("Loading document by deprecated filename lookup")
+        return load_document_by_filename(request.active_file)
+    logger.info("No document specified, loading most recent")
+    return _latest_document()
 
 
 @router.post("/stream", responses={400: {"description": "No user message found"}, 500: {"description": "Error en chat"}})
@@ -153,50 +179,7 @@ async def chat_stream(request: ChatRequest):
         
         query = user_messages[-1].content
         
-        # Load document context with priority:
-        # 0. doc_content (pre-loaded content from frontend) — fastest, no DB needed
-        # 1. doc_id (SQLite uuid)
-        # 2. active_file (filename) — backwards compat
-        # 3. most recent document — fallback
-        document: Optional[DocumentContext] = None
-
-        if request.doc_content and len(request.doc_content.strip()) > 20:
-            logger.info("Using pre-loaded doc_content from frontend (bypassing DB lookup)")
-            # Derive a display name from doc_id or active_file
-            doc_label = request.doc_id or request.active_file or "documento-activo"
-            heading_match = re.match(r'^#\s+(.+)$', request.doc_content, re.MULTILINE)
-            title = heading_match.group(1).strip() if heading_match else None
-            document = DocumentContext(
-                doc_id=doc_label,
-                filename=request.active_file,
-                title=title,
-                content=request.doc_content,
-                content_type="frontend"
-            )
-        elif request.doc_id:
-            logger.info("Loading document by identifier")
-            document = load_document_context(request.doc_id)
-        elif request.active_file:
-            logger.info("Loading document by deprecated filename lookup")
-            document = load_document_by_filename(request.active_file)
-        
-        if not document:
-            # Fallback to most recent document
-            logger.info("No document specified, loading most recent")
-            # First try with ingested_at
-            latest = db.transcriptions.find_one(
-                {"is_deleted": {"$ne": True}},
-                sort=[("ingested_at", -1)]
-            )
-            # If not found, try any document (some docs might miss ingested_at)
-            if not latest:
-                latest = db.transcriptions.find_one(
-                    {"is_deleted": {"$ne": True}},
-                    sort=[("_id", -1)]
-                )
-            
-            if latest:
-                document = load_document_context(str(latest["_id"]))
+        document: Optional[DocumentContext] = _requested_document(request)
         
         if not document:
             # Create a minimal context
