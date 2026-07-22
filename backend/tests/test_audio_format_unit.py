@@ -124,3 +124,21 @@ def test_download_and_batch_missing_paths(tmp_path, monkeypatch):
     with pytest.raises(module.HTTPException) as exc:
         asyncio.run(module.batch_convert_files(module.BatchConvertRequest(files=["missing.wav"]), True))
     assert exc.value.status_code == 404
+
+
+def test_audio_processing_operations(tmp_path, monkeypatch):
+    path = tmp_path / "clip.wav"
+    path.write_bytes(b"audio")
+    monkeypatch.setattr(module, "project_root", tmp_path)
+    result = SimpleNamespace(status="completed", error_message=None, to_dict=lambda: {"ok": True})
+    service = MagicMock()
+    for name in ("normalize_audio", "trim_silence", "extract_segment", "merge_files", "change_speed"):
+        setattr(service, name, AsyncMock(return_value=result))
+    monkeypatch.setattr(module, "audio_formatter", service)
+    assert asyncio.run(module.normalize_audio_volume("clip.wav", -16, True)) == {"ok": True}
+    assert asyncio.run(module.trim_audio_silence("clip.wav", -40, True)) == {"ok": True}
+    assert asyncio.run(module.extract_audio_segment("clip.wav", 0, 1, True)) == {"ok": True}
+    assert asyncio.run(module.merge_audio_files(["clip.wav"], "joined.wav", True)) == {"ok": True}
+    assert asyncio.run(module.change_audio_speed("clip.wav", 1.25, True)) == {"ok": True}
+    service.normalize_audio.assert_awaited_once()
+    service.merge_files.assert_awaited_once()
