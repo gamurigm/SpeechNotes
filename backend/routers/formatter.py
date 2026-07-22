@@ -46,7 +46,7 @@ class FileInfo(BaseModel):
     ya_formateado: bool
 
 
-@router.get("/files", response_model=List[FileInfo])
+@router.get("/files", response_model=List[FileInfo], responses={500: {"description": "Error al listar transcripciones"}})
 async def list_available_files(api_ok: Annotated[bool, Depends(require_auth)]):
     """
     List all available transcriptions from the database that can be formatted.
@@ -80,7 +80,7 @@ async def list_available_files(api_ok: Annotated[bool, Depends(require_auth)]):
         raise HTTPException(status_code=500, detail=f"Error listing transcriptions: {str(e)}")
 
 
-@router.post("/start", response_model=FormatJobResponse)
+@router.post("/start", response_model=FormatJobResponse, responses={400: {"description": "No se proporcionaron IDs"}, 500: {"description": "Error al iniciar trabajo"}})
 async def start_format_job(request: FormatRequest, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Start a new formatting job using transcription IDs from the database.
@@ -101,7 +101,7 @@ async def start_format_job(request: FormatRequest, api_ok: Annotated[bool, Depen
         raise HTTPException(status_code=500, detail=f"Error starting job: {str(e)}")
 
 
-@router.get("/job/{job_id}")
+@router.get("/job/{job_id}", responses={404: {"description": "Trabajo no encontrado"}})
 async def get_job_status(job_id: str, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Get current status of a formatting job

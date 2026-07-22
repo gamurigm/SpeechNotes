@@ -135,7 +135,7 @@ def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
         return None
 
 
-@router.post("/stream")
+@router.post("/stream", responses={400: {"description": "No user message found"}, 500: {"description": "Error en chat"}})
 async def chat_stream(request: ChatRequest):
     """
     Streaming chat endpoint with document context awareness.
@@ -252,7 +252,7 @@ async def chat_stream(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("/", response_model=ChatResponse, responses={400: {"description": "No user message found"}, 500: {"description": "Error en chat"}})
 async def chat(request: ChatRequest):
     """Non-streaming chat endpoint (for compatibility)."""
     try:

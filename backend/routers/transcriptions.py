@@ -45,7 +45,7 @@ class TranscriptionUpdate(BaseModel):
 #  Endpoints
 # ──────────────────────────────────────────────
 
-@router.get("/latest")
+@router.get("/latest", responses={500: {"description": "Error al obtener última transcripción"}})
 async def get_latest_transcription(service: Annotated[TranscriptionService, Depends(get_service)]):
     """Get the latest processed transcription (delegates to Service)."""
     try:
@@ -56,7 +56,7 @@ async def get_latest_transcription(service: Annotated[TranscriptionService, Depe
         raise HTTPException(500, f"Error: {str(e)}")
 
 
-@router.get("")
+@router.get("", responses={500: {"description": "Error al listar transcripciones"}})
 async def list_transcriptions(
     service: Annotated[TranscriptionService, Depends(get_service)],
     limit: int = 50,
@@ -69,7 +69,7 @@ async def list_transcriptions(
         raise HTTPException(500, f"Error: {str(e)}")
 
 
-@router.get("/search")
+@router.get("/search", responses={500: {"description": "Error en búsqueda"}})
 async def search_transcriptions(
     service: Annotated[TranscriptionService, Depends(get_service)],
     q: str,
@@ -82,7 +82,7 @@ async def search_transcriptions(
         raise HTTPException(500, f"Search error: {str(e)}")
 
 
-@router.get("/{transcription_id}")
+@router.get("/{transcription_id}", responses={404: {"description": "Transcripción no encontrada"}, 500: {"description": "Error al obtener transcripción"}})
 async def get_transcription_by_id(
     service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
@@ -99,7 +99,7 @@ async def get_transcription_by_id(
         raise HTTPException(500, f"Error: {str(e)}")
 
 
-@router.put("/{transcription_id}")
+@router.put("/{transcription_id}", responses={404: {"description": "Transcripción no encontrada"}})
 async def update_transcription(
     service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
@@ -111,7 +111,7 @@ async def update_transcription(
     raise HTTPException(404, NOT_FOUND_MESSAGE)
 
 
-@router.delete("/{transcription_id}")
+@router.delete("/{transcription_id}", responses={404: {"description": "Transcripción no encontrada"}})
 async def delete_transcription(
     service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
