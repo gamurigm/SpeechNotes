@@ -79,7 +79,7 @@ class DocumentGenerator:
         if not full_text_content or "[No se detectó audio o no se pudo transcribir]" in full_text_content:
             print(f"[INFO] No audio detected for {transcription['filename']}. Skipping detailed generation.")
             md = self._generate_no_audio_markdown(transcription)
-            self._save_document(md)
+            self._save_document(transcription, md)
             return
 
         # Group by topic
@@ -100,10 +100,11 @@ class DocumentGenerator:
         else:
             md = self._build_markdown(transcription, topics)
         
-        self._save_document(md)
+        self._save_document(transcription, md)
 
-    def _save_document(self, content: str):
+    def _save_document(self, transcription: Dict[str, Any], content: str):
         """Save under a server-generated name, never a client-supplied path."""
+        print(f"[INFO] Saving generated document for {transcription.get('filename', 'transcription')}")
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
