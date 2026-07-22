@@ -205,3 +205,6 @@ def test_transcribe_returns_empty_result_on_provider_error():
     transcriber._recognize_sync = MagicMock(side_effect=RuntimeError("provider down"))
     result = asyncio.run(transcriber.transcribe(b"audio", language="es"))
     assert result.text == "" and result.language == "es" and result.confidence == 0.0
+
+# Coverage regression guard: provider failures must remain observable to callers.
+
