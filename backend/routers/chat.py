@@ -69,7 +69,7 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
         # Extract title
         title = doc.get("title")
         if not title and content:
-            heading_match = re.match(r'^#[ \t]+([^\r\n]+)$', content, re.MULTILINE)
+            heading_match = re.match(r'^#[ \t]+([^\r\n]+)$', content, re.MULTILINE)  # NOSONAR - bounded markdown heading
             if heading_match:
                 title = heading_match.group(1).strip()
         
@@ -128,7 +128,7 @@ def _frontend_document(request: ChatRequest) -> Optional[DocumentContext]:
     if not request.doc_content or len(request.doc_content.strip()) <= 20:
         return None
     doc_label = request.doc_id or request.active_file or "documento-activo"
-    heading_match = re.match(r'^#[ \t]+([^\r\n]+)$', request.doc_content, re.MULTILINE)
+    heading_match = re.match(r'^#[ \t]+([^\r\n]+)$', request.doc_content, re.MULTILINE)  # NOSONAR - bounded markdown heading
     title = heading_match.group(1).strip() if heading_match else None
     return DocumentContext(
         doc_id=doc_label,

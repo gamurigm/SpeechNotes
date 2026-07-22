@@ -9,7 +9,7 @@
  */
 
 export class ConfigManager {
-    private static _instance: ConfigManager | null = null;
+    private static _instance: ConfigManager | null = null; // NOSONAR - lazy singleton assignment is intentional
 
     // Variables de configuración
     private readonly nextAuthUrl: string;

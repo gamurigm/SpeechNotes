@@ -182,7 +182,7 @@ async def run_job_background(job_id: str):
     Used when job is started without WebSocket connection
     """
     try:
-        async for progress in formatter_agent.run_job(job_id):
+        async for _ in formatter_agent.run_job(job_id):
             # Progress is handled by WebSocket connections
             # This just ensures the job runs
             pass

@@ -10,7 +10,7 @@ import traceback
 import uuid
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 import logfire
 import aiofiles
 
@@ -127,7 +127,7 @@ async def full_transcription_pipeline(file_path: Path, output_name: str, temp_di
 @logfire.instrument
 async def transcribe_uploaded_file(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
+    file: Annotated[UploadFile, File(...)]
 ):
     """
     Endpoint for uploading and transcribing an audio file

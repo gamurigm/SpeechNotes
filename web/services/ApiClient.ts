@@ -16,19 +16,17 @@ export class ApiClient {
     private constructor() { }
 
     public static getInstance(): ApiClient {
-        if (!ApiClient.instance) {
-            ApiClient.instance = new ApiClient();
-        }
+        ApiClient.instance ??= new ApiClient();
         return ApiClient.instance;
     }
 
     private async request<T>(endpoint: string, options?: RequestInit, retries = 3): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
-        const headers = {
+        const baseHeaders = {
             'Content-Type': 'application/json',
             'x-api-key': 'dev-secret-api-key',
-            ...(options?.headers ?? {}),
         };
+        const headers = options?.headers ? { ...baseHeaders, ...options.headers } : baseHeaders;
 
         let lastError: unknown;
         for (let i = 0; i < retries; i++) {
