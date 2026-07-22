@@ -149,7 +149,7 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
             return
         
         # Stream progress updates
-        async for _ in formatter_agent.run_job(job_id):
+        async for progress in formatter_agent.run_job(job_id):
             await websocket.send_json(progress.to_dict())
             await asyncio.sleep(0.1)  # Small delay to avoid overwhelming client
         
