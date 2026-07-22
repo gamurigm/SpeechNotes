@@ -1,158 +1,62 @@
-% ============================================================================
-%  08_herramientas.tex — IEEE 730 §8: Herramientas (Sección A.c)
-% ============================================================================
-
 \chapter{Herramientas, Técnicas y Metodologías}
-\label{ch:herramientas}
+\label{sec:herramientas}
 
-La selección de herramientas SQA respondió a tres criterios: \textbf{compatibilidad} con el stack
-tecnológico del proyecto (Python/FastAPI, Next.js), \textbf{disponibilidad} en el entorno de pruebas
-(sin costo de licencia en el nivel académico) y \textbf{cobertura} de las diferentes capas de calidad
-(estática, unitaria, integración, sistema, CI/CD).
+\section{Herramientas SQA}
+\label{sec:herramientas-sqa}
 
-% ---------------------------------------------------------------------------
-\section{Herramientas de Gestión de Calidad}
-\label{sec:herramientas-gestion}
+La tabla~\ref{tab:herramientas-detalle} detalla las herramientas utilizadas en el proyecto.
 
-\subsection{Jira Software (Gestión de Defectos y Tareas)}
-\label{subsec:jira}
-
-\textbf{Rol en el proyecto:} Repositorio oficial de defectos y tablero de seguimiento del sprint SQA.
-
-\textbf{Justificación técnica:} Jira es el estándar de facto en gestión ágil de proyectos de software y
-ofrece integración nativa con GitHub, lo que permite vincular commits y pull requests directamente a tickets
-de defecto. En el contexto de este proyecto, se utilizó para:
-
-\begin{itemize}
-    \item Registrar los 9 defectos encontrados durante el sprint (BUG-001 a BUG-009).
-    \item Clasificar defectos por severidad (Critical, Major, Minor) y prioridad.
-    \item Hacer seguimiento del ciclo de vida de cada defecto (Abierto → En Progreso → Resuelto → Cerrado).
-    \item Generar el informe de densidad de defectos del Apéndice C.
-\end{itemize}
-
-\textbf{Alternativas evaluadas:} GitHub Issues (descartado por falta de campos de severidad/prioridad
-nativos), Trello (descartado por falta de flujo de estados).
-
-\subsection{SonarCloud (Análisis Estático de Código)}
-\label{subsec:sonarcloud}
-
-\textbf{Rol en el proyecto:} Análisis continuo de calidad de código para el repositorio completo.
-
-\textbf{Justificación técnica:} SonarCloud es la solución en la nube de SonarQube, compatible de forma nativa
-con Python (backend FastAPI) y TypeScript/JavaScript (frontend Next.js). Proporciona métricas objetivas de:
-
-\begin{itemize}
-    \item \textbf{Deuda técnica:} tiempo estimado para corregir todos los \textit{code smells}.
-    \item \textbf{Cobertura de código:} porcentaje de líneas cubiertas por pruebas automatizadas.
-    \item \textbf{Duplicación:} porcentaje de código duplicado en el repositorio.
-    \item \textbf{Vulnerabilidades de seguridad:} detección de patrones de OWASP Top 10.
-    \item \textbf{Reliability:} bugs potenciales detectados por análisis de flujo de datos.
-\end{itemize}
-
-\textbf{Alternativas evaluadas:} Pylint + ESLint (herramientas locales, descartadas porque no
-proporcionan un portal centralizado ni integración con CI/CD de forma inmediata).
-
-% ---------------------------------------------------------------------------
-\section{Herramientas de Automatización de Pruebas}
-\label{sec:herramientas-automatizacion}
-
-\subsection{pytest (Pruebas Unitarias e Integración del Backend)}
-\label{subsec:pytest}
-
-\textbf{Rol en el proyecto:} Framework de pruebas para el backend Python/FastAPI.
-
-\textbf{Justificación técnica:} pytest es la herramienta estándar del ecosistema Python. Se eligió sobre
-\texttt{unittest} (biblioteca estándar) por:
-
-\begin{itemize}
-    \item Sintaxis más concisa (sin clases ni métodos \texttt{setUp}).
-    \item Soporte nativo de \textit{fixtures} para inyección de dependencias en tests.
-    \item Compatible con \texttt{httpx.AsyncClient} para pruebas de endpoints FastAPI de forma asíncrona.
-    \item Integración directa con SonarCloud para reporte de cobertura vía \texttt{pytest-cov}.
-\end{itemize}
-
-\textbf{Módulos cubiertos:} Auth (\texttt{test\_auth.py}), Transcripciones (\texttt{test\_transcriptions.py}),
-Health (\texttt{test\_health.py}), VAD Config (\texttt{test\_vad\_config.py}), Seguridad de Rutas
-(\texttt{test\_path\_security.py}), Settings (\texttt{test\_settings.py}).
-
-\subsection{Cypress (Pruebas E2E del Frontend)}
-\label{subsec:cypress}
-
-\textbf{Rol en el proyecto:} Automatización de pruebas de extremo a extremo sobre el frontend Next.js.
-
-\textbf{Justificación técnica:} Cypress es la herramienta E2E más adoptada en el ecosistema JavaScript/TypeScript.
-Se eligió sobre Playwright por su \textit{Test Runner} visual y la facilidad de depuración interactiva. Permite
-automatizar el flujo completo de usuario: login → grabación → transcripción → edición, ejecutando las pruebas
-directamente en el navegador Chromium sin necesidad de drivers externos (Selenium WebDriver).
-
-\subsection{Jest (Pruebas Unitarias del Frontend)}
-\label{subsec:jest}
-
-\textbf{Rol en el proyecto:} Pruebas unitarias de componentes React en el frontend Next.js.
-
-\textbf{Justificación técnica:} Jest es el framework de pruebas por defecto de Next.js (incluido en su
-configuración de boilerplate). Junto con \texttt{@testing-library/react}, permite verificar el renderizado
-y el comportamiento de componentes como \texttt{RecordingPanel} y \texttt{LiveTranscription} sin necesidad
-de levantar un servidor.
-
-\subsection{Postman / curl (Pruebas Manuales de API)}
-\label{subsec:postman}
-
-\textbf{Rol en el proyecto:} Pruebas exploratorias y de contrato sobre los endpoints REST del backend.
-
-\textbf{Justificación técnica:} Postman proporciona una interfaz gráfica para diseñar y ejecutar solicitudes
-HTTP, documentar contratos de API y compartir colecciones entre los miembros del equipo SQA. Se utilizó
-curl como alternativa en consola para pruebas rápidas y para el script de verificación del endpoint
-\texttt{/health}. No se requirió instalación adicional en el entorno de pruebas.
-
-% ---------------------------------------------------------------------------
-\section{Herramientas de Integración Continua}
-\label{sec:herramientas-ci}
-
-\subsection{GitHub Actions (CI/CD)}
-\label{subsec:github-actions}
-
-\textbf{Rol en el proyecto:} Pipeline de integración continua que ejecuta automáticamente las pruebas
-unitarias e integración del backend en cada \textit{pull request} hacia la rama \texttt{main}.
-
-\textbf{Justificación técnica:} GitHub Actions es la solución de CI/CD nativa de GitHub, sin costo para
-repositorios públicos. El workflow \texttt{.github/workflows/} configurado en el proyecto ejecuta:
-
-\begin{enumerate}
-    \item Instalación de dependencias Python (\texttt{pip install -r requirements.txt}).
-    \item Ejecución de la suite pytest con reporte de cobertura.
-    \item Publicación del reporte de cobertura a SonarCloud.
-\end{enumerate}
-
-\textbf{Alternativas evaluadas:} Jenkins (requiere servidor propio), CircleCI (requiere configuración de
-créditos de cómputo).
-
-% ---------------------------------------------------------------------------
-\section{Resumen del Stack de Herramientas SQA}
-\label{sec:resumen-herramientas}
-
-\begin{longtable}{p{3cm}p{1.8cm}p{2.5cm}p{2.5cm}p{3cm}}
-\caption{Resumen de herramientas SQA seleccionadas}
-\label{tab:herramientas-resumen}\\
+\begin{longtable}{lp{3cm}p{5cm}p{3cm}}
+\caption{Detalle de herramientas SQA}
+\label{tab:herramientas-detalle}\\
 \toprule
-\textbf{Herramienta} & \textbf{Versión} & \textbf{Categoría} & \textbf{Capa} & \textbf{Propósito}\\
+\textbf{Herramienta} & \textbf{Versión} & \textbf{Tipo} & \textbf{Propósito}\\
 \midrule
 \endfirsthead
 \toprule
-\textbf{Herramienta} & \textbf{Versión} & \textbf{Categoría} & \textbf{Capa} & \textbf{Propósito}\\
+\textbf{Herramienta} & \textbf{Versión} & \textbf{Tipo} & \textbf{Propósito}\\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 
-Jira Software & Cloud & Gestión & Proceso & Seguimiento de defectos y tareas del sprint\\
-SonarCloud & Cloud & Análisis Estático & Código & Deuda técnica, vulnerabilidades, cobertura\\
-GitHub Actions & Cloud & CI/CD & Proceso & Ejecución automática de pruebas en PRs\\
-pytest & 8.x & Automatización & Backend & Pruebas unitarias e integración (Python)\\
-Cypress & 14.x & Automatización & Frontend/E2E & Pruebas de flujo de usuario completo\\
-Jest & 29.x & Automatización & Frontend & Pruebas unitarias de componentes React\\
-Postman & Desktop & Manual & API & Pruebas exploratorias de endpoints REST\\
-curl & CLI & Manual & API & Verificación rápida de endpoints REST\\
+Jira Software & Cloud & Gestión de proyectos & Seguimiento de tareas y defectos\\
 
-\bottomrule
+SonarCloud & Cloud & Análisis estático & Medición de calidad de código\\
+
+GitHub Actions & Cloud & CI/CD & Automatización de pruebas\\
+
+pytest & 8.x & Automatización & Pruebas backend\\
+
+Cypress & 14.x & Automatización & Pruebas E2E frontend\\
+
+Jest & 29.x & Automatización & Pruebas unitarias frontend\\
+
+Postman & Desktop & Manual & Pruebas de API\\
+
+curl & CLI & Manual & Pruebas de API\\
+
 \end{longtable}
+
+\section{Justificación Técnica del Stack Elegido}
+\label{sec:justificacion-stack}
+
+La selección del conjunto de herramientas de SQA responde a criterios de compatibilidad con la arquitectura del sistema, eficiencia en ejecución asíncrona y adopción de estándares de la industria:
+
+\begin{itemize}
+    \item \textbf{pytest + httpx (Backend Automation):} \textit{Justificación:} El backend de SpeechNotes está construido con FastAPI (Python asíncrono). \texttt{pytest} es el estándar de facto en Python, permitiendo fixture management nativo, integración transparente con \texttt{asyncio} y generación de reportes JUnit XML. \texttt{httpx} ofrece un cliente HTTP asíncrono óptimo para evaluar endpoints REST de streaming y procesamiento de audio.
+    \item \textbf{Jest (Frontend Unit Testing):} \textit{Justificación:} Integrado nativamente dentro del ecosistema Next.js/React. Permite ejecutar pruebas de renderizado de componentes UI (\texttt{RecordingPanel}, \texttt{LiveTranscription}) en un entorno simulado de DOM (\texttt{jsdom}) ultra rápido sin requerir el arranque completo del navegador.
+    \item \textbf{Cypress (Frontend E2E Testing):} \textit{Justificación:} Proporciona recarga en tiempo real, captura de video/screenshots de fallos en ejecuciones headless y emulación precisa de eventos del usuario en navegadores Chromium. Garantiza la validación de flujos críticos de extremo a extremo de la interfaz web.
+    \item \textbf{SonarCloud (Análisis Estático / SAST):} \textit{Justificación:} Herramienta SaaS que analiza de forma automatizada tanto el repositorio TypeScript (Frontend) como Python (Backend). Evalúa la adherencia a la regla de \textit{Clean Code}, calcula cobertura de código, detecta \textit{security hotspots} y previene la introducción de deuda técnica mediante umbrales de \textit{Quality Gates}.
+    \item \textbf{Jira Software + GitHub Actions (CI/CD y Gestión):} \textit{Justificación:} Permite la trazabilidad bi-direccional entre requisiciones, tareas de SQA, commits de código y registro de bugs (\texttt{BUG-001} a \texttt{BUG-008}). GitHub Actions ejecuta automáticamente las suites de pruebas unitarias y SAST en cada \textit{Pull Request} hacia la rama \texttt{planning-SQA}.
+    \item \textbf{Postman + curl (Pruebas Manuales de API):} \textit{Justificación:} Permiten la construcción de colecciones de prueba reutilizables para autenticación por tokens JWT y la simulación rápida de envíos multipart/form-data de archivos de audio sin intervención del cliente web.
+\end{itemize}
+
+\section{Procedimientos de Monitoreo}
+\label{sec:monitoreo}
+
+\begin{itemize}
+    \item \textbf{Jira Dashboard:} Dashboard personalizado con gadgets de burndown, issues por estado, issues por responsable.
+    \item \textbf{Slack:} Notificaciones automáticas de GitHub Actions y Jira.
+    \item \textbf{Reuniones diarias:} Stand-up de 15 min para sincronización del equipo SQA.
+\end{itemize}

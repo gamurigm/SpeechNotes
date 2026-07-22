@@ -1,132 +1,89 @@
-% ============================================================================
-%  01_proposito.tex — IEEE 730 §1: Propósito y Alcance (Sección A.a)
-% ============================================================================
+\chapter{Propósito}
+\label{sec:proposito}
 
-\chapter{Propósito y Alcance}
-\label{ch:proposito}
+El presente Plan de Aseguramiento de la Calidad de Software (SQAP) establece la organización, las tareas, las responsabilidades y los lineamientos para las actividades de aseguramiento de la calidad del proyecto \textbf{SpeechNotes}. Este documento sigue los lineamientos de los estándares IEEE 730-1998 e IEEE 730.1-1995, adaptados al contexto académico del proyecto final de SQA.
 
-El presente \textbf{Plan de Aseguramiento de la Calidad de Software} (SQAP) establece la organización, las tareas,
-las responsabilidades y los criterios de calidad para el proyecto \textbf{SpeechNotes --- Sistema de Transcripción
-Inteligente con IA}. El documento sigue los lineamientos del estándar \textbf{IEEE 730-1998} adaptados al marco
-académico del proyecto final de Aseguramiento de la Calidad de Software (SQA).
+\section{Alcance}
+\label{sec:alcance}
 
-Este SQAP es ejecutado por un equipo externo e independiente al equipo de desarrollo, durante un \textit{sprint SQA}
-comprendido entre el \textbf{18 y el 21 de julio de 2026}.
+Este plan cubre las actividades de SQA realizadas durante el sprint de calidad comprendido entre el 18 y el 21 de julio de 2026.
 
-% ---------------------------------------------------------------------------
+\subsection{Módulos incluidos}
+\label{subsec:modulos-incluidos}
+
+A continuación se detallan los módulos y requisitos funcionales evaluados, junto con la justificación de su inclusión:
+
+\begin{itemize}
+    \item \textbf{RF-01 --- Auth (Autenticación y Sesiones):} Inicio de sesión con usuario demo y manejo de credenciales inválidas. \textit{Justificación:} Componente crítico de seguridad y control de acceso que actúa como puerta de entrada a la aplicación.
+    \item \textbf{RF-02 --- Audio / Frontend (Captura de Dispositivo):} Prueba de micrófono con y sin dispositivo físico conectado. \textit{Justificación:} Verifica la capacidad de la interfaz web para interactuar con la Web Audio API del navegador y manejar excepciones de hardware.
+    \item \textbf{RF-03 --- Audio / Backend (Procesamiento VAD):} Inicio y detención de grabación con detección de actividad de voz (Voice Activity Detection). \textit{Justificación:} El motor VAD determina los segmentos de voz válidos, reduciendo datos nulos antes de enviarlos a transcripción.
+    \item \textbf{RF-04 --- Realtime ASR (Transcripción en Vivo):} Streaming WebSocket de fragmentos de audio y transcripción continua. \textit{Justificación:} Flujo principal (Core Business Flow) donde la latencia y sincronización determinan la experiencia del usuario.
+    \item \textbf{RF-05 --- Upload / Backend (Ingesta de Audio):} Carga de archivos de audio (WAV, MP3, 0-bytes) para transcripción asíncrona. \textit{Justificación:} Permite procesar grabaciones preexistentes y validar el manejo de formatos e insumos corruptos o vacíos.
+    \item \textbf{RF-06 --- Transcripciones (Persistencia y Consulta):} Recuperación de transcripciones guardadas en MongoDB/SQLite. \textit{Justificación:} Asegura la integridad del almacenamiento persistente de las notas generadas.
+    \item \textbf{RF-07 --- Editor (Edición de Contenido):} Modificación de texto transcrito y guardado de cambios. \textit{Justificación:} Permite la corrección manual del texto generado por el modelo de IA antes de su formateo final.
+    \item \textbf{RF-08 --- Búsqueda (Búsqueda Textual):} Filtrado de transcripciones por palabras clave. \textit{Justificación:} Garantiza la correcta localización de información en historiales extensos.
+    \item \textbf{RF-09 --- IA / Formatter (Estructuración con LLM):} Formateo automatizado de notas mediante el pipeline de NVIDIA NIM. \textit{Justificación:} Transforma transcripciones crudas en notas estructuradas (puntos clave, resúmenes, minutas).
+    \item \textbf{RF-10 --- Chat / RAG (Asistente Contextual):} Interacción conversacional sobre el contenido de la transcripción. \textit{Justificación:} Funcionalidad avanzada de búsqueda semántica y recuperación aumentada por generación sobre los documentos del usuario.
+\end{itemize}
+
+\subsection{Módulos excluidos}
+\label{subsec:modulos-excluidos}
+
+Se delimitan los siguientes componentes y pruebas fuera del alcance del presente plan:
+
+\begin{itemize}
+    \item \textbf{Pruebas de carga y estrés prolongadas (> 2 horas):} Excluidas debido al consumo intensivo y límites de cuotas operativas de las APIs de GPU en NVIDIA NIM Cloud, concentrando el análisis de rendimiento en pruebas de integración y carga puntual.
+    \item \textbf{Automatización E2E al 100\% de cobertura:} Excluida por las limitaciones de tiempo del sprint de SQA. Se priorizó una estrategia híbrida con automatización focalizada (backend con \texttt{pytest} y escenarios críticos con \texttt{Cypress}) complementada con ejecución manual exhaustiva.
+    \item \textbf{Refactorización y corrección directa de código base:} Excluida por delimitación de roles. El equipo de SQA identifica, documenta y reporta defectos en Jira, siendo responsabilidad del equipo de desarrollo la implementación de parches.
+    \item \textbf{Configuración inicial e infraestructura de SonarCloud:} Se toma la instancia y reglas de calidad previamente desplegadas como línea base operacional para el análisis estático.
+\end{itemize}
+
 \section{Identificación del Sistema}
 \label{sec:identificacion}
 
 \begin{itemize}
-    \item \textbf{Nombre del sistema:} SpeechNotes
-    \item \textbf{Versión evaluada:} 1.0 (rama \texttt{planning-SQA})
+    \item \textbf{Nombre:} SpeechNotes
+    \item \textbf{Versión:} 1.0
     \item \textbf{Repositorio:} \url{https://github.com/anomalyco/SpeechNotes}
-    \item \textbf{Stack tecnológico:} Python/FastAPI (backend), Next.js 16 (frontend),
-          MongoDB/SQLite/ChromaDB (datos), NVIDIA NIM (modelos ASR, BNR, LLM), Socket.IO (tiempo real).
-    \item \textbf{Arquitectura:} Monorepo con backend FastAPI + Socket.IO, frontend Next.js 16,
-          apps de escritorio Tauri/Electron.
+    \item \textbf{Rama SQA:} \texttt{planning-SQA}
 \end{itemize}
 
-% ---------------------------------------------------------------------------
-\section{Alcance: Módulos Incluidos}
-\label{sec:modulos-incluidos}
-
-El presente plan cubre los siguientes \textbf{10 requisitos funcionales}, seleccionados por representar el flujo
-crítico de valor del usuario (registro de audio → transcripción → gestión → inteligencia artificial):
-
-\begin{longtable}{clp{7cm}}
-\caption{Módulos incluidos en el alcance del SQAP}
-\label{tab:modulos-incluidos}\\
-\toprule
-\textbf{RF} & \textbf{Módulo} & \textbf{Justificación de inclusión}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{RF} & \textbf{Módulo} & \textbf{Justificación de inclusión}\\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-
-RF-01 & Auth (Autenticación) & Punto de entrada crítico: sin autenticación ningún otro módulo es accesible. Un fallo aquí bloquea el 100\% de los casos de prueba.\\
-
-RF-02 & Audio / Frontend (Micrófono) & Módulo de captura de audio en el navegador. Funcionalidad principal del producto.\\
-
-RF-03 & Audio / Backend (VAD) & Detección de actividad de voz (Voice Activity Detection). Controla inicio y fin de grabación.\\
-
-RF-04 & Realtime ASR & Transcripción en tiempo real vía Socket.IO y NVIDIA NIM (Parakeet/Canary).\\
-
-RF-05 & Upload / Backend & Carga de archivos de audio existentes para transcribir asíncronamente.\\
-
-RF-06 & Transcripciones (CRUD) & Listado, visualización y eliminación de notas de voz guardadas.\\
-
-RF-07 & Editor & Edición y guardado de transcripciones por parte del usuario.\\
-
-RF-08 & Búsqueda & Búsqueda textual sobre el contenido de las transcripciones guardadas.\\
-
-RF-09 & IA / Formatter & Formateo y estructuración automática de texto crudo mediante un modelo LLM de NVIDIA NIM.\\
-
-RF-10 & Chat / RAG & Chat contextual sobre las transcripciones mediante un agente RAG con ChromaDB y NVIDIA NIM.\\
-
-\bottomrule
-\end{longtable}
-
-% ---------------------------------------------------------------------------
-\section{Alcance: Módulos Excluidos}
-\label{sec:modulos-excluidos}
-
-Los siguientes módulos y actividades quedan \textbf{fuera del alcance} de este plan, con su justificación correspondiente:
-
-\begin{longtable}{lp{4.5cm}p{6cm}}
-\caption{Módulos excluidos y justificación}
-\label{tab:modulos-excluidos}\\
-\toprule
-\textbf{Módulo / Actividad} & \textbf{Motivo} & \textbf{Justificación técnica}\\
-\midrule
-\endfirsthead
-\toprule
-\textbf{Módulo / Actividad} & \textbf{Motivo} & \textbf{Justificación técnica}\\
-\midrule
-\endhead
-\bottomrule
-\endfoot
-
-Apps Electron / Tauri & Fuera del sprint & Las apps de escritorio comparten el mismo código web; los defectos de la app de escritorio son reflejo de los del frontend web. Probar ambas en el plazo de 4 días sería redundante.\\
-
-Pruebas de carga (>2h) & Restricción de tiempo & Un ciclo de prueba de rendimiento bajo carga requiere un entorno dedicado y al menos 8h de ejecución. Se documenta como riesgo (véase Cap.~\ref{ch:riesgos}).\\
-
-Automatización completa de suite & Restricción de recursos & El equipo SQA tiene 4 personas y 4 días. Se priorizan scripts de prueba sobre los 2 casos de mayor complejidad (CP-07, CP-08). La automatización completa queda como recomendación.\\
-
-Corrección de código & Fuera del rol SQA & El equipo SQA reporta defectos; la corrección es responsabilidad del equipo de desarrollo. El SQA solo verifica la corrección mediante re-test.\\
-
-Módulo de Administración (Admin) & Bajo riesgo & El panel de administración es de uso interno y su impacto en el usuario final es indirecto. No presenta flujos críticos de negocio.\\
-
-Módulo BNR (ruido de fondo) & Dependencia de hardware & La eliminación de ruido de fondo (Background Noise Removal vía gRPC) requiere hardware específico de NVIDIA Riva. No disponible en el entorno de pruebas local.\\
-
-\bottomrule
-\end{longtable}
-
-% ---------------------------------------------------------------------------
 \section{Resumen del Sistema}
-\label{sec:resumen-sistema}
+\label{sec:resumen}
 
-SpeechNotes implementa un pipeline de transcripción de audio a texto en cinco etapas:
+SpeechNotes es un sistema de transcripción inteligente que convierte audio en notas estructuradas mediante un pipeline de cinco modelos especializados de NVIDIA NIM. La arquitectura sigue un patrón de tres capas:
+
+\begin{itemize}
+    \item \textbf{Frontend:} Next.js 16 con HeroUI, Socket.IO Client y soporte para aplicaciones de escritorio (Tauri/Electron).
+    \item \textbf{Backend:} FastAPI con Socket.IO, servicios modulares de audio (ASR, BNR, VAD) y agentes de IA para formateo y chat contextual.
+    \item \textbf{Datos y Modelos:} MongoDB (primario), SQLite/Prisma (auth), ChromaDB (búsqueda vectorial) y NVIDIA NIM (modelos de IA).
+\end{itemize}
+
+\section{Resumen del Documento}
+\label{sec:resumen-doc}
+
+Este SQAP se estructura en 15 secciones y 5 apéndices, mapeando los requisitos del estándar académico (Secciones A, B, C, D) de la siguiente manera:
+
+\begin{itemize}
+    \item \textbf{Sección A (Plan SQAP):} Capítulos 1 al 5 y 14.
+    \item \textbf{Sección B (Ejecución y Evidencias):} Capítulos 6 y 7, Apéndices A al D.
+    \item \textbf{Sección C (Informe de Cierre):} Apéndice E.
+    \item \textbf{Sección D (Conclusiones):} Capítulo 15.
+\end{itemize}
+
+\section{Relación con Otros Planes}
+\label{sec:relacion}
+
+Este SQAP se complementa con el Plan de Desarrollo de Software (SDP) y el Plan de Gestión de Configuración (SCMP) del proyecto SpeechNotes. Las actividades de SQA definidas aquí son consistentes con dichos planes.
+
+\section{Documentos de Referencia}
+\label{sec:referencias}
 
 \begin{enumerate}
-    \item \textbf{Captura de audio:} El navegador captura el micrófono mediante WebRTC. El VAD (Voice Activity Detection) detecta inicio/fin de habla en tiempo real con Socket.IO.
-    \item \textbf{Reducción de ruido (BNR):} Opcional, vía NVIDIA Riva gRPC. Elimina ruido de fondo antes de la transcripción.
-    \item \textbf{Transcripción ASR:} El audio limpio se envía a NVIDIA NIM (modelo Parakeet TDT 0.6B para inglés, Canary 1B Flash para español) y se obtiene texto.
-    \item \textbf{Formateo con LLM:} Un agente basado en Llama 3.1 70B reestructura el texto crudo en un documento organizado con encabezados y párrafos.
-    \item \textbf{Chat / RAG:} El usuario puede interrogar sus transcripciones mediante un agente RAG que usa ChromaDB como almacén vectorial y NVIDIA NIM como LLM.
+    \item IEEE Std 730-1998 --- IEEE Standard for Software Quality Assurance Plans.
+    \item IEEE Std 730.1-1995 --- IEEE Guide for Software Quality Assurance Planning.
+    \item IEEE/EIA Std 12207 --- Standard for Information Technology -- Software Life Cycle Processes.
+    \item Guía del Proyecto Final --- Plan de Aseguramiento de la Calidad SQA (Proyecto Final Parcial 3).
+    \item SpeechNotes --- SQA Sprint Plan (Julio 2026).
+    \item Persona D --- Casos de Prueba Manuales y Matriz de Rastreabilidad.
 \end{enumerate}
-
-% ---------------------------------------------------------------------------
-\section{Relación con Otros Documentos}
-\label{sec:relacion-docs}
-
-Este SQAP se complementa con:
-\begin{itemize}
-    \item \textbf{Plan de Gestión de Configuración (SCMP):} Define el control de ramas, versionado semántico y etiquetas de entrega.
-    \item \textbf{Guía del Proyecto Final SQA:} Parámetros académicos, criterios de evaluación y plazos de entrega.
-    \item \textbf{Registro de Defectos Jira:} Base oficial de defectos (BUG-001 a BUG-009) referenciados en los apéndices.
-\end{itemize}

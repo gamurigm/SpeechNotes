@@ -1,109 +1,88 @@
-% ============================================================================
-%  06_pruebas.tex — IEEE 730 §6: Estrategia de Pruebas (Sección A.b)
-% ============================================================================
+\chapter{Estrategia y Tipos de Prueba}
+\label{sec:pruebas}
 
-\chapter{Estrategia de Pruebas}
-\label{ch:pruebas}
-
-La estrategia de pruebas define los tipos de prueba seleccionados, las técnicas utilizadas, los criterios
-que rigen el inicio y fin de las actividades de prueba, y la relación entre los requisitos funcionales
-y los casos de prueba diseñados.
-
-% ---------------------------------------------------------------------------
 \section{Tipos de Prueba Seleccionados}
 \label{sec:tipos-prueba}
 
-Se seleccionaron seis tipos de prueba complementarios, siguiendo un enfoque de pirámide de pruebas que
-prioriza la automatización en los niveles bajos y la validación manual en el nivel de sistema.
+La estrategia de pruebas sigue una pirámide de pruebas adaptada a arquitecturas con componentes de Inteligencia Artificial y streaming en tiempo real:
 
-\begin{longtable}{p{3.5cm}p{3cm}p{3.5cm}p{3.5cm}}
-\caption{Tipos de prueba, herramientas y alcance}
+\begin{enumerate}[label=\alph*)]
+    \item \textbf{Pruebas Unitarias (Backend y Frontend):} Evalúan la lógica interna de funciones aisladas sin dependencias de red o base de datos. Se utiliza \texttt{pytest} en el backend para validar algoritmos de VAD, utilidades de formateo y servicios de tokenización; y \texttt{Jest} en el frontend para probar componentes aislados como \texttt{RecordingPanel} y \texttt{LiveTranscription}.
+    \item \textbf{Pruebas de Integración (Backend):} Verifican la interacción entre módulos del sistema (p.~ej., FastApi con SQLite/Prisma, motor de Socket.IO con el pipeline de audio y clientes HTTP con NVIDIA NIM). Se utiliza \texttt{pytest} con \texttt{httpx} para simular peticiones asíncronas a los endpoints REST.
+    \item \textbf{Pruebas Funcionales / Sistema (Manuales y Exploratorias):} Validan de extremo a extremo los flujos de usuario sobre la interfaz web completa y APIs REST. Se ejecutaron 14 casos de prueba estructurados (Apéndice~\ref{apendice:b}) cubriendo flujos exitosos (\textit{Happy Path}), condiciones de error e insumos en el límite.
+    \item \textbf{Pruebas de Análisis Estático (SAST):} Inspección continua del código fuente mediante \texttt{SonarCloud} para identificar vulnerabilidades de seguridad, violaciones de estándares de codificación, duplidado de código y \textit{code smells}.
+    \item \textbf{Pruebas E2E / Interfaz (Automatizadas):} Pruebas en navegador con \texttt{Cypress} para simular las interacciones completas del usuario en la interfaz Next.js, incluyendo flujos de autenticación, carga de archivos y manipulación del editor.
+\end{enumerate}
+
+\begin{longtable}{llp{5cm}}
+\caption{Resumen de tipos de prueba ejecutados}
 \label{tab:tipos-prueba}\\
 \toprule
-\textbf{Tipo de Prueba} & \textbf{Herramienta} & \textbf{Módulos cubiertos} & \textbf{Objetivo}\\
+\textbf{Tipo} & \textbf{Herramienta} & \textbf{Alcance}\\
 \midrule
 \endfirsthead
 \toprule
-\textbf{Tipo de Prueba} & \textbf{Herramienta} & \textbf{Módulos cubiertos} & \textbf{Objetivo}\\
+\textbf{Tipo} & \textbf{Herramienta} & \textbf{Alcance}\\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 
-\textbf{Análisis Estático} & SonarCloud & Todo el repositorio & Detectar code smells, vulnerabilidades, bugs y deuda técnica antes de ejecutar pruebas dinámicas.\\
+Unitarias (Backend) & pytest & Servicios individuales de audio, VAD, auth\\
 
-\textbf{Pruebas Unitarias (Backend)} & pytest 8.x & Auth, VAD, Audio Processor, NIM Registry & Verificar que cada función y servicio produce el resultado correcto en aislamiento, con mocks de dependencias externas.\\
+Integración (Backend) & pytest + httpx & Endpoints REST: transcriptions, auth, health\\
 
-\textbf{Pruebas de Integración (Backend)} & pytest + httpx & Endpoints REST: \texttt{/health}, \texttt{/auth}, \texttt{/transcriptions} & Verificar que los módulos interactúan correctamente entre sí a través de la API REST.\\
+Funcionales Manuales & Navegador + curl & 14 casos de prueba (Apéndice~B)\\
 
-\textbf{Pruebas Unitarias (Frontend)} & Jest 29.x & Componentes \texttt{RecordingPanel}, \texttt{LiveTranscription}, \texttt{TranscriptionList} & Verificar que los componentes React renderizan correctamente y manejan sus estados.\\
+Estáticas & SonarCloud & Análisis de código, code smells, vulnerabilidades\\
 
-\textbf{Pruebas Funcionales (Sistema) Manuales} & Navegador + curl + Postman & Los 10 RF del alcance & Ejecutar los 14 casos de prueba diseñados para verificar el comportamiento del sistema completo desde la perspectiva del usuario.\\
+E2E (Frontend) & Cypress & Flujo de grabación y transcripción\\
 
-\textbf{Pruebas E2E (Frontend)} & Cypress 14.x & Flujo completo: login → grabación → transcripción & Automatizar el flujo de usuario más crítico del sistema de extremo a extremo.\\
+Unitarias (Frontend) & Jest & Componentes RecordingPanel, LiveTranscription\\
 
-\bottomrule
 \end{longtable}
 
-\subsection{Técnicas de Diseño de Casos de Prueba}
-
-Para el diseño de los 14 casos de prueba se aplicaron las siguientes técnicas:
-
-\begin{itemize}
-    \item \textbf{Happy Path (Camino Feliz):} 10 casos que verifican el comportamiento correcto del sistema cuando se proveen datos válidos. Ej.: CP-01 (login exitoso), CP-05 (transcripción en vivo).
-    \item \textbf{Flujo de Error / Negativo:} 3 casos que verifican el comportamiento del sistema ante entradas inválidas o condiciones de fallo. Ej.: CP-02 (credenciales inválidas), CP-06 (archivo vacío).
-    \item \textbf{Valor Límite (Boundary Value Analysis):} 1 caso que prueba el comportamiento del sistema en los límites de capacidad. Ej.: CP-12 (transcripción de más de 4000 caracteres en el formatter IA).
-    \item \textbf{Prueba Exploratoria:} Aplicada de forma complementaria para detectar defectos no anticipados en el diseño (resultó en BUG-006, BUG-008, BUG-009).
-\end{itemize}
-
-% ---------------------------------------------------------------------------
 \section{Criterios de Aceptación y Rechazo}
-\label{sec:criterios-aceptacion}
+\label{sec:criterios}
 
-\subsection{Criterios de Entrada (\textit{Entry Criteria})}
-\label{subsec:entry-criteria}
+Para garantizar el rigor técnico del proceso SQA, se definen explícitamente los criterios de entrada y salida para el ciclo de pruebas:
 
-Las siguientes condiciones deben cumplirse \textbf{antes de iniciar} la ejecución de las pruebas:
+\subsection{Criterios de entrada (Entry Criteria)}
+\label{subsec:entry}
 
-\begin{itemize}
-    \item[\checkmark] El frontend está operativo y accesible en \texttt{http://localhost:3006}.
-    \item[\checkmark] El backend está operativo y responde en \texttt{http://localhost:9443/health} con \texttt{\{"status":"healthy"\}}.
-    \item[\checkmark] La base de datos SQLite (\texttt{web/dev.db}) está inicializada con el usuario demo: \texttt{demo@speechnotes.app} / \texttt{demo123}.
-    \item[\checkmark] La base de datos MongoDB está activa en \texttt{localhost:27017}.
-    \item[\checkmark] Las credenciales de la API de NVIDIA NIM están configuradas en el archivo \texttt{.env} del proyecto.
-    \item[\checkmark] El entorno de pruebas ha sido aprobado por el QA Lead (revisión de versión de rama y dependencias instaladas).
-    \item[\checkmark] Los casos de prueba han sido revisados y aprobados en su versión 1.0.
-\end{itemize}
-
-\textbf{Criterio de suspenso:} Si el endpoint \texttt{/health} no responde, o si el usuario demo no puede autenticarse, la ejecución de pruebas se suspende y se escala al equipo de desarrollo.
-
-\subsection{Criterios de Salida (\textit{Exit Criteria})}
-\label{subsec:exit-criteria}
-
-Las siguientes condiciones deben cumplirse para declarar \textbf{finalizada} la ejecución de pruebas:
+Una fase o suite de pruebas sólo podrá iniciarse cuando se cumplan las siguientes condiciones previas:
 
 \begin{itemize}
-    \item[\checkmark] El 100\% de los casos de prueba diseñados (14/14) han sido ejecutados.
-    \item[\checkmark] El 100\% de los requisitos funcionales del alcance (10/10) tienen al menos un caso de prueba ejecutado.
-    \item[\checkmark] Todos los defectos de severidad \textbf{Critical} han sido corregidos y verificados mediante re-test.
-    \item[\checkmark] Los defectos de severidad \textbf{Major} han sido documentados y priorizados para corrección.
-    \item[\checkmark] El informe de cobertura de código de SonarCloud ha sido generado.
-    \item[\checkmark] El informe de cierre (Test Summary Report, Apéndice E) ha sido redactado y aprobado.
-    \item[\checkmark] El presente SQAP ha sido ensamblado en PDF y revisado por el equipo.
+    \item Frontend Next.js compilado y operativo en \url{http://localhost:3006}.
+    \item Backend FastAPI iniciado y respondiendo health-checks en \url{http://localhost:9443}.
+    \item Base de datos relacional/vectorial inicializada con esquemas vigentes (\texttt{web/dev.db}).
+    \item Usuario de prueba estandarizado creado (\texttt{demo@speechnotes.app} / \texttt{demo123}).
+    \item Dispositivo físico de captura de audio (micrófono) detectado e inicializado en la estación de pruebas.
+    \item Claves de API activas y cuota disponible para los servicios externos de NVIDIA NIM Cloud.
+    \item Matriz de rastreabilidad y casos de prueba revisados y aprobados por el líder SQA.
 \end{itemize}
 
-\textbf{Criterio de rechazo de entregable:} Si más del 20\% de los casos de prueba (más de 2 de 14) resultan en estado \textit{Fallado} al finalizar el sprint, el equipo de desarrollo deberá corregir los defectos y se realizará un re-test antes de emitir el informe de cierre.
+\subsection{Criterios de salida (Exit Criteria)}
+\label{subsec:exit}
 
-% ---------------------------------------------------------------------------
-\section{Cobertura de Requisitos}
-\label{sec:cobertura}
+El ciclo de pruebas se considerará completado satisfactoriamente y el sistema estará listo para cierre cuando se alcancen las siguientes condiciones de aceptación:
 
-La distribución de los 14 casos de prueba sobre los 10 requisitos funcionales garantiza una cobertura del 100\%:
+\begin{itemize}
+    \item El 100\% de los 14 casos de prueba diseñados hayan sido ejecutados y documentados.
+    \item La tasa de éxito de casos de prueba supere el 90\% (alcanzado: 92.86\%).
+    \item El 100\% de los defectos clasificados como severidad \texttt{Critical} y \texttt{High} hayan sido corregidos y verificados.
+    \item Los defectos menores u opcionales pendientes estén formalmente registrados en Jira con su respectivo plan de remediación posterior.
+    \item Se haya completado la ejecución del análisis estático en SonarCloud con revisión de \textit{Quality Gate}.
+    \item El Informe de Cierre de SQA y la Matriz de Rastreabilidad estén consolidados y anexados al presente documento.
+\end{itemize}
+
+\section{Matriz de Pruebas vs.\ Requisitos}
+\label{sec:matriz-pruebas}
+
+La matriz de rastreabilidad completa se presenta en el Apéndice~\ref{apendice:a}. En resumen:
 
 \begin{itemize}
     \item \textbf{10 requisitos funcionales} cubiertos al 100\%.
-    \item \textbf{14 casos de prueba} distribuidos: 10 happy path, 3 flujo de error, 1 valor límite.
-    \item \textbf{13 casos aprobados} (92.86\%) y \textbf{1 caso con re-test} (7.14\%, BUG-003 corregido).
+    \item \textbf{14 casos de prueba} distribuidos en 10 happy path, 3 error, 1 límite.
+    \item \textbf{13 casos pasados} (92.86\%) y \textbf{1 caso fallado} (7.14\%).
 \end{itemize}
-
-La matriz completa de rastreabilidad requisito--caso de prueba se presenta en el Apéndice~\ref{apendice:a}.
