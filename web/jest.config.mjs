@@ -12,6 +12,7 @@ const config = {
         'app/dashboard/components/LiveTranscription.tsx',
         'app/dashboard/components/MarkdownViewer.tsx',
         'app/dashboard/components/RecordingPanel.tsx',
+        'services/ApiClient.ts',
     ],
     coverageReporters: [
         ['lcov', { projectRoot: '..' }],
