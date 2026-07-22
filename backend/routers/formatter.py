@@ -6,7 +6,7 @@ Content is read from and written to the database (no file I/O).
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from pathlib import Path
 import asyncio
 import os
@@ -47,7 +47,7 @@ class FileInfo(BaseModel):
 
 
 @router.get("/files", response_model=List[FileInfo])
-async def list_available_files(api_ok: bool = Depends(require_auth)):
+async def list_available_files(api_ok: Annotated[bool, Depends(require_auth)]):
     """
     List all available transcriptions from the database that can be formatted.
     """
@@ -81,7 +81,7 @@ async def list_available_files(api_ok: bool = Depends(require_auth)):
 
 
 @router.post("/start", response_model=FormatJobResponse)
-async def start_format_job(request: FormatRequest, api_ok: bool = Depends(require_auth)):
+async def start_format_job(request: FormatRequest, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Start a new formatting job using transcription IDs from the database.
     """
@@ -102,7 +102,7 @@ async def start_format_job(request: FormatRequest, api_ok: bool = Depends(requir
 
 
 @router.get("/job/{job_id}")
-async def get_job_status(job_id: str, api_ok: bool = Depends(require_auth)):
+async def get_job_status(job_id: str, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Get current status of a formatting job
     """
