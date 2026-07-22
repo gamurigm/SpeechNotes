@@ -1,4 +1,5 @@
 import importlib.util
+import asyncio
 from pathlib import Path
 import sys
 from types import ModuleType, SimpleNamespace
@@ -194,3 +195,13 @@ def test_offline_transcribe_raises_after_retries_and_on_other_errors(monkeypatch
 def test_factory_creates_transcriber():
     result = module.RivaClientFactory.create_transcriber(_config())
     assert isinstance(result, module.RivaTranscriber)
+
+
+def test_transcribe_returns_empty_result_on_provider_error():
+    from backend.services.nim.riva_asr_client import RivaWhisperASRClient
+    from backend.services.nim.protocols import NIMConfig
+    config = NIMConfig(name="test", model_id="riva", api_key="key", grpc_host="host", grpc_port=443, grpc_function_id="fn")
+    transcriber = RivaWhisperASRClient(config)
+    transcriber._recognize_sync = MagicMock(side_effect=RuntimeError("provider down"))
+    result = asyncio.run(transcriber.transcribe(b"audio", language="es"))
+    assert result.text == "" and result.language == "es" and result.confidence == 0.0
