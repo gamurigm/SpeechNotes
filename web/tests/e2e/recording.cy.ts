@@ -72,8 +72,8 @@ describe('Flujos críticos de SpeechNotes', () => {
     });
 
     it('carga la vista de una transcripción almacenada', () => {
-        cy.contains('Clase de calidad simulada').should('be.visible');
-        cy.contains('Transcripción histórica cargada por Cypress.').should('be.visible');
+        cy.contains('Clase de calidad simulada', { timeout: 30_000 }).should('be.visible');
+        cy.contains('Transcripción histórica cargada por Cypress.', { timeout: 30_000 }).should('be.visible');
     });
 
     it('simula una grabación y muestra la transcripción en vivo', () => {

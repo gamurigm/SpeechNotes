@@ -5,6 +5,112 @@ import { useRecording } from '../providers/RecordingProvider';
 import { Mic, Waves, Sparkles, Zap } from 'lucide-react';
 import { useBackground } from '../../providers';
 
+type LiveMessage = ReturnType<typeof useRecording>['messages'][number];
+type LiveStatus = ReturnType<typeof useRecording>['liveStatus'];
+
+const PARTICLES = Array.from({ length: 8 }, (_, index) => index);
+
+function getCounterContainerTone(messageCount: number, isLight: boolean): string {
+    if (messageCount === 0) return 'bg-white/5 border-white/5';
+    return isLight
+        ? 'bg-emerald-500/10 border-emerald-500/30'
+        : 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]';
+}
+
+function getCounterTextTone(messageCount: number, isLight: boolean): string {
+    if (messageCount === 0) return isLight ? 'text-slate-700' : 'text-slate-500';
+    return isLight ? 'text-emerald-800' : 'text-emerald-400';
+}
+
+function SegmentCounter({ count, animatedCount, isLight, showWave }: Readonly<{
+    count: number;
+    animatedCount: number;
+    isLight: boolean;
+    showWave: boolean;
+}>) {
+    const containerTone = getCounterContainerTone(count, isLight);
+    const textTone = getCounterTextTone(count, isLight);
+
+    return (
+        <div className="flex items-center gap-3">
+            <div className={`relative px-4 py-1.5 rounded-xl ${containerTone} border backdrop-blur-md transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
+                <div className="flex items-baseline gap-1.5">
+                    <span className={`text-lg font-black tabular-nums tracking-tighter ${textTone}`}>
+                        {animatedCount}
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-800' : 'text-slate-500/80'}`}>segmentos</span>
+                </div>
+                {showWave && <div className="absolute inset-0 rounded-xl bg-emerald-400/20 animate-ping" />}
+            </div>
+        </div>
+    );
+}
+
+function EmptyTranscription({ isRecording, liveStatus }: Readonly<{
+    isRecording: boolean;
+    liveStatus: LiveStatus;
+}>) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center gap-6 py-12">
+            <div className="relative">
+                <div className="p-6 rounded-3xl bg-content-glass border border-white/10 shadow-2xl backdrop-blur-md">
+                    <Sparkles size={48} className="text-theme-secondary/80" />
+                </div>
+                <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-xl -z-10 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+                <p className="text-theme-primary text-lg font-semibold">
+                    {isRecording ? 'Escuchando audio...' : 'Listo para transcribir'}
+                </p>
+                <p className="text-theme-secondary text-sm max-w-xs">
+                    {isRecording
+                        ? 'Si hay voz, el backend encola audio hasta cada 8 segundos. Revisa el estado abajo.'
+                        : 'Presiona el boton de grabacion para comenzar a capturar audio en tiempo real'}
+                </p>
+                {isRecording && liveStatus && (
+                    <div className="mt-4 px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-left max-w-sm">
+                        <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Estado tecnico</p>
+                        <p className="text-sm text-theme-primary mt-1">{liveStatus.label}</p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-theme-secondary">
+                            {liveStatus.rms !== undefined && <span>RMS {liveStatus.rms}</span>}
+                            {liveStatus.bufferSeconds !== undefined && <span>Buffer {liveStatus.bufferSeconds}s</span>}
+                            {liveStatus.queueSize !== undefined && <span>Cola {liveStatus.queueSize}</span>}
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div className="flex gap-2 mt-2">
+                <div className="w-2 h-2 rounded-full bg-cyan-500/50 animate-bounce" style={{ animationDelay: '0s' }} />
+                <div className="w-2 h-2 rounded-full bg-purple-500/50 animate-bounce" style={{ animationDelay: '0.1s' }} />
+                <div className="w-2 h-2 rounded-full bg-pink-500/50 animate-bounce" style={{ animationDelay: '0.2s' }} />
+            </div>
+        </div>
+    );
+}
+
+function TranscriptionMessages({ messages }: Readonly<{ messages: LiveMessage[] }>) {
+    return messages.map((message, index) => (
+        <div
+            key={`${message.timestamp}-${message.text}`}
+            className="group relative flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] hover:bg-white/5 border border-white/5 transition-all duration-300 backdrop-blur-sm animate-in slide-in-from-bottom-3 fade-in"
+            style={{
+                animationDelay: `${Math.min(index * 30, 300)}ms`,
+                animationDuration: '400ms'
+            }}
+        >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="flex-shrink-0 relative">
+                <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600/25 via-blue-600/25 to-cyan-600/25 border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
+                    <span className="text-sm font-mono font-bold text-cyan-300 tracking-wide">{message.timestamp}</span>
+                </div>
+            </div>
+            <p className="flex-1 text-base text-[var(--foreground)] leading-relaxed group-hover:text-[var(--foreground)] transition-colors duration-200">
+                {message.text}
+            </p>
+        </div>
+    ));
+}
+
 export function LiveTranscription() {
     const { messages, isRecording, liveStatus } = useRecording();
     const { themeType } = useBackground();
@@ -33,9 +139,6 @@ export function LiveTranscription() {
         return () => clearTimeout(timer);
     }, [messages.length, animatedCount]);
 
-    // Particle animation for recording state
-    const particles = Array.from({ length: 8 }, (_, i) => i);
-
     return (
         <div className="w-full h-full relative overflow-hidden rounded-3xl glass transition-all duration-500">
 
@@ -47,7 +150,7 @@ export function LiveTranscription() {
                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-full blur-[80px] transition-all duration-1000 ${isRecording ? 'opacity-100 animate-pulse' : 'opacity-0'}`} />
 
                 {/* Floating particles when recording */}
-                {isRecording && particles.map((i) => (
+                {isRecording && PARTICLES.map((i) => (
                     <div
                         key={i}
                         className="absolute w-1 h-1 bg-cyan-400/60 rounded-full animate-float"
@@ -96,22 +199,7 @@ export function LiveTranscription() {
                         </div>
                     </div>
 
-                    {/* Segment counter with animation */}
-                    <div className="flex items-center gap-3">
-                        <div className={`relative px-4 py-1.5 rounded-xl ${messages.length > 0 ? (isLight ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]') : 'bg-white/5 border-white/5'} border backdrop-blur-md transition-all duration-300 ${showWave ? 'scale-110' : 'scale-100'}`}>
-                            <div className="flex items-baseline gap-1.5">
-                                <span className={`text-lg font-black tabular-nums tracking-tighter ${messages.length > 0 ? (isLight ? 'text-emerald-800' : 'text-emerald-400') : (isLight ? 'text-slate-700' : 'text-slate-500')}`}>
-                                    {animatedCount}
-                                </span>
-                                <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-800' : 'text-slate-500/80'}`}>segmentos</span>
-                            </div>
-
-                            {/* Glow effect on new message */}
-                            {showWave && (
-                                <div className="absolute inset-0 rounded-xl bg-emerald-400/20 animate-ping" />
-                            )}
-                        </div>
-                    </div>
+                    <SegmentCounter count={messages.length} animatedCount={animatedCount} isLight={isLight} showWave={showWave} />
                 </div>
 
                 {/* Theme-Aware Neon Divider - Unified with Header Base */}
@@ -169,72 +257,9 @@ export function LiveTranscription() {
                 ref={scrollRef}
                 className="custom-scrollbar relative z-10 h-[calc(100%-88px)] min-h-[400px] overflow-y-auto px-5 py-4 space-y-3"
             >
-                {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center gap-6 py-12">
-                        {/* Animated empty state */}
-                        <div className="relative">
-                            <div className="p-6 rounded-3xl bg-content-glass border border-white/10 shadow-2xl backdrop-blur-md">
-                                <Sparkles size={48} className="text-theme-secondary/80" />
-                            </div>
-                            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-xl -z-10 animate-pulse" />
-                        </div>
-                        <div className="space-y-2">
-                            <p className="text-theme-primary text-lg font-semibold">
-                                {isRecording ? 'Escuchando audio...' : 'Listo para transcribir'}
-                            </p>
-                            <p className="text-theme-secondary text-sm max-w-xs">
-                                {isRecording
-                                    ? 'Si hay voz, el backend encola audio hasta cada 8 segundos. Revisa el estado abajo.'
-                                    : 'Presiona el boton de grabacion para comenzar a capturar audio en tiempo real'}
-                            </p>
-                            {isRecording && liveStatus && (
-                                <div className="mt-4 px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-left max-w-sm">
-                                    <p className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Estado tecnico</p>
-                                    <p className="text-sm text-theme-primary mt-1">{liveStatus.label}</p>
-                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-theme-secondary">
-                                        {liveStatus.rms !== undefined && <span>RMS {liveStatus.rms}</span>}
-                                        {liveStatus.bufferSeconds !== undefined && <span>Buffer {liveStatus.bufferSeconds}s</span>}
-                                        {liveStatus.queueSize !== undefined && <span>Cola {liveStatus.queueSize}</span>}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                            <div className="w-2 h-2 rounded-full bg-cyan-500/50 animate-bounce" style={{ animationDelay: '0s' }} />
-                            <div className="w-2 h-2 rounded-full bg-purple-500/50 animate-bounce" style={{ animationDelay: '0.1s' }} />
-                            <div className="w-2 h-2 rounded-full bg-pink-500/50 animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        </div>
-                    </div>
-                ) : (
-                    messages.map((msg, i) => (
-                        <div
-                            key={i}
-                            className="group relative flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] hover:bg-white/5 border border-white/5 transition-all duration-300 backdrop-blur-sm animate-in slide-in-from-bottom-3 fade-in"
-                            style={{
-                                animationDelay: `${Math.min(i * 30, 300)}ms`,
-                                animationDuration: '400ms'
-                            }}
-                        >
-                            {/* Glow effect on hover */}
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                            {/* Timestamp badge */}
-                            <div className="flex-shrink-0 relative">
-                                <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600/25 via-blue-600/25 to-cyan-600/25 border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
-                                    <span className="text-sm font-mono font-bold text-cyan-300 tracking-wide">
-                                        {msg.timestamp}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Text content */}
-                            <p className="flex-1 text-base text-[var(--foreground)] leading-relaxed group-hover:text-[var(--foreground)] transition-colors duration-200">
-                                {msg.text}
-                            </p>
-
-                        </div>
-                    ))
-                )}
+                {messages.length === 0
+                    ? <EmptyTranscription isRecording={isRecording} liveStatus={liveStatus} />
+                    : <TranscriptionMessages messages={messages} />}
             </div>
 
             {/* Top subtle shadow for depth */}

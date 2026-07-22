@@ -21,6 +21,7 @@ export default defineConfig({
         },
     },
     screenshotsFolder: 'tests/evidence/screenshots',
+    trashAssetsBeforeRuns: false,
     videosFolder: 'tests/evidence/videos',
     video: false,
     viewportHeight: 900,

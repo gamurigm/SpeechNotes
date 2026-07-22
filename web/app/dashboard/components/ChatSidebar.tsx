@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Sparkles, Bot, User, Loader2, FileText, Maximize2, Minimize2, X, BrainCircuit, Check } from 'lucide-react';
-import Image from 'next/image';
+import { Send, Sparkles, Bot, User, Loader2, FileText, Maximize2, Minimize2, X, BrainCircuit } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useBackground } from '../../providers';
 
@@ -25,8 +25,339 @@ interface ChatSidebarProps {
     onClose?: () => void;
 }
 
-export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, activeFile, isExpanded, isFormatted, onToggleExpand, onClose }: ChatSidebarProps) {
-    const { theme, themeType } = useBackground();
+interface ChatStreamEvent {
+    content?: string;
+    error?: string;
+}
+
+function normalizeDocumentName(name?: string): string | null {
+    return name
+        ? name.replace('transcription_', '').replace('.md', '').replace('_formatted', '')
+        : null;
+}
+
+function isChatStreamEvent(value: unknown): value is ChatStreamEvent {
+    if (!value || typeof value !== 'object') return false;
+    const event = value as Record<string, unknown>;
+    return (event.content === undefined || typeof event.content === 'string')
+        && (event.error === undefined || typeof event.error === 'string');
+}
+
+function parseChatStreamEvent(rawEvent: string): ChatStreamEvent | null {
+    if (!rawEvent.startsWith('data: ')) return null;
+
+    try {
+        const parsed: unknown = JSON.parse(rawEvent.slice(6));
+        return isChatStreamEvent(parsed) ? parsed : null;
+    } catch (error) {
+        console.warn('Ignoring malformed chat stream event', error);
+        return null;
+    }
+}
+
+async function consumeChatStream(
+    response: Response,
+    onContent: (content: string) => void,
+): Promise<void> {
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let done = false;
+
+    while (!done) {
+        const result = await reader.read();
+        done = result.done;
+        buffer += decoder.decode(result.value, { stream: !done });
+        const events = buffer.split('\n\n');
+        buffer = events.pop() ?? '';
+
+        for (const rawEvent of events) {
+            const event = parseChatStreamEvent(rawEvent);
+            if (event?.error) throw new Error(event.error);
+            if (event?.content) onContent(event.content);
+        }
+    }
+
+    const finalEvent = parseChatStreamEvent(buffer.trim());
+    if (finalEvent?.error) throw new Error(finalEvent.error);
+    if (finalEvent?.content) onContent(finalEvent.content);
+}
+
+function createMarkdownComponents(isLight: boolean): Components {
+    const theme = isLight
+        ? {
+            heading1: 'border-slate-300 text-slate-900',
+            heading2: 'text-slate-900',
+            heading3: 'text-violet-950 bg-violet-100',
+            body: 'text-slate-900',
+            bullet: 'bg-violet-600 shadow-[0_0_5px_rgba(124,58,237,0.3)]',
+            strong: 'text-indigo-950 bg-indigo-100 underline decoration-indigo-200 decoration-1 underline-offset-2',
+            quote: 'bg-slate-100 border-slate-200 text-slate-700 italic',
+            code: 'bg-slate-200 text-indigo-700 border-indigo-200',
+            rule: 'bg-slate-300',
+        }
+        : {
+            heading1: 'border-white/10 text-white title-semi-neon',
+            heading2: 'text-white title-semi-neon',
+            heading3: 'text-violet-200 bg-violet-500/10',
+            body: 'text-slate-200',
+            bullet: 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]',
+            strong: 'text-white text-glow-contrast bg-white/10',
+            quote: 'bg-indigo-500/5 border-indigo-500/10 text-slate-400 italic shadow-inner',
+            code: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
+            rule: 'bg-gradient-to-r from-transparent via-white/10 to-transparent',
+        };
+
+    return {
+        h1: ({ children, ...props }) => <h1 className={`text-2xl font-black mb-4 border-b ${theme.heading1} pb-2`} {...props}>{children}</h1>,
+        h2: ({ children, ...props }) => <h2 className={`text-xl font-bold mb-3 mt-6 ${theme.heading2}`} {...props}>{children}</h2>,
+        h3: ({ children, ...props }) => <h3 className={`text-lg font-bold mb-3 mt-6 px-3 py-1 rounded-lg border-l-4 border-violet-500 shadow-sm ${theme.heading3}`} {...props}>{children}</h3>,
+        p: ({ children, ...props }) => <p className={`mb-4 last:mb-0 leading-[1.8] ${theme.body} font-medium`} {...props}>{children}</p>,
+        ul: (props) => <ul className="space-y-3 mb-4 mt-2" {...props} />,
+        ol: (props) => <ol className="space-y-3 mb-4 mt-2 list-decimal list-inside" {...props} />,
+        li: ({ children }) => (
+            <li className="flex items-start gap-3">
+                <span className={`mt-2.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${theme.bullet}`} />
+                <span className={`flex-1 text-[15px] ${theme.body}`}>{children}</span>
+            </li>
+        ),
+        strong: (props) => <strong className={`font-black ${theme.strong} px-1.5 py-0.5 rounded-md`} {...props} />,
+        blockquote: (props) => <blockquote className={`my-6 p-5 rounded-2xl border-l-4 border-l-indigo-500 shadow-sm ${theme.quote}`} {...props} />,
+        code: (props) => <code className={`px-2 py-0.5 rounded-lg font-mono text-[0.85em] border ${theme.code}`} {...props} />,
+        hr: () => <hr className={`my-8 border-none h-px ${theme.rule}`} />,
+    };
+}
+
+function appendAssistantContent(
+    messages: Message[],
+    assistantMessageId: string,
+    content: string,
+): Message[] {
+    return messages.map(message => message.id === assistantMessageId
+        ? { ...message, content: message.content + content }
+        : message);
+}
+
+function getThinkingButtonTone(useThinking: boolean, isLight: boolean): string {
+    if (useThinking) {
+        return isLight
+            ? 'bg-violet-100 border-violet-200 text-violet-700'
+            : 'bg-[var(--theme-neon-color)]/20 border-[var(--theme-neon-color)]/40 text-[var(--theme-neon-color)]';
+    }
+    return isLight
+        ? 'bg-slate-100 border-slate-200 text-slate-500'
+        : 'bg-white/5 border-white/10 text-slate-400';
+}
+
+function DocumentContextBadge({ isFormatted }: Readonly<{ isFormatted?: boolean }>) {
+    const containerTone = isFormatted
+        ? 'bg-violet-500/10 border-violet-500/20'
+        : 'bg-emerald-500/5 border-emerald-500/10';
+    const labelTone = isFormatted ? 'text-violet-400' : 'text-emerald-500/80';
+
+    return (
+        <div className={`px-1.5 py-0.5 rounded-md ${containerTone}`}>
+            <span className={`text-[12px] font-black uppercase tracking-tighter ${labelTone}`}>
+                {isFormatted ? 'AI Formatted' : 'Verified'}
+            </span>
+        </div>
+    );
+}
+
+function ChatHeader({
+    activeDocId,
+    displayName,
+    isExpanded,
+    isFormatted,
+    isLight,
+    onClose,
+    onToggleExpand,
+    onToggleThinking,
+    useThinking,
+}: Readonly<{
+    activeDocId?: string;
+    displayName: string | null;
+    isExpanded?: boolean;
+    isFormatted?: boolean;
+    isLight: boolean;
+    onClose?: () => void;
+    onToggleExpand?: () => void;
+    onToggleThinking: () => void;
+    useThinking: boolean;
+}>) {
+    const closeTone = isLight ? 'text-slate-600 hover:text-rose-600' : 'text-slate-300 hover:text-rose-400';
+    const contextTone = isLight ? 'text-slate-500' : 'text-slate-300';
+    const documentTone = isLight ? 'text-slate-600' : 'text-slate-300';
+
+    return (
+        <div className="relative z-10 px-8 pt-8 pb-4">
+            <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <BrainCircuit size={28} className="text-white drop-shadow-md" />
+                        </div>
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
+                    </div>
+                    <div>
+                        <h3 className={`text-[19px] font-bold tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            Intelligence Hub
+                            <Sparkles size={14} className={isLight ? 'text-indigo-600' : 'text-violet-400'} />
+                        </h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+                            <span className={`text-[11px] uppercase tracking-widest font-black ${contextTone}`}>Active Context</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={onToggleThinking}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-500 ${getThinkingButtonTone(useThinking, isLight)} hover:scale-105 active:scale-95 shadow-sm`}
+                        title={useThinking ? 'Desactivar análisis profundo (Más rápido)' : 'Activar análisis profundo (Más inteligente)'}
+                    >
+                        <Sparkles
+                            size={12}
+                            className={useThinking ? 'animate-pulse' : 'text-slate-400'}
+                            style={{ color: useThinking ? 'var(--theme-neon-color)' : undefined }}
+                        />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">{useThinking ? 'Thinking' : 'Fast'}</span>
+                    </button>
+
+                    <div className="w-px h-4 bg-white/5 mx-1" />
+                    <button
+                        type="button"
+                        onClick={onToggleExpand}
+                        className="p-2.5 rounded-xl hover:brightness-125 text-slate-400 hover:text-white transition-all duration-300 backdrop-blur-md"
+                        style={{ background: 'var(--theme-glass-bg)', border: '1px solid var(--theme-glass-border)' }}
+                        title={isExpanded ? 'Contraer' : 'Expandir'}
+                    >
+                        {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={`p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md ${closeTone}`}
+                        style={{ background: 'var(--theme-glass-bg)', border: '1px solid var(--theme-glass-border)' }}
+                        title="Cerrar"
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 py-2 px-4 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-md">
+                <FileText size={16} className={activeDocId ? 'text-violet-400' : 'text-slate-600'} />
+                <div className="flex-1 overflow-hidden">
+                    <p className={`text-[15px] font-bold truncate ${documentTone}`}>{displayName || 'Selecciona un documento'}</p>
+                </div>
+                {activeDocId && <DocumentContextBadge isFormatted={isFormatted} />}
+            </div>
+        </div>
+    );
+}
+
+function ChatMessageContent({ content, isLight }: Readonly<{ content: string; isLight: boolean }>) {
+    const cleanedContent = content.replace(/\[Analizando:.*?\]/, '').trim();
+    const thinkMatch = /<think>([\s\S]*?)(?:<\/think>|$)/.exec(cleanedContent);
+    const thinkingContent = thinkMatch?.[1].trim() ?? '';
+    const restContent = cleanedContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
+
+    return (
+        <>
+            {thinkingContent && (
+                <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-white/10 border-l-4 border-l-violet-500/50 italic text-[13px] text-[var(--foreground)]/60 leading-relaxed">
+                    <div className="flex items-center gap-2 mb-2 opacity-60">
+                        <Sparkles size={12} className="text-violet-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Razonamiento Interno</span>
+                    </div>
+                    {thinkingContent}
+                    {!cleanedContent.includes('</think>') && <span className="animate-pulse ml-1 inline-block">...</span>}
+                </div>
+            )}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={createMarkdownComponents(isLight)}>
+                {restContent}
+            </ReactMarkdown>
+        </>
+    );
+}
+
+function ChatMessageItem({ message, isLight }: Readonly<{ message: Message; isLight: boolean }>) {
+    const isUser = message.role === 'user';
+    const avatarTone = isUser
+        ? 'bg-gradient-to-br from-indigo-500 to-blue-600'
+        : 'bg-gradient-to-br from-violet-500 to-fuchsia-600';
+    const bubbleTone = isUser
+        ? 'bg-violet-600/30 border border-violet-400/30 text-white'
+        : 'glass text-[var(--foreground)]';
+
+    return (
+        <div className={`flex gap-4 ${isUser ? 'flex-row-reverse' : ''} group/msg`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${avatarTone}`}>
+                {isUser ? <User size={18} className="text-white" /> : <BrainCircuit size={22} className="text-white drop-shadow-sm" />}
+            </div>
+            <div className={`max-w-[90%] relative ${isUser ? 'text-right' : ''}`}>
+                <div className={`px-5 py-4 rounded-[1.5rem] text-[15px] leading-relaxed ${bubbleTone} shadow-sm chat-markdown font-medium`}>
+                    {message.content.includes('[Analizando:') && !isUser && (
+                        <div className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 w-fit">
+                            <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Analizando Documento</span>
+                        </div>
+                    )}
+                    <ChatMessageContent content={message.content} isLight={isLight} />
+                </div>
+                <span className={`block mt-1.5 text-[11px] font-bold uppercase ${isLight ? 'text-slate-500' : 'text-slate-400'} tracking-wider opacity-60 group-hover/msg:opacity-100 transition-opacity`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ChatMessages({ activeDocId, isLight, isLoading, messages }: Readonly<{
+    activeDocId?: string;
+    isLight: boolean;
+    isLoading: boolean;
+    messages: Message[];
+}>) {
+    return (
+        <>
+            {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center px-10">
+                    <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-slate-900 to-slate-800 border border-white/5 flex items-center justify-center mb-6 shadow-2xl relative group-hover:scale-105 transition-transform duration-500">
+                        <Bot size={40} className="text-violet-400/80" />
+                        <div className="absolute inset-0 rounded-[2rem] bg-violet-500/10 blur-2xl animate-pulse" />
+                    </div>
+                    <h4 className="font-bold text-[21px] mb-2 title-semi-neon">Asistente de Clase</h4>
+                    <p className={`text-[15px] leading-relaxed max-w-[250px] ${isLight ? 'text-slate-600' : 'text-slate-300'} font-medium text-glow-contrast`}>
+                        {activeDocId
+                            ? 'Estoy listo para responder preguntas sobre la clase seleccionada.'
+                            : 'Selecciona una transcripción para comenzar el análisis inteligente.'}
+                    </p>
+                </div>
+            ) : messages.map(message => <ChatMessageItem key={message.id} message={message} isLight={isLight} />)}
+
+            {isLoading && (
+                <div className="flex gap-4 animate-pulse">
+                    <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center">
+                        <BrainCircuit size={22} className="text-white opacity-80 shadow-inner" />
+                    </div>
+                    <div className="flex-1 py-4 px-5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3">
+                        <Loader2 size={16} className="text-violet-500 animate-spin" />
+                        <span className={`text-[13px] font-black ${isLight ? 'text-slate-600' : 'text-slate-200'} uppercase tracking-widest text-glow-contrast`}>Generating context...</span>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, activeFile, isExpanded, isFormatted, onToggleExpand, onClose }: Readonly<ChatSidebarProps>) {
+    const { themeType } = useBackground();
     const isLight = themeType === 'light';
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -53,11 +384,7 @@ export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, acti
         }
     }, [messages]);
 
-    const displayName = activeDocName
-        ? activeDocName.replace('transcription_', '').replace('.md', '').replace('_formatted', '')
-        : activeFile
-            ? activeFile.replace('transcription_', '').replace('.md', '').replace('_formatted', '')
-            : null;
+    const displayName = normalizeDocumentName(activeDocName) ?? normalizeDocumentName(activeFile);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,35 +426,9 @@ export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, acti
             });
 
             if (!response.ok) throw new Error('Chat failed');
-            if (!response.body) throw new Error('No response body');
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let done = false;
-
-            while (!done) {
-                const { value, done: doneReading } = await reader.read();
-                done = doneReading;
-                const chunkValue = decoder.decode(value, { stream: !done });
-
-                const lines = chunkValue.split('\n\n');
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const dataStr = line.slice(6);
-                        try {
-                            const data = JSON.parse(dataStr);
-                            if (data.content) {
-                                setMessages(prev => prev.map(msg =>
-                                    msg.id === assistantMessageId
-                                        ? { ...msg, content: msg.content + data.content }
-                                        : msg
-                                ));
-                            }
-                            if (data.error) throw new Error(data.error);
-                        } catch (e) { }
-                    }
-                }
-            }
+            await consumeChatStream(response, (content) => {
+                setMessages(previous => appendAssistantContent(previous, assistantMessageId, content));
+            });
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => prev.map(msg =>
@@ -151,215 +452,24 @@ export function ChatSidebar({ activeDocId, activeDocName, activeDocContent, acti
                 <div className={`absolute bottom-0 inset-x-0 h-px ${isLight ? 'bg-black/5' : 'bg-white/10'}`} />
             </div>
 
-            {/* Header */}
-            <div className="relative z-10 px-8 pt-8 pb-4">
-                <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                <BrainCircuit size={28} className="text-white drop-shadow-md" />
-                            </div>
-                            <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-4 ${isLight ? 'border-white' : 'border-slate-950'} shadow-sm`} />
-                        </div>
-                        <div>
-                            <h3 className={`text-[19px] font-bold tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                Intelligence Hub
-                                <Sparkles size={14} className={isLight ? 'text-indigo-600' : 'text-violet-400'} />
-                            </h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                                <span className={`text-[11px] uppercase tracking-widest font-black ${isLight ? 'text-slate-500' : 'text-slate-300'}`}>Active Context</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        {/* Thinking Pill Toggle */}
-                        <button
-                            onClick={() => setUseThinking(!useThinking)}
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-500 ${useThinking
-                                ? (isLight ? 'bg-violet-100 border-violet-200 text-violet-700' : 'bg-[var(--theme-neon-color)]/20 border-[var(--theme-neon-color)]/40 text-[var(--theme-neon-color)]')
-                                : (isLight ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white/5 border-white/10 text-slate-400')
-                                } hover:scale-105 active:scale-95 shadow-sm`}
-                            title={useThinking ? "Desactivar análisis profundo (Más rápido)" : "Activar análisis profundo (Más inteligente)"}
-                        >
-                            <Sparkles
-                                size={12}
-                                className={useThinking ? 'animate-pulse' : 'text-slate-400'}
-                                style={{ color: useThinking ? 'var(--theme-neon-color)' : undefined }}
-                            />
-                            <span className="text-[11px] font-bold uppercase tracking-wider">{useThinking ? 'Thinking' : 'Fast'}</span>
-                        </button>
-
-                        <div className="w-px h-4 bg-white/5 mx-1" />
-
-                        {/* Expand Toggle */}
-                        <button
-                            onClick={onToggleExpand}
-                            className="p-2.5 rounded-xl hover:brightness-125 text-slate-400 hover:text-white transition-all duration-300 backdrop-blur-md"
-                            style={{
-                                background: 'var(--theme-glass-bg)',
-                                border: '1px solid var(--theme-glass-border)'
-                            }}
-                            title={isExpanded ? "Contraer" : "Expandir"}
-                        >
-                            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                        </button>
-
-                        {/* Subtle Close Button */}
-                        <button
-                            onClick={onClose}
-                            className={`p-2.5 rounded-xl transition-all duration-300 backdrop-blur-md ${isLight
-                                ? 'text-slate-600 hover:text-rose-600'
-                                : 'text-slate-300 hover:text-rose-400'
-                                }`}
-                            style={{
-                                background: 'var(--theme-glass-bg)',
-                                border: '1px solid var(--theme-glass-border)'
-                            }}
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Context Badge */}
-                <div className="mt-4 flex items-center gap-3 py-2 px-4 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-md">
-                    <FileText size={16} className={activeDocId ? "text-violet-400" : "text-slate-600"} />
-                    <div className="flex-1 overflow-hidden">
-                        <p className={`text-[15px] font-bold truncate ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                            {displayName || 'Selecciona un documento'}
-                        </p>
-                    </div>
-                    {activeDocId && (
-                        <div className={`px-1.5 py-0.5 rounded-md ${isFormatted ? 'bg-violet-500/10 border-violet-500/20' : 'bg-emerald-500/5 border-emerald-500/10'}`}>
-                            <span className={`text-[12px] font-black uppercase tracking-tighter ${isFormatted ? 'text-violet-400' : 'text-emerald-500/80'}`}>
-                                {isFormatted ? 'AI Formatted' : 'Verified'}
-                            </span>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <ChatHeader
+                activeDocId={activeDocId}
+                displayName={displayName}
+                isExpanded={isExpanded}
+                isFormatted={isFormatted}
+                isLight={isLight}
+                onClose={onClose}
+                onToggleExpand={onToggleExpand}
+                onToggleThinking={() => setUseThinking(previous => !previous)}
+                useThinking={useThinking}
+            />
 
             {/* Messages Area */}
             <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scroll-smooth custom-scrollbar"
             >
-                {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center px-10">
-                        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-slate-900 to-slate-800 border border-white/5 flex items-center justify-center mb-6 shadow-2xl relative group-hover:scale-105 transition-transform duration-500">
-                            <Bot size={40} className="text-violet-400/80" />
-                            <div className="absolute inset-0 rounded-[2rem] bg-violet-500/10 blur-2xl animate-pulse" />
-                        </div>
-                        <h4 className={`font-bold text-[21px] mb-2 title-semi-neon`}>Asistente de Clase</h4>
-                        <p className={`text-[15px] leading-relaxed max-w-[250px] ${isLight ? 'text-slate-600' : 'text-slate-300'} font-medium text-glow-contrast`}>
-                            {activeDocId
-                                ? "Estoy listo para responder preguntas sobre la clase seleccionada."
-                                : "Selecciona una transcripción para comenzar el análisis inteligente."
-                            }
-                        </p>
-                    </div>
-                ) : (
-                    messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''} group/msg`}
-                        >
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${msg.role === 'user'
-                                ? 'bg-gradient-to-br from-indigo-500 to-blue-600'
-                                : 'bg-gradient-to-br from-violet-500 to-fuchsia-600'
-                                }`}>
-                                {msg.role === 'user' ? (
-                                    <User size={18} className="text-white" />
-                                ) : (
-                                    <BrainCircuit size={22} className="text-white drop-shadow-sm" />
-                                )}
-                            </div>
-
-                            <div className={`max-w-[90%] relative ${msg.role === 'user' ? 'text-right' : ''}`}>
-                                <div className={`px-5 py-4 rounded-[1.5rem] text-[15px] leading-relaxed ${msg.role === 'user'
-                                    ? 'bg-violet-600/30 border border-violet-400/30 text-white'
-                                    : 'glass text-[var(--foreground)]'
-                                    } shadow-sm chat-markdown font-medium`}>
-
-                                    {/* Handle [Analizando: ...] prefix */}
-                                    {msg.content.includes('[Analizando:') && msg.role === 'assistant' && (
-                                        <div className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 w-fit">
-                                            <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Analizando Documento</span>
-                                        </div>
-                                    )}
-
-                                    {(() => {
-                                        const content = msg.content.replace(/\[Analizando:.*?\]/, '').trim();
-                                        const thinkMatch = content.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-                                        const hasThinking = !!thinkMatch;
-                                        const thinkingContent = thinkMatch ? thinkMatch[1].trim() : '';
-                                        const restContent = content.replace(/<think>[\s\S]*?(?:<\/think>|$)/, '').trim();
-
-                                        return (
-                                            <>
-                                                {hasThinking && (
-                                                    <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-white/10 border-l-4 border-l-violet-500/50 italic text-[13px] text-[var(--foreground)]/60 leading-relaxed">
-                                                        <div className="flex items-center gap-2 mb-2 opacity-60">
-                                                            <Sparkles size={12} className="text-violet-400" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">Razonamiento Interno</span>
-                                                        </div>
-                                                        {thinkingContent}
-                                                        {!content.includes('</think>') && <span className="animate-pulse ml-1 inline-block">...</span>}
-                                                    </div>
-                                                )}
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm]}
-                                                    components={{
-                                                        h1: ({ node, ...props }) => <h1 className={`text-2xl font-black mb-4 border-b ${isLight ? 'border-slate-300 text-slate-900' : 'border-white/10 text-white title-semi-neon'} pb-2`} {...props} />,
-                                                        h2: ({ node, ...props }) => <h2 className={`text-xl font-bold mb-3 mt-6 ${isLight ? 'text-slate-900' : 'text-white title-semi-neon'}`} {...props} />,
-                                                        h3: ({ node, ...props }) => <h3 className={`text-lg font-bold mb-3 mt-6 px-3 py-1 rounded-lg border-l-4 border-violet-500 shadow-sm ${isLight ? 'text-violet-950 bg-violet-100' : 'text-violet-200 bg-violet-500/10'}`} {...props} />,
-                                                        p: ({ node, ...props }) => <p className={`mb-4 last:mb-0 leading-[1.8] ${isLight ? 'text-slate-900' : 'text-slate-200'} font-medium`} {...props} />,
-                                                        ul: ({ node, ...props }) => <ul className="space-y-3 mb-4 mt-2" {...props} />,
-                                                        ol: ({ node, ...props }) => <ol className="space-y-3 mb-4 mt-2 list-decimal list-inside" {...props} />,
-                                                        li: ({ node, ...props }) => (
-                                                            <li className="flex items-start gap-3">
-                                                                <span className={`mt-2.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLight ? 'bg-violet-600 shadow-[0_0_5px_rgba(124,58,237,0.3)]' : 'bg-violet-400 shadow-[0_0_8px_rgba(139,92,246,0.8)]'}`} />
-                                                                <span className={`flex-1 text-[15px] ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{props.children}</span>
-                                                            </li>
-                                                        ),
-                                                        strong: ({ node, ...props }) => (
-                                                            <strong className={`font-black ${isLight ? 'text-indigo-950 bg-indigo-100 underline decoration-indigo-200 decoration-1 underline-offset-2' : 'text-white text-glow-contrast bg-white/10'} px-1.5 py-0.5 rounded-md`} {...props} />
-                                                        ),
-                                                        blockquote: ({ node, ...props }) => (
-                                                            <blockquote className={`my-6 p-5 rounded-2xl border-l-4 border-l-indigo-500 shadow-sm ${isLight ? 'bg-slate-100 border-slate-200 text-slate-700 italic' : 'bg-indigo-500/5 border-indigo-500/10 text-slate-400 italic shadow-inner'}`} {...props} />
-                                                        ),
-                                                        code: ({ node, ...props }) => <code className={`px-2 py-0.5 rounded-lg font-mono text-[0.85em] border ${isLight ? 'bg-slate-200 text-indigo-700 border-indigo-200' : 'bg-violet-500/10 text-violet-300 border-violet-500/20'}`} {...props} />,
-                                                        hr: () => <hr className={`my-8 border-none h-px ${isLight ? 'bg-slate-300' : 'bg-gradient-to-r from-transparent via-white/10 to-transparent'}`} />,
-                                                    }}
-                                                >
-                                                    {restContent}
-                                                </ReactMarkdown>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                                <span className={`block mt-1.5 text-[11px] font-bold uppercase ${isLight ? 'text-slate-500' : 'text-slate-400'} tracking-wider opacity-60 group-hover/msg:opacity-100 transition-opacity`}>
-                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-                        </div>
-                    ))
-                )}
-
-                {isLoading && (
-                    <div className="flex gap-4 animate-pulse">
-                        <div className="w-10 h-10 rounded-2xl bg-slate-800 flex items-center justify-center">
-                            <BrainCircuit size={22} className="text-white opacity-80 shadow-inner" />
-                        </div>
-                        <div className="flex-1 py-4 px-5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3">
-                            <Loader2 size={16} className="text-violet-500 animate-spin" />
-                            <span className={`text-[13px] font-black ${isLight ? 'text-slate-600' : 'text-slate-200'} uppercase tracking-widest text-glow-contrast`}>Generating context...</span>
-                        </div>
-                    </div>
-                )}
+                <ChatMessages activeDocId={activeDocId} isLight={isLight} isLoading={isLoading} messages={messages} />
             </div>
 
             {/* Input Footer */}

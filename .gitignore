@@ -97,6 +97,7 @@ docs/internal/
 tests/
 !/web/tests/
 !/web/tests/**
+web/tests/evidence/coverage/
 !/backend/tests/
 !/backend/tests/**
 
