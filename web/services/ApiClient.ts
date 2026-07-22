@@ -10,7 +10,7 @@
  */
 
 export class ApiClient {
-    private static instance: ApiClient;
+    private static instance: ApiClient | undefined;
     private readonly baseUrl: string = 'http://127.0.0.1:9443/api';
 
     private constructor() { }
@@ -27,7 +27,7 @@ export class ApiClient {
         const headers = {
             'Content-Type': 'application/json',
             'x-api-key': 'dev-secret-api-key',
-            ...(options?.headers || {}),
+            ...(options?.headers ?? {}),
         };
 
         let lastError: unknown;

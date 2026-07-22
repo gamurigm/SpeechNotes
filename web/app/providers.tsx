@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { HeroUIProvider } from "@heroui/react";
 import { useRouter } from 'next/navigation';
 
@@ -170,8 +170,13 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
     }
   };
 
+  const contextValue = useMemo(
+    () => ({ theme, setTheme, customBg, setCustomBg: updateCustomBg, glassOpacity, setGlassOpacity, themeType }),
+    [theme, customBg, glassOpacity, themeType],
+  );
+
   return (
-    <BackgroundContext.Provider value={{ theme, setTheme, customBg, setCustomBg: updateCustomBg, glassOpacity, setGlassOpacity, themeType }}>
+    <BackgroundContext.Provider value={contextValue}>
       <HeroUIProvider navigate={router.push}>
         {children}
       </HeroUIProvider>

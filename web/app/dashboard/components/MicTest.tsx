@@ -30,8 +30,8 @@ export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
 
     const calculateRMS = (dataArray: Uint8Array): number => {
         let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-            const normalized = (dataArray[i] - 128) / 128;
+        for (const sample of dataArray) {
+            const normalized = (sample - 128) / 128;
             sum += normalized * normalized;
         }
         const rms = Math.sqrt(sum / dataArray.length);
