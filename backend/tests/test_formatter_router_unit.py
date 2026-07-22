@@ -53,3 +53,26 @@ def test_job_status_and_background(monkeypatch):
         yield progress
     agent.run_job = stream
     asyncio.run(module.run_job_background("j"))
+
+
+def test_formatter_websocket_streams_progress(monkeypatch):
+    progress = SimpleNamespace(to_dict=lambda: {"status": "ok"})
+    job = SimpleNamespace(job_id="j", status="done", successful=1, failed=0)
+    agent = MagicMock(get_job=lambda _: job)
+    async def stream(_job_id):
+        yield progress
+    agent.run_job = stream
+    monkeypatch.setattr(module, "formatter_agent", agent)
+
+    class FakeWebSocket:
+        scope = {"headers": []}
+        def __init__(self):
+            self.messages = []
+        async def accept(self): pass
+        async def send_json(self, value): self.messages.append(value)
+        async def close(self): pass
+
+    websocket = FakeWebSocket()
+    asyncio.run(module.format_progress_websocket(websocket, "j"))
+    assert websocket.messages[0] == {"status": "ok"}
+    assert websocket.messages[-1]["status"] == "job_completed"
