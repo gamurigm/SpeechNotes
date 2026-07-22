@@ -6,7 +6,7 @@ Handles format conversion requests and WebSocket progress streaming
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import Annotated, List, Optional, Dict
 from pathlib import Path
 import asyncio
 
@@ -109,7 +109,7 @@ class ProfileInfo(BaseModel):
 # ==================== API Endpoints ====================
 
 @router.get("/profiles", response_model=List[ProfileInfo], responses={500: {"description": "Error al obtener perfiles"}})
-async def get_available_profiles(api_ok: bool = Depends(require_auth)):
+async def get_available_profiles(api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Get list of available conversion profiles
     """
@@ -121,7 +121,7 @@ async def get_available_profiles(api_ok: bool = Depends(require_auth)):
 
 
 @router.post("/detect", response_model=DetectFormatResponse, responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al detectar formato"}})
-async def detect_audio_format(request: DetectFormatRequest, api_ok: bool = Depends(require_auth)):
+async def detect_audio_format(request: DetectFormatRequest, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Detect audio format and extract metadata
     """
@@ -152,7 +152,7 @@ async def detect_audio_format(request: DetectFormatRequest, api_ok: bool = Depen
 
 
 @router.post("/convert", responses={404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al convertir archivo"}})
-async def convert_single_file(request: ConvertFileRequest, api_ok: bool = Depends(require_auth)):
+async def convert_single_file(request: ConvertFileRequest, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Convert a single audio file
     """
@@ -182,7 +182,7 @@ async def convert_single_file(request: ConvertFileRequest, api_ok: bool = Depend
 
 
 @router.post("/batch", response_model=JobResponse, responses={400: {"description": "No se proporcionaron archivos"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al iniciar trabajo"}})
-async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depends(require_auth)):
+async def batch_convert_files(request: BatchConvertRequest, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Start a batch conversion job
     Returns job_id and WebSocket URL for progress updates
@@ -225,7 +225,7 @@ async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depen
 
 
 @router.get("/job/{job_id}", responses={404: {"description": "Trabajo no encontrado"}})
-async def get_job_status(job_id: str, api_ok: bool = Depends(require_auth)):
+async def get_job_status(job_id: str, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Get current status of a format job
     """
@@ -302,7 +302,7 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
 
 
 @router.post("/cleanup", responses={500: {"description": "Error al limpiar archivos temporales"}})
-async def cleanup_temp_files(api_ok: bool = Depends(require_auth)):
+async def cleanup_temp_files(api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Clean up temporary files
     """
@@ -316,7 +316,7 @@ async def cleanup_temp_files(api_ok: bool = Depends(require_auth)):
 # ==================== ENDPOINT DE DESCARGA ====================
 
 @router.get("/download/{file_path:path}", responses={400: {"description": "Ruta no permitida o no es archivo"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al descargar archivo"}})
-async def download_formatted_file(file_path: str, api_ok: bool = Depends(require_auth)):
+async def download_formatted_file(file_path: str, api_ok: Annotated[bool, Depends(require_auth)]):
     """
     Descarga el archivo de audio formateado directamente a tu computadora
     
@@ -363,9 +363,9 @@ async def download_formatted_file(file_path: str, api_ok: bool = Depends(require
 
 @router.post("/normalize", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al normalizar audio"}})
 async def normalize_audio_volume(
+    api_ok: Annotated[bool, Depends(require_auth)],
     file_path: str,
     target_loudness_db: float = -16.0,
-    api_ok: bool = Depends(require_auth)
 ):
     """
     Normaliza el volumen del audio a un nivel óptimo
@@ -398,9 +398,9 @@ async def normalize_audio_volume(
 
 @router.post("/trim-silence", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al recortar silencios"}})
 async def trim_audio_silence(
+    api_ok: Annotated[bool, Depends(require_auth)],
     file_path: str,
     silence_thresh_db: int = -40,
-    api_ok: bool = Depends(require_auth)
 ):
     """
     Elimina silencios al inicio y final del audio
@@ -433,10 +433,10 @@ async def trim_audio_silence(
 
 @router.post("/extract-segment", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al extraer segmento"}})
 async def extract_audio_segment(
+    api_ok: Annotated[bool, Depends(require_auth)],
     file_path: str,
     start_time_seconds: float,
     end_time_seconds: float,
-    api_ok: bool = Depends(require_auth)
 ):
     """
     Extrae un segmento específico del audio
@@ -471,9 +471,9 @@ async def extract_audio_segment(
 
 @router.post("/merge", responses={400: {"description": "Ruta no permitida"}, 500: {"description": "Error al unir archivos"}})
 async def merge_audio_files(
+    api_ok: Annotated[bool, Depends(require_auth)],
     file_paths: List[str],
     output_filename: Optional[str] = None,
-    api_ok: bool = Depends(require_auth)
 ):
     """
     Une varios archivos de audio en uno solo
@@ -503,9 +503,9 @@ async def merge_audio_files(
 
 @router.post("/change-speed", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al cambiar velocidad"}})
 async def change_audio_speed(
+    api_ok: Annotated[bool, Depends(require_auth)],
     file_path: str,
     speed_factor: float = 1.5,
-    api_ok: bool = Depends(require_auth)
 ):
     """
     Cambia la velocidad del audio

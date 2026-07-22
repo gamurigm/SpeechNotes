@@ -135,10 +135,10 @@ def test_audio_processing_operations(tmp_path, monkeypatch):
     for name in ("normalize_audio", "trim_silence", "extract_segment", "merge_files", "change_speed"):
         setattr(service, name, AsyncMock(return_value=result))
     monkeypatch.setattr(module, "audio_formatter", service)
-    assert asyncio.run(module.normalize_audio_volume("clip.wav", -16, True)) == {"ok": True}
-    assert asyncio.run(module.trim_audio_silence("clip.wav", -40, True)) == {"ok": True}
-    assert asyncio.run(module.extract_audio_segment("clip.wav", 0, 1, True)) == {"ok": True}
-    assert asyncio.run(module.merge_audio_files(["clip.wav"], "joined.wav", True)) == {"ok": True}
-    assert asyncio.run(module.change_audio_speed("clip.wav", 1.25, True)) == {"ok": True}
+    assert asyncio.run(module.normalize_audio_volume(True, "clip.wav", -16)) == {"ok": True}
+    assert asyncio.run(module.trim_audio_silence(True, "clip.wav", -40)) == {"ok": True}
+    assert asyncio.run(module.extract_audio_segment(True, "clip.wav", 0, 1)) == {"ok": True}
+    assert asyncio.run(module.merge_audio_files(True, ["clip.wav"], "joined.wav")) == {"ok": True}
+    assert asyncio.run(module.change_audio_speed(True, "clip.wav", 1.25)) == {"ok": True}
     service.normalize_audio.assert_awaited_once()
     service.merge_files.assert_awaited_once()
