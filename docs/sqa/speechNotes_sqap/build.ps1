@@ -10,20 +10,13 @@ if (-not (Get-Command pdflatex -ErrorAction SilentlyContinue)) {
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 
 Write-Host "Compilando SQAP de SpeechNotes..." -ForegroundColor Green
+Set-Location $ProjectRoot
 
 # Primera pasada
-pdflatex -interaction=nonstopmode -output-directory=$OutputDir $MainFile
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Error en primera pasada. Revise $OutputDir\speechnotes_sqap.log"
-    exit $LASTEXITCODE
-}
+pdflatex -interaction=nonstopmode -output-directory="output" speechnotes_sqap.tex
 
 # Segunda pasada (referencias cruzadas)
-pdflatex -interaction=nonstopmode -output-directory=$OutputDir $MainFile
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Error en segunda pasada. Revise $OutputDir\speechnotes_sqap.log"
-    exit $LASTEXITCODE
-}
+pdflatex -interaction=nonstopmode -output-directory="output" speechnotes_sqap.tex
 
 $OutputFile = Join-Path $OutputDir "speechnotes_sqap.pdf"
 if (Test-Path $OutputFile) {
