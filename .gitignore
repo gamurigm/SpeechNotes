@@ -108,6 +108,7 @@ backend/tests/helpers/__pycache__/
 
 # ── Build output / PyInstaller ─────────────────────────────
 dist/
+dist-electron/
 build/
 *.spec
 

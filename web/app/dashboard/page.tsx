@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardBody, Spinner, Slider, Button, Divider } from "@heroui/react";
 import { RecordingPanel } from './components/RecordingPanel';
 import { LiveTranscription } from './components/LiveTranscription';
@@ -9,9 +9,8 @@ import { MicTest } from './components/MicTest';
 import { ChatSidebar } from './components/ChatSidebar';
 import { RecordingProvider, useRecording } from './providers/RecordingProvider';
 import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves, MessageCircle } from 'lucide-react';
-import Image from 'next/image';
 import { useBackground } from '../providers';
-import { BackgroundPicker, ThemeSettings } from "./components/BackgroundPicker";
+import { ThemeSettings } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
 
 // Hooks especializados (SRP / SOLID)
@@ -25,6 +24,15 @@ type ToolbarIconProps = {
     isActive?: boolean;
     className?: string;
 };
+
+type SearchResult = {
+    id: string;
+    filename: string;
+    date: string;
+    snippet: string;
+};
+
+const clampZoom = (value: number) => Math.max(50, Math.min(145, value));
 
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
     const [showTooltip, setShowTooltip] = useState(false);
@@ -84,7 +92,7 @@ function DashboardContent() {
 
     // 2. Búsqueda y Navegación Global
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [activeSearchTerm, setActiveSearchTerm] = useState('');
     const [showSearchPalette, setShowSearchPalette] = useState(false);
@@ -93,8 +101,6 @@ function DashboardContent() {
     const transcriptionService = useTranscriptionService();
     const tools = useToolRegistry({
         transcriptionId: transcriptionService.transcriptionId,
-        transcriptions: transcriptionService.transcriptions,
-        selectedIndex: transcriptionService.selectedIndex,
         setProcessingIds: transcriptionService.setProcessingIds,
         loadTranscriptionById: transcriptionService.loadTranscriptionById,
         loadTranscriptionsList: transcriptionService.loadTranscriptionsList,
@@ -102,10 +108,8 @@ function DashboardContent() {
     });
 
     // --- Helpers de UI ---
-    const clampZoom = (v: number) => Math.max(50, Math.min(145, v));
-    const handleMdZoom = (level: number) => setMdZoom(clampZoom(level));
-    const handleMdZoomIn = () => handleMdZoom(mdZoom + 10);
-    const handleMdZoomOut = () => handleMdZoom(mdZoom - 10);
+    const handleMdZoomIn = useCallback(() => setMdZoom(current => clampZoom(current + 10)), []);
+    const handleMdZoomOut = useCallback(() => setMdZoom(current => clampZoom(current - 10)), []);
     const handleAppZoom = (level: number) => setAppZoom(clampZoom(level));
 
     useEffect(() => {
@@ -122,7 +126,7 @@ function DashboardContent() {
         };
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [mdZoom]);
+    }, [handleMdZoomIn, handleMdZoomOut]);
 
     const handleSearch = async (val: string) => {
         setSearchQuery(val);
@@ -136,7 +140,7 @@ function DashboardContent() {
             const res = await fetch(`/api/transcriptions/search?q=${encodeURIComponent(val)}`, {
                 headers: { 'x-api-key': 'dev-secret-api-key' }
             });
-            const data = await res.json();
+            const data = await res.json() as { items?: SearchResult[] };
             setSearchResults(data.items || []);
         } catch (e) {
             console.error("Search failed", e);
@@ -145,7 +149,7 @@ function DashboardContent() {
         }
     };
 
-    const handleSelectSearchResult = async (result: any) => {
+    const handleSelectSearchResult = async (result: SearchResult) => {
         setActiveSearchTerm(searchQuery);
         setShowSearchPalette(false);
         await transcriptionService.loadTranscriptionById(result.id);
@@ -782,7 +786,7 @@ function DashboardContent() {
                                                     </div>
                                                     <span className="text-[10px] font-mono text-white/30">{item.date}</span>
                                                 </div>
-                                                <p className="text-sm opacity-50 italic line-clamp-2 leading-relaxed pl-11 border-l-2 border-white/5">"{item.snippet}"</p>
+                                                <p className="text-sm opacity-50 italic line-clamp-2 leading-relaxed pl-11 border-l-2 border-white/5">&ldquo;{item.snippet}&rdquo;</p>
                                             </CardBody>
                                         </Card>
                                     )) : <div className="p-12 text-center opacity-30"><p className="text-lg font-black uppercase tracking-widest">Sin coincidencias</p></div>}

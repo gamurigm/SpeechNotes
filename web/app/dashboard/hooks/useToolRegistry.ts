@@ -3,8 +3,6 @@ import { ToastType } from '../components/Toast';
 
 interface ToolRegistryProps {
     transcriptionId: string | null;
-    transcriptions: any[];
-    selectedIndex: number;
     setProcessingIds: (updater: (prev: Set<string>) => Set<string>) => void;
     loadTranscriptionById: (id: string) => Promise<void>;
     loadTranscriptionsList: () => Promise<void>;
@@ -13,8 +11,6 @@ interface ToolRegistryProps {
 
 export function useToolRegistry({
     transcriptionId,
-    transcriptions,
-    selectedIndex,
     setProcessingIds,
     loadTranscriptionById,
     loadTranscriptionsList,
@@ -47,7 +43,7 @@ export function useToolRegistry({
             });
 
             if (!res.ok) throw new Error('Failed to start formatting');
-            const { job_id, ws_url } = await res.json();
+            const { ws_url } = await res.json();
 
             const ws = new WebSocket(`ws://127.0.0.1:9443/api/format${ws_url}`);
             const clearProcessingId = () => {

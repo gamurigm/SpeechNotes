@@ -30,7 +30,7 @@ export class ApiClient {
             ...(options?.headers || {}),
         };
 
-        let lastError;
+        let lastError: unknown;
         for (let i = 0; i < retries; i++) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
@@ -44,7 +44,7 @@ export class ApiClient {
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                    const error = await response.json().catch(() => ({ detail: 'Unknown error' })) as { detail?: string };
                     console.error(`[ApiClient] Error ${response.status}:`, error);
                     // Don't retry client errors (4xx), only server errors (5xx) or network errors
                     if (response.status >= 400 && response.status < 500) {
@@ -54,7 +54,7 @@ export class ApiClient {
                 }
 
                 return response.json();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 clearTimeout(timeoutId);
                 console.warn(`[ApiClient] Attempt ${i + 1}/${retries} failed for ${url}:`, error);
                 lastError = error;
@@ -64,13 +64,13 @@ export class ApiClient {
         }
 
         console.error(`[ApiClient] All ${retries} attempts failed for ${url}`);
-        if (lastError?.name === 'AbortError') {
+        if (lastError instanceof Error && lastError.name === 'AbortError') {
             throw new Error(`Request timeout after ${retries} attempts`);
         }
-        throw lastError;
+        throw lastError instanceof Error ? lastError : new Error('Unknown API request error');
     }
 
-    private transcriptionCache: Map<string, any> = new Map();
+    private transcriptionCache: Map<string, unknown> = new Map();
 
     public async getLatestTranscription() {
         return this.request('/transcriptions/latest');
@@ -92,7 +92,7 @@ export class ApiClient {
     }
 
     public async updateTranscription(id: string, content: string) {
-        const response: any = await this.request(`/transcriptions/${id}`, {
+        const response = await this.request(`/transcriptions/${id}`, {
             method: 'PUT',
             body: JSON.stringify({ content })
         });
@@ -100,7 +100,8 @@ export class ApiClient {
         // Update cache with new content if successful
         if (this.transcriptionCache.has(id)) {
             const cached = this.transcriptionCache.get(id);
-            this.transcriptionCache.set(id, { ...cached, content });
+            const cachedFields = cached && typeof cached === 'object' ? cached : {};
+            this.transcriptionCache.set(id, { ...cachedFields, content });
         }
 
         return response;

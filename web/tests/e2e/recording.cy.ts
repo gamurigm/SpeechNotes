@@ -68,6 +68,12 @@ describe('Flujos críticos de SpeechNotes', () => {
     beforeEach(() => {
         loginAsDemo();
         cy.visit('/dashboard', { onBeforeLoad: installAudioSimulation });
+        cy.window().then(async (win) => {
+            const response = await win.fetch('http://127.0.0.1:9443/api/transcriptions', {
+                headers: { 'x-api-key': 'dev-secret-api-key' },
+            });
+            expect(response.status).to.equal(200);
+        });
         cy.contains('Transcripción en Vivo', { timeout: 30_000 }).should('be.visible');
     });
 

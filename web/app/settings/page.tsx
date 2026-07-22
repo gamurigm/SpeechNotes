@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Input, Button, Divider, Chip, Accordion, AccordionItem } from "@heroui/react";
-import { Settings, Key, Brain, Mic, Shield, Eye, EyeOff, Save, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Card, CardBody, Input, Button, Chip, Accordion, AccordionItem } from "@heroui/react";
+import { Settings, Brain, Mic, Shield, Eye, EyeOff, Save, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 // ---------------------------------------------------------------------------

@@ -98,7 +98,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<BackgroundTheme>('cyberpunk');
   const [customBg, setCustomBgState] = useState<string | null>(null);
   const [glassOpacity, setGlassOpacityState] = useState<number>(10);
-  const [themeType, setThemeType] = useState<'light' | 'dark'>('dark');
+  const themeType = themeColors[theme]['--theme-type'] as 'light' | 'dark';
 
   // Load theme and custom image from localStorage on mount
   useEffect(() => {
@@ -106,16 +106,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const savedCustomBg = localStorage.getItem('sn-custom-bg');
     const savedOpacity = localStorage.getItem('sn-glass-opacity');
 
-    if (savedTheme && (themeColors[savedTheme] || savedTheme === 'custom')) {
-      setThemeState(savedTheme);
-      setThemeType(themeColors[savedTheme]['--theme-type'] as 'light' | 'dark');
-    }
-    if (savedCustomBg) {
-      setCustomBgState(savedCustomBg);
-    }
-    if (savedOpacity) {
-      setGlassOpacityState(parseInt(savedOpacity));
-    }
+    const animationFrame = requestAnimationFrame(() => {
+      if (savedTheme && themeColors[savedTheme]) {
+        setThemeState(savedTheme);
+      }
+      if (savedCustomBg) {
+        setCustomBgState(savedCustomBg);
+      }
+      if (savedOpacity) {
+        setGlassOpacityState(parseInt(savedOpacity, 10));
+      }
+    });
+
+    return () => cancelAnimationFrame(animationFrame);
   }, []);
 
   // Apply theme variables to root
@@ -123,8 +126,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     const currentThemeProps = themeColors[theme];
     const type = currentThemeProps['--theme-type'] as 'light' | 'dark';
-    setThemeType(type);
-
     // Apply all variables defined in themeColors
     Object.entries(currentThemeProps).forEach(([property, value]) => {
       root.style.setProperty(property, value);

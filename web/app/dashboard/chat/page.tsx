@@ -16,6 +16,11 @@ export default function ChatPage() {
   const isLoading = status === 'submitted';
 
   const normalizedMessages = Array.isArray(messages) ? messages : [];
+  const getMessageText = (message: (typeof normalizedMessages)[number]) =>
+    message.parts
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('');
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
@@ -51,9 +56,9 @@ export default function ChatPage() {
               <div className="text-sm space-y-2">
                 <p>Prueba preguntas como:</p>
                 <ul className="space-y-1 text-left max-w-md mx-auto">
-                  <li>• "¿De qué trata la clase de análisis y diseño?"</li>
-                  <li>• "¿Cuándo se grabó la clase sobre patrones de diseño?"</li>
-                  <li>• "Resume los puntos principales del documento X"</li>
+                  <li>• &ldquo;¿De qué trata la clase de análisis y diseño?&rdquo;</li>
+                  <li>• &ldquo;¿Cuándo se grabó la clase sobre patrones de diseño?&rdquo;</li>
+                  <li>• &ldquo;Resume los puntos principales del documento X&rdquo;</li>
                 </ul>
               </div>
             </div>
@@ -77,7 +82,7 @@ export default function ChatPage() {
                   {message.role === 'user' ? '👤 Tú' : '🤖 Asistente'}
                 </div>
                 <div className="whitespace-pre-wrap">
-                  {"text" in message ? (message as any).text : (message as any).content}
+                  {getMessageText(message)}
                 </div>
               </div>
             </div>
@@ -101,7 +106,7 @@ export default function ChatPage() {
           onSubmit={e => {
             e.preventDefault();
             if (input.trim()) {
-              (sendMessage as any)({ role: 'user', content: input });
+              sendMessage({ text: input });
               setInput('');
             }
           }}

@@ -30,7 +30,6 @@ export default function FormatterPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<FormatterProgress[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const [summary, setSummary] = useState<{ successful: number; failed: number } | null>(null);
   const [completedFiles, setCompletedFiles] = useState<number>(0);
 
@@ -43,7 +42,7 @@ export default function FormatterPage() {
     try {
       setIsLoading(true);
       // Try with session cookies first (preferred)
-      let res = await fetch('http://localhost:9443/api/format/files', {
+      const res = await fetch('http://localhost:9443/api/format/files', {
         headers: { 'x-api-key': 'dev-secret-api-key' }
       });
 
@@ -96,7 +95,7 @@ export default function FormatterPage() {
     setCompletedFiles(0);
 
     try {
-      let res = await fetch('http://localhost:9443/api/format/start', {
+      const res = await fetch('http://localhost:9443/api/format/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': 'dev-secret-api-key' },
         body: JSON.stringify({ file_ids: Array.from(selectedIds) })
@@ -154,7 +153,6 @@ export default function FormatterPage() {
         // isRunning is set to false when we receive job_completed or an error.
       };
 
-      setWs(websocket);
 
     } catch (error) {
       console.error('Error starting formatting:', error);

@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { useBackground, BackgroundTheme } from '../../providers';
-import { Palette, Check, Monitor, Moon, Sun, Zap, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { Palette, Check, Monitor, Moon, Sun, Zap, Upload, X } from 'lucide-react';
 import { Button, Popover, PopoverTrigger, PopoverContent, Divider, Slider } from "@heroui/react";
 
 const themes: { id: BackgroundTheme; name: string; icon: React.ReactNode; color: string }[] = [

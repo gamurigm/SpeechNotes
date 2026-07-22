@@ -16,10 +16,9 @@ interface ToastProps {
 export function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
-    const [isVisible, setIsVisible] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        setIsVisible(true);
         const timer = setTimeout(() => {
             setIsVisible(false);
             setTimeout(onClose, 300); // Wait for fade-out animation
@@ -63,6 +62,7 @@ export function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
                 </div>
 
                 <button
+                    type="button"
                     onClick={() => {
                         setIsVisible(false);
                         setTimeout(onClose, 300);

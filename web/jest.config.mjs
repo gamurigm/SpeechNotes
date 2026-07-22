@@ -7,10 +7,24 @@ const createJestConfig = nextJest({
 const config = {
     clearMocks: true,
     coverageDirectory: 'tests/evidence/coverage',
+    collectCoverageFrom: [
+        'app/dashboard/components/ChatSidebar.tsx',
+        'app/dashboard/components/LiveTranscription.tsx',
+        'app/dashboard/components/MarkdownViewer.tsx',
+        'app/dashboard/components/RecordingPanel.tsx',
+    ],
     coverageReporters: [
         ['lcov', { projectRoot: '..' }],
         'text-summary',
     ],
+    coverageThreshold: {
+        global: {
+            branches: 75,
+            functions: 80,
+            lines: 85,
+            statements: 80,
+        },
+    },
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
     },

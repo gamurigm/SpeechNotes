@@ -1,5 +1,5 @@
 # Stage 1: Dependencies
-FROM node:20-slim AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 
 # Install openssl for Prisma
@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: Builder
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
 
 # Install openssl for Prisma
@@ -34,7 +34,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

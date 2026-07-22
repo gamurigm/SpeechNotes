@@ -102,17 +102,11 @@ export function MicTest({ onClose }: { onClose?: () => void }) {
 
     useEffect(() => {
         return () => {
-            if (isTesting) {
-                stopMicTest();
-            }
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            void audioContextRef.current?.close();
         };
-    }, [isTesting]);
-
-    const getStatusColor = () => {
-        if (rmsLevel > 300) return 'from-emerald-500 to-teal-500';
-        if (rmsLevel > 150) return 'from-amber-500 to-orange-500';
-        return 'from-slate-600 to-slate-700';
-    };
+    }, []);
 
     const getProgressColor = () => {
         if (rmsLevel > 300) return 'bg-emerald-500';
