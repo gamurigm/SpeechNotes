@@ -8,12 +8,12 @@ except Exception:
 
 class ContentStrategy(Protocol):
     """Protocol for rendering strategies (SOLID: ISP/DIP)"""
-    def render(self, doc: Dict, segments: List[Dict]) -> str:
+    def render(self, doc: Dict, _segments: List[Dict]) -> str:
         ...
 
 class FormattedContentStrategy:
     """Strategy for high-quality formatted content (Kimi/M2)"""
-    def render(self, doc: Dict, segments: List[Dict]) -> str:
+    def render(self, doc: Dict, _segments: List[Dict]) -> str:
         return doc.get("formatted_content") or ""
 
 class SegmentDocumentStrategy:
@@ -32,7 +32,7 @@ class SegmentDocumentStrategy:
 
 class RawContentStrategy:
     """Fallback strategy for raw text"""
-    def render(self, doc: Dict, segments: List[Dict]) -> str:
+    def render(self, doc: Dict, _segments: List[Dict]) -> str:
         # Priority: Edited > Formatted (as fallback) > Raw
         return doc.get("edited_content") or doc.get("formatted_content") or doc.get("raw_content") or ""
 
