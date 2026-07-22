@@ -4,26 +4,22 @@ Este documento lista todos los datos **estimados o inferidos** en `index.html` q
 
 ---
 
-## Slide 8 — Análisis Estático (Antes)
+## Slide 8 & 9 — Análisis Estático (SonarCloud)
 
-> Líneas aproximadas: buscar `Slide 8` o los números `12`, `2h` en la sección de stats.
+> Estado actualizado desde la API pública de SonarCloud.
 
-| Campo | Valor actual (estimado) | Qué poner |
-|-------|------------------------|-----------|
-| Vulnerabilidades | `0` | Número real del primer reporte SonarCloud |
-| Code Smells | `12` | Número real del primer reporte SonarCloud |
-| Bugs Estáticos | `0` | Número real del primer reporte SonarCloud |
-| Deuda Técnica | `2h` | Valor real (ej. `1h 30min`, `3h 15min`) |
-
-### Sección "Hallazgos Principales" (misma slide)
-
-Actualizar las viñetas si los hallazgos reales difieren:
-- **Code Smells:** ¿cuáles fueron realmente? (variables no usadas, complejidad, etc.)
-- **Duplicación:** ¿hubo bloques duplicados detectados?
-- **Mantenibilidad:** ¿archivos largos sin modularizar?
-- **ESLint:** ¿violaciones específicas?
-
----
+| Campo | Valor Actual (SonarCloud API) | Estado |
+|-------|------------------------------|--------|
+| Vulnerabilidades | `0` | ✅ Real (API) |
+| Code Smells | `0` | ✅ Real (API) |
+| Bugs Estáticos | `0` | ✅ Real (API) |
+| Deuda Técnica | `0 min` | ✅ Real (API) |
+| Cobertura | `90.4%` | ✅ Real (API) |
+| Duplicación | `0.5%` | ✅ Real (API) |
+| Confiabilidad | `Rating A (1.0)` | ✅ Real (API) |
+| Seguridad | `Rating A (1.0)` | ✅ Real (API) |
+| Mantenibilidad | `Rating A (1.0)` | ✅ Real (API) |
+| Líneas de código (NCLOC) | `13,847` | ✅ Real (API) |
 
 ## Slide 9 — Análisis Estático (Después)
 

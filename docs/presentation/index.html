@@ -1092,34 +1092,57 @@
   <section class="slide" data-slide="8">
     <span class="slide-number">08 / 17</span>
     <div class="topic-tag anim">Análisis Estático</div>
-    <h2 class="anim">Análisis Estático — Antes</h2>
-    <p class="subtitle anim">Reporte inicial de SonarCloud tras primer escaneo del repositorio</p>
+    <h2 class="anim">Análisis Estático — Reporte SonarCloud</h2>
+    <p class="subtitle anim">Estado actual del proyecto en SonarCloud — 13,847 líneas de código analizadas</p>
     <div class="stat-row anim">
       <div class="stat">
-        <div class="number" style="background: linear-gradient(135deg, #ef4444, #f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
         <div class="label">Vulnerabilidades</div>
       </div>
       <div class="stat">
-        <div class="number" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">12</div>
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
         <div class="label">Code Smells</div>
       </div>
       <div class="stat">
-        <div class="number" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
         <div class="label">Bugs Estáticos</div>
       </div>
       <div class="stat">
-        <div class="number" style="background: linear-gradient(135deg, #06b6d4, #10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">2h</div>
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0 min</div>
         <div class="label">Deuda Técnica</div>
+      </div>
+    </div>
+    <div class="stat-row anim">
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">90.4%</div>
+        <div class="label">Cobertura</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0.5%</div>
+        <div class="label">Duplicación</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">A</div>
+        <div class="label">Confiabilidad</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">A</div>
+        <div class="label">Seguridad</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">A</div>
+        <div class="label">Mantenibilidad</div>
       </div>
     </div>
     <div class="split anim">
       <div class="glass">
         <h3>Hallazgos Principales</h3>
         <ul>
-          <li><strong>Code Smells:</strong> Variables no utilizadas, funciones con complejidad ciclomática elevada</li>
-          <li><strong>Duplicación:</strong> Bloques de manejo de errores repetidos en routers</li>
-          <li><strong>Mantenibilidad:</strong> Archivos con más de 300 líneas sin modularizar</li>
-          <li><strong>ESLint:</strong> Violaciones de reglas next/core-web-vitals</li>
+          <li><strong>0 Code Smells:</strong> Limpieza total de deuda técnica en el código analizado</li>
+          <li><strong>0 Bugs / 0 Vulnerabilidades:</strong> Sin problemas de confiabilidad ni seguridad</li>
+          <li><strong>Cobertura 90.4%:</strong> Cobertura excepcional en la suite de pruebas</li>
+          <li><strong>Duplicación 0.5%:</strong> Nivel mínimo de código duplicado</li>
+          <li><strong>Triple A:</strong> Calificación perfecta (Rating A) en Confiabilidad, Seguridad y Mantenibilidad</li>
         </ul>
       </div>
       <div class="glass">
@@ -1136,6 +1159,7 @@ sonar.python.coverage.reportPaths=
 sonar.javascript.lcov.reportPaths=
   web/tests/evidence/coverage/lcov.info
         </div>
+        <p style="margin-top:12px; font-size:0.82rem; color:var(--text-tertiary);">13,847 líneas de código · CI/CD via GitHub Actions</p>
       </div>
     </div>
   </section>
@@ -1145,52 +1169,64 @@ sonar.javascript.lcov.reportPaths=
        ═══════════════════════════════════════════════════════════ -->
   <section class="slide" data-slide="9">
     <span class="slide-number">09 / 17</span>
-    <div class="topic-tag anim">Comparativa</div>
-    <h2 class="anim">Análisis Estático — Después</h2>
-    <p class="subtitle anim">Comparativa tras refactorización y corrección de code smells</p>
+    <div class="topic-tag anim">Desglose</div>
+    <h2 class="anim">Análisis Estático — Desglose de Métricas</h2>
+    <p class="subtitle anim">Resultados de SonarCloud y estado óptimo del Quality Gate</p>
     <div class="compare anim">
       <div class="compare-box before">
-        <h4>❌ Antes</h4>
+        <h4>⚡ Estado del Proyecto</h4>
         <ul>
-          <li>12 Code Smells</li>
-          <li>~2h Deuda Técnica</li>
-          <li>Duplicación en handlers</li>
-          <li>Sin quality gate en CI</li>
+          <li>0 Code Smells (0 min deuda)</li>
+          <li>0 Bugs / 0 Vulnerabilidades</li>
+          <li>13,847 líneas de código</li>
+          <li>Quality Gate Aprobado (PASSED)</li>
         </ul>
       </div>
       <div class="compare-arrow">→</div>
       <div class="compare-box after">
-        <h4>✅ Después</h4>
+        <h4>✅ Excelencia en Calidad</h4>
         <ul>
-          <li>4 Code Smells restantes</li>
-          <li>~45min Deuda Técnica</li>
-          <li>Handlers modularizados</li>
-          <li>Quality gate activo en CI/CD</li>
+          <li>Cobertura de tests: 90.4%</li>
+          <li>Duplicación mínima: 0.5%</li>
+          <li>Triple Rating A (Confiabilidad, Seguridad, Mantenibilidad)</li>
+          <li>Pipeline CI/CD automatizado</li>
         </ul>
       </div>
     </div>
     <div class="bar-chart anim" style="margin-top:28px;">
       <div class="bar-row">
-        <div class="bar-label">Code Smells</div>
+        <div class="bar-label">Confiabilidad</div>
         <div class="bar-track">
-          <div class="bar-fill grad-red" style="width:100%;">12 → 4 (−67%)</div>
+          <div class="bar-fill grad-green" style="width:100%;">Rating A — 0 Bugs</div>
         </div>
       </div>
       <div class="bar-row">
-        <div class="bar-label">Deuda Técnica</div>
+        <div class="bar-label">Seguridad</div>
         <div class="bar-track">
-          <div class="bar-fill grad-1" style="width:63%;">2h → 45min (−63%)</div>
+          <div class="bar-fill grad-green" style="width:100%;">Rating A — 0 Vulnerabilidades</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Mantenibilidad</div>
+        <div class="bar-track">
+          <div class="bar-fill grad-green" style="width:100%;">Rating A — 0 Code Smells (0 min deuda)</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Cobertura</div>
+        <div class="bar-track">
+          <div class="bar-fill grad-green" style="width:90%;">90.4% de cobertura de tests</div>
         </div>
       </div>
       <div class="bar-row">
         <div class="bar-label">Duplicación</div>
         <div class="bar-track">
-          <div class="bar-fill grad-green" style="width:80%;">Reducida 80%</div>
+          <div class="bar-fill grad-green" style="width:10%;">0.5%</div>
         </div>
       </div>
     </div>
     <div class="highlight-box anim" style="margin-top:20px;">
-      <p><strong>Impacto:</strong> La integración de SonarCloud en GitHub Actions asegura que la calidad del código se mantenga en el tiempo. El quality gate previene regresiones en futuros commits.</p>
+      <p><strong>Valoración:</strong> El proyecto alcanza una calificación perfecta (Triple Rating A) en SonarCloud. Con 0 code smells, 0 bugs, 0 vulnerabilidades y una cobertura del 90.4%, el código supera ampliamente los estándares de calidad de la industria.</p>
     </div>
   </section>
 
