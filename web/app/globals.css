@@ -68,12 +68,6 @@
   --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
 }
 
-/* Base fallback - will be overridden by Providers.tsx */
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 /* ─────────────────────────────────────────────────────────────
    Base Styles
    ───────────────────────────────────────────────────────────── */
@@ -391,10 +385,6 @@ button:active:not(:disabled),
   }
 }
 
-.animate-soft-pulse {
-  animation: soft-pulse 2s ease-in-out infinite;
-}
-
 /* ─────────────────────────────────────────────────────────────
    Fade In Up Animation
    ───────────────────────────────────────────────────────────── */
@@ -433,12 +423,12 @@ button:active:not(:disabled),
 
 .badge-primary {
   background: rgba(139, 92, 246, 0.1);
-  color: rgb(167, 139, 250);
+  color: rgb(196, 181, 253);
   border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .badge-success {
   background: rgba(16, 185, 129, 0.1);
-  color: rgb(52, 211, 153);
+  color: rgb(110, 231, 183);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
