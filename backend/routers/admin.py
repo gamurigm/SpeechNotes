@@ -12,7 +12,10 @@ from src.database.mongo_manager import MongoManager
 router = APIRouter()
 
 
-@router.delete("/clear_transcriptions")
+@router.delete(
+    "/clear_transcriptions",
+    responses={500: {"description": "Error al limpiar las transcripciones"}},
+)
 async def clear_transcriptions(api_ok: Annotated[bool, Depends(require_api_key)]) -> Dict[str, int]:
     """Delete all documents in the `transcriptions` collection.
 

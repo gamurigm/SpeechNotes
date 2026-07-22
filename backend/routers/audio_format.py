@@ -108,7 +108,7 @@ class ProfileInfo(BaseModel):
 
 # ==================== API Endpoints ====================
 
-@router.get("/profiles", response_model=List[ProfileInfo])
+@router.get("/profiles", response_model=List[ProfileInfo], responses={500: {"description": "Error al obtener perfiles"}})
 async def get_available_profiles(api_ok: bool = Depends(require_auth)):
     """
     Get list of available conversion profiles
@@ -120,7 +120,7 @@ async def get_available_profiles(api_ok: bool = Depends(require_auth)):
         raise HTTPException(status_code=500, detail=f"Error fetching profiles: {str(e)}")
 
 
-@router.post("/detect", response_model=DetectFormatResponse)
+@router.post("/detect", response_model=DetectFormatResponse, responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al detectar formato"}})
 async def detect_audio_format(request: DetectFormatRequest, api_ok: bool = Depends(require_auth)):
     """
     Detect audio format and extract metadata
@@ -151,7 +151,7 @@ async def detect_audio_format(request: DetectFormatRequest, api_ok: bool = Depen
         raise HTTPException(status_code=500, detail=f"Error detecting format: {str(e)}")
 
 
-@router.post("/convert")
+@router.post("/convert", responses={404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al convertir archivo"}})
 async def convert_single_file(request: ConvertFileRequest, api_ok: bool = Depends(require_auth)):
     """
     Convert a single audio file
@@ -181,7 +181,7 @@ async def convert_single_file(request: ConvertFileRequest, api_ok: bool = Depend
         raise HTTPException(status_code=500, detail=f"Error converting file: {str(e)}")
 
 
-@router.post("/batch", response_model=JobResponse)
+@router.post("/batch", response_model=JobResponse, responses={400: {"description": "No se proporcionaron archivos"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al iniciar trabajo"}})
 async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depends(require_auth)):
     """
     Start a batch conversion job
@@ -224,7 +224,7 @@ async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depen
         raise HTTPException(status_code=500, detail=f"Error starting batch job: {str(e)}")
 
 
-@router.get("/job/{job_id}")
+@router.get("/job/{job_id}", responses={404: {"description": "Trabajo no encontrado"}})
 async def get_job_status(job_id: str, api_ok: bool = Depends(require_auth)):
     """
     Get current status of a format job
@@ -301,7 +301,7 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
             print(f"[WS] Job {job_id} was already disconnected")
 
 
-@router.post("/cleanup")
+@router.post("/cleanup", responses={500: {"description": "Error al limpiar archivos temporales"}})
 async def cleanup_temp_files(api_ok: bool = Depends(require_auth)):
     """
     Clean up temporary files
@@ -315,7 +315,7 @@ async def cleanup_temp_files(api_ok: bool = Depends(require_auth)):
 
 # ==================== ENDPOINT DE DESCARGA ====================
 
-@router.get("/download/{file_path:path}")
+@router.get("/download/{file_path:path}", responses={400: {"description": "Ruta no permitida o no es archivo"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al descargar archivo"}})
 async def download_formatted_file(file_path: str, api_ok: bool = Depends(require_auth)):
     """
     Descarga el archivo de audio formateado directamente a tu computadora
@@ -361,7 +361,7 @@ async def download_formatted_file(file_path: str, api_ok: bool = Depends(require
 
 # ==================== ENDPOINTS ADICIONALES DE FFMPEG ====================
 
-@router.post("/normalize")
+@router.post("/normalize", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al normalizar audio"}})
 async def normalize_audio_volume(
     file_path: str,
     target_loudness_db: float = -16.0,
@@ -396,7 +396,7 @@ async def normalize_audio_volume(
         raise HTTPException(status_code=500, detail=f"Error normalizando audio: {str(e)}")
 
 
-@router.post("/trim-silence")
+@router.post("/trim-silence", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al recortar silencios"}})
 async def trim_audio_silence(
     file_path: str,
     silence_thresh_db: int = -40,
@@ -431,7 +431,7 @@ async def trim_audio_silence(
         raise HTTPException(status_code=500, detail=f"Error recortando silencios: {str(e)}")
 
 
-@router.post("/extract-segment")
+@router.post("/extract-segment", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al extraer segmento"}})
 async def extract_audio_segment(
     file_path: str,
     start_time_seconds: float,
@@ -469,7 +469,7 @@ async def extract_audio_segment(
         raise HTTPException(status_code=500, detail=f"Error extrayendo segmento: {str(e)}")
 
 
-@router.post("/merge")
+@router.post("/merge", responses={400: {"description": "Ruta no permitida"}, 500: {"description": "Error al unir archivos"}})
 async def merge_audio_files(
     file_paths: List[str],
     output_filename: Optional[str] = None,
@@ -501,7 +501,7 @@ async def merge_audio_files(
         raise HTTPException(status_code=500, detail=f"Error uniendo archivos: {str(e)}")
 
 
-@router.post("/change-speed")
+@router.post("/change-speed", responses={400: {"description": "Ruta no permitida"}, 404: {"description": "Archivo no encontrado"}, 500: {"description": "Error al cambiar velocidad"}})
 async def change_audio_speed(
     file_path: str,
     speed_factor: float = 1.5,
