@@ -162,10 +162,6 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
                 audio_chunks=self._pcm_chunks(pcm, sample_rate),
                 streaming_config=streaming_config,
             )
-        else:
-            responses = asr_service.offline_recognize(pcm, config)
-
-        if "parakeet" in self._cfg.model_id.lower():
             texts = []
             for response in responses:
                 for result in response.results:
@@ -174,6 +170,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
             return " ".join(texts).strip()
 
         # Extract best transcript from response
+        response = asr_service.offline_recognize(pcm, config)
         texts = []
         for result in response.results:
             if result.alternatives:
