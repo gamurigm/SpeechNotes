@@ -7,21 +7,23 @@ Public components are loaded lazily so importing a focused subpackage such as
 from importlib import import_module
 
 __version__ = "2.0.0"
+_AUDIO_MODULE = ".audio"
+_TRANSCRIPTION_MODULE = ".transcription"
 
 _EXPORTS = {
     "ConfigManager": (".core", "ConfigManager"),
     "RivaConfig": (".core", "RivaConfig"),
     "RivaClientFactory": (".core.riva_client", "RivaClientFactory"),
     "RivaTranscriber": (".core.riva_client", "RivaTranscriber"),
-    "AudioConfig": (".audio", "AudioConfig"),
-    "MicrophoneStream": (".audio", "MicrophoneStream"),
-    "ContinuousRecorder": (".audio", "ContinuousRecorder"),
-    "VADRecorder": (".audio", "VADRecorder"),
-    "VADConfig": (".audio", "VADConfig"),
-    "MicrophoneCalibrator": (".audio", "MicrophoneCalibrator"),
-    "FormatterFactory": (".transcription", "FormatterFactory"),
-    "OutputWriter": (".transcription", "OutputWriter"),
-    "TranscriptionService": (".transcription", "TranscriptionService"),
+    "AudioConfig": (_AUDIO_MODULE, "AudioConfig"),
+    "MicrophoneStream": (_AUDIO_MODULE, "MicrophoneStream"),
+    "ContinuousRecorder": (_AUDIO_MODULE, "ContinuousRecorder"),
+    "VADRecorder": (_AUDIO_MODULE, "VADRecorder"),
+    "VADConfig": (_AUDIO_MODULE, "VADConfig"),
+    "MicrophoneCalibrator": (_AUDIO_MODULE, "MicrophoneCalibrator"),
+    "FormatterFactory": (_TRANSCRIPTION_MODULE, "FormatterFactory"),
+    "OutputWriter": (_TRANSCRIPTION_MODULE, "OutputWriter"),
+    "TranscriptionService": (_TRANSCRIPTION_MODULE, "TranscriptionService"),
 }
 
 __all__ = list(_EXPORTS)

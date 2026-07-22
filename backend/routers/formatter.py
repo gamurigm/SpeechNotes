@@ -149,7 +149,7 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
             return
         
         # Stream progress updates
-        async for progress in formatter_agent.run_job(job_id):
+        async for _ in formatter_agent.run_job(job_id):
             await websocket.send_json(progress.to_dict())
             await asyncio.sleep(0.1)  # Small delay to avoid overwhelming client
         
@@ -167,12 +167,12 @@ async def format_progress_websocket(websocket: WebSocket, job_id: str):
         print(f"Error in WebSocket for job {job_id}: {e}")
         try:
             await websocket.send_json({"error": str(e)})
-        except:
+        except Exception:
             pass
     finally:
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass
 
 

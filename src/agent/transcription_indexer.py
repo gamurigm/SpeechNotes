@@ -233,7 +233,7 @@ class TranscriptionIndexer:
                 print(f"[ERROR] Error procesando {file_path.name}: {e}\n")
         
         print("=" * 60)
-        print(f"[OK] Indexacion completa:")
+        print("[OK] Indexacion completa:")
         print(f"   Archivos procesados: {len(results)}")
         print(f"   Total de chunks: {total_chunks}")
         print(f"   Documentos en vector store: {len(self.vector_store)}")
@@ -278,7 +278,7 @@ class TranscriptionIndexer:
                 print(f"[ERROR] Error procesando {file_path.name}: {e}\n")
         
         print("=" * 60)
-        print(f"[OK] Indexacion completa:")
+        print("[OK] Indexacion completa:")
         print(f"   Archivos procesados: {len(results)}")
         print(f"   Total de chunks: {total_chunks}")
         print(f"   Documentos en vector store: {len(self.vector_store)}")

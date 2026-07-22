@@ -167,7 +167,7 @@ class FormatterAgent:
                 job.successful += 1
                 yield progress
                 
-            except Exception as e:
+            except Exception:
                 error_id = doc_id if 'doc_id' in locals() else f"index-{idx}"
                 progress = FormatterProgress(
                     job_id=job_id,
@@ -224,7 +224,7 @@ class FormatterAgent:
                     "doc": doc
                 }
                 
-            except Exception as e:
+            except Exception:
                 if attempt < max_retries:
                     await asyncio.sleep(1 * (2 ** attempt))
                     continue
@@ -310,7 +310,7 @@ tipo: Profesional
 """
                 return header + formatted_content
 
-            except Exception as e:
+            except Exception:
                 if attempt < max_retries:
                     await asyncio.sleep(2 * (2 ** attempt))  # Exponential backoff
                     continue

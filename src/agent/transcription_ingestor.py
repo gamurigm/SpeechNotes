@@ -129,7 +129,7 @@ class TranscriptionIngestor:
         try:
             content = file_path.read_text(encoding='utf-8')
             word_count = len(content.split())
-        except:
+        except (OSError, UnicodeError):
             word_count = 0
             
         return {

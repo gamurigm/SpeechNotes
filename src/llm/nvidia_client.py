@@ -51,7 +51,7 @@ class NvidiaInferenceClient:
             print(f"[NVIDIA Client] API Key: {masked_key}")
 
             if not self.api_key.startswith("nvapi-"):
-                print(f"[NVIDIA Client] WARNING: API Key does not start with 'nvapi-'. It might be invalid.")
+                print("[NVIDIA Client] WARNING: API Key does not start with 'nvapi-'. It might be invalid.")
             
             self.client = OpenAI(
                 base_url=self.base_url,

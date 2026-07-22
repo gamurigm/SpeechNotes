@@ -102,7 +102,7 @@ class LanguageDetectionService:
         """Extract the JSON detection result from the model response."""
         try:
             # Strip markdown code blocks
-            clean = re.sub(r"```(?:json)?|```", "", raw).strip()
+            clean = re.sub(r"```(?:json)?", "", raw).strip()
             data = json.loads(clean)
             code = data.get("language_code", "unknown").lower()[:5]
             name = data.get("language_name") or LANGUAGE_NAMES.get(code, "Unknown")

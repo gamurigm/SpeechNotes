@@ -25,6 +25,7 @@ from backend.services.audio.pipeline import PipelineContext, PipelineFactory
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+EMPTY_UPLOAD_MESSAGE = "Uploaded file is empty"
 
 
 # ── POST /api/audio/transcribe ──────────────────────────────────────────
@@ -49,7 +50,7 @@ async def transcribe_audio(
     """
     audio_bytes = await file.read()
     if not audio_bytes:
-        raise HTTPException(400, "Uploaded file is empty")
+        raise HTTPException(400, EMPTY_UPLOAD_MESSAGE)
 
     svc = ASRService()
     result = await svc.transcribe(
@@ -90,7 +91,7 @@ async def denoise_audio(
     """
     audio_bytes = await file.read()
     if not audio_bytes:
-        raise HTTPException(400, "Uploaded file is empty")
+        raise HTTPException(400, EMPTY_UPLOAD_MESSAGE)
 
     svc = NoiseRemovalService()
     result = await svc.denoise(
@@ -134,7 +135,7 @@ async def run_pipeline(
     """
     audio_bytes = await file.read()
     if not audio_bytes:
-        raise HTTPException(400, "Uploaded file is empty")
+        raise HTTPException(400, EMPTY_UPLOAD_MESSAGE)
 
     try:
         pipe = PipelineFactory.create(pipeline)

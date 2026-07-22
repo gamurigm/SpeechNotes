@@ -256,7 +256,7 @@ function DashboardContent() {
                                     <div
                                         className="absolute inset-0 rounded-r-2xl border-y border-r transition-all duration-500 backdrop-blur-xl"
                                         style={{
-                                            background: showSidebar ? 'var(--theme-glass-bg)' : 'var(--theme-glass-bg)',
+                                            background: 'var(--theme-glass-bg)',
                                             borderColor: showSidebar ? 'var(--theme-glass-border)' : 'rgba(99, 102, 241, 0.3)',
                                             opacity: showSidebar ? '0.4' : '1',
                                             transform: showSidebar ? 'translateX(-12px)' : 'translateX(0)'
@@ -385,7 +385,8 @@ function DashboardContent() {
                                                             className="hidden"
                                                             onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)}
                                                         />
-                                                        <div
+                                                        <button
+                                                            type="button"
                                                             className="relative border-2 border-dashed border-white/20 rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-blue-400/50 hover:bg-blue-500/5 transition-all duration-300 group"
                                                             onClick={() => tools.uploadInputRef.current?.click()}
                                                         >
@@ -399,7 +400,7 @@ function DashboardContent() {
                                                                 </p>
                                                                 <p className="text-[10px] text-white/40 font-semibold">MP3, WAV, M4A, OGG, WebM</p>
                                                             </div>
-                                                        </div>
+                                                        </button>
                                                     </div>
 
                                                     <Divider className="opacity-20" />
@@ -552,7 +553,8 @@ function DashboardContent() {
                                                         </Button>
                                                     </div>
                                                     <input ref={tools.uploadInputRef} type="file" accept="audio/*" className="hidden" onChange={(e) => tools.setUploadFileName(e.target.files?.[0]?.name || null)} />
-                                                    <div
+                                                    <button
+                                                        type="button"
                                                         className="border-2 border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-all"
                                                         onClick={() => tools.uploadInputRef.current?.click()}
                                                     >
@@ -560,7 +562,7 @@ function DashboardContent() {
                                                         <p className="text-[10px] text-slate-400 font-bold truncate max-w-full px-2">
                                                             {tools.uploadFileName || 'Haz clic para seleccionar'}
                                                         </p>
-                                                    </div>
+                                                    </button>
                                                     <Button
                                                         size="md"
                                                         color="primary"
@@ -764,7 +766,12 @@ function DashboardContent() {
             {/* Command Palette Search */}
             {showSearchPalette && (
                 <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4 backdrop-blur-sm bg-black/40 animate-in fade-in duration-300">
-                    <div className="absolute inset-0" onClick={() => setShowSearchPalette(false)} />
+                    <button
+                        type="button"
+                        aria-label="Cerrar búsqueda"
+                        className="absolute inset-0"
+                        onClick={() => setShowSearchPalette(false)}
+                    />
                     <div className="w-full max-w-2xl glass border border-white/20 shadow-2xl rounded-3xl overflow-hidden relative animate-in zoom-in-95 slide-in-from-top-4 duration-300">
                         <div className="p-6 flex items-center gap-4 border-b border-white/10">
                             <Search className="text-blue-500 animate-pulse" size={24} />

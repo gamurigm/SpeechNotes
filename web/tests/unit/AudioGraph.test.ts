@@ -28,7 +28,7 @@ describe('AudioGraph', () => {
         };
 
         const mockScriptProcessor = {
-            onaudioprocess: null as ((ev: any) => void) | null,
+            onaudioprocess: null as ((ev: AudioProcessingEvent) => void) | null,
             connect: jest.fn(),
             disconnect: jest.fn(),
         };
@@ -102,8 +102,7 @@ describe('AudioGraph', () => {
         await audioGraph.initialize(16000);
         audioGraph.createGraph({ sampleRate: 16000, fftSize: 1024, gain: 1.0 });
 
-        audioGraph.setGain(3.5);
-        // Gain updated without throwing error
+        expect(() => audioGraph.setGain(3.5)).not.toThrow();
     });
 
     test('dispose cleans up script processor, gain, analyser, tracks and context', async () => {

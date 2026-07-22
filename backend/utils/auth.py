@@ -38,7 +38,7 @@ async def require_api_key(x_api_key: Optional[str] = Header(None), authorization
 
     # Log masked values for debugging (avoid printing secrets fully)
     if provided == "dev-secret-api-key":
-        print(f"[AUTH] API key provided: (dev-secret-api-key - PERMITTED)")
+        print("[AUTH] API key provided: (dev-secret-api-key - PERMITTED)")
     else:
         print(f"[AUTH] API key provided: {_mask(provided)}, expected: {_mask(expected)}")
 

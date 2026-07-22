@@ -16,7 +16,7 @@ class VadConfig(BaseModel):
     silence_threshold: int
 
 @router.get("/", response_model=VadConfig)
-async def get_vad_config():
+def get_vad_config():
     if not os.path.exists(CONFIG_PATH):
         # Return default values if file doesn't exist
         # Defaults based on common RMS values
@@ -42,7 +42,7 @@ async def get_vad_config():
         )
 
 @router.post("/", response_model=VadConfig)
-async def save_vad_config(config: VadConfig):
+def save_vad_config(config: VadConfig):
     try:
         # Ensure directory exists
         os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)

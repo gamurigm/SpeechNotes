@@ -87,7 +87,7 @@ def test_connection():
             return False
             
     except FileNotFoundError as e:
-        print(f"\n❌ Error: Archivo de configuración no encontrado")
+        print("\n❌ Error: Archivo de configuración no encontrado")
         print(f"   {e}")
         print("\n💡 Asegúrate de tener un archivo .env en el directorio raíz del proyecto")
         return False

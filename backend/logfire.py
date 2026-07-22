@@ -13,18 +13,56 @@ def instrument(*args, **kwargs):
     # If used with parens: @logfire.instrument("name")
     return decorator
 
-def info(*args, **kwargs): pass
-def error(*args, **kwargs): pass
-def warn(*args, **kwargs): pass
-def configure(*args, **kwargs): pass
-def instrument_requests(*args, **kwargs): pass
-def instrument_httpx(*args, **kwargs): pass
-def instrument_pymongo(*args, **kwargs): pass
-def instrument_pydantic_ai(*args, **kwargs): pass
-def instrument_fastapi(*args, **kwargs): pass
+def info(*args, **kwargs):
+    """Intentionally discard informational telemetry in the local shim."""
+    return None
+
+
+def error(*args, **kwargs):
+    """Intentionally discard error telemetry in the local shim."""
+    return None
+
+
+def warn(*args, **kwargs):
+    """Intentionally discard warning telemetry in the local shim."""
+    return None
+
+
+def configure(*args, **kwargs):
+    """Accept Logfire configuration while telemetry is intentionally disabled."""
+    return None
+
+
+def instrument_requests(*args, **kwargs):
+    """Leave Requests uninstrumented while telemetry is disabled."""
+    return None
+
+
+def instrument_httpx(*args, **kwargs):
+    """Leave HTTPX uninstrumented while telemetry is disabled."""
+    return None
+
+
+def instrument_pymongo(*args, **kwargs):
+    """Leave PyMongo uninstrumented while telemetry is disabled."""
+    return None
+
+
+def instrument_pydantic_ai(*args, **kwargs):
+    """Leave Pydantic AI uninstrumented while telemetry is disabled."""
+    return None
+
+
+def instrument_fastapi(*args, **kwargs):
+    """Leave FastAPI uninstrumented while telemetry is disabled."""
+    return None
+
+
 class DummyContextManager:
     def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb): pass
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Never suppress exceptions raised inside the dummy span."""
+        return None
     def __getattr__(self, name): return self
     def __call__(self, *args, **kwargs): return self
 
@@ -32,11 +70,13 @@ def span(*args, **kwargs): return DummyContextManager()
 
 class LogfireSpan:
     """Dummy class to satisfy pydantic_ai internal imports."""
-    pass
+    # The compatibility type deliberately carries no state or behavior.
 
 class Logfire:
     """Dummy Logfire object to silence pydantic-graph."""
-    def __init__(self, *args, **kwargs): pass
+    def __init__(self, *args, **kwargs):
+        """Accept the real client's constructor arguments without side effects."""
+        return None
     def __getattr__(self, name):
         # Return a callable that does nothing, or a DummyContextManager for spans
         if name in ('span', 'instrument'):

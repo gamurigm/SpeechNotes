@@ -105,7 +105,7 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
             content_type=content_type
         )
         
-    except Exception as e:
+    except Exception:
         logger.exception("Error loading requested document context")
         return None
 
@@ -130,7 +130,7 @@ def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
             
         return load_document_context(str(doc["_id"]))
         
-    except Exception as e:
+    except Exception:
         logger.exception("Error loading requested document by filename")
         return None
 
@@ -248,7 +248,7 @@ async def chat_stream(request: ChatRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error in chat endpoint")
+        logger.exception("Error in chat endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
 

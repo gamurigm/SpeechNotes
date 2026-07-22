@@ -19,6 +19,7 @@ except Exception:
     from ..utils.auth import require_auth
 
 router = APIRouter()
+FILE_NOT_FOUND_MESSAGE = "Archivo no encontrado"
 
 # Initialize formatter service
 def get_project_root():
@@ -29,7 +30,7 @@ def get_project_root():
     if not (project_root / "backend").exists():
         project_root = Path.cwd()
         if not (project_root / "backend").exists():
-            raise RuntimeError(f"Could not find project root")
+            raise RuntimeError("Could not find project root")
     
     return project_root
 
@@ -42,6 +43,7 @@ except RuntimeError as e:
 print(f"[INIT] Audio Format Router - Project root: {project_root.absolute()}")
 
 audio_formatter = AudioFormatterService(project_root)
+background_tasks: set[asyncio.Task] = set()
 
 
 def resolve_project_path(file_path: str) -> Path:
@@ -205,7 +207,9 @@ async def batch_convert_files(request: BatchConvertRequest, api_ok: bool = Depen
         )
         
         # Start job in background
-        asyncio.create_task(run_batch_job_background(job_id, request.max_concurrent))
+        task = asyncio.create_task(run_batch_job_background(job_id, request.max_concurrent))
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
         
         return JobResponse(
             job_id=job_id,
@@ -374,7 +378,7 @@ async def normalize_audio_volume(
         input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
-            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            raise HTTPException(status_code=404, detail=FILE_NOT_FOUND_MESSAGE)
         
         result = await audio_formatter.normalize_audio(
             input_path=input_path,
@@ -409,7 +413,7 @@ async def trim_audio_silence(
         input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
-            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            raise HTTPException(status_code=404, detail=FILE_NOT_FOUND_MESSAGE)
         
         result = await audio_formatter.trim_silence(
             input_path=input_path,
@@ -446,7 +450,7 @@ async def extract_audio_segment(
         input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
-            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            raise HTTPException(status_code=404, detail=FILE_NOT_FOUND_MESSAGE)
         
         result = await audio_formatter.extract_segment(
             input_path=input_path,
@@ -514,7 +518,7 @@ async def change_audio_speed(
         input_path = resolve_project_path(file_path)
         
         if not input_path.exists():
-            raise HTTPException(status_code=404, detail="Archivo no encontrado")
+            raise HTTPException(status_code=404, detail=FILE_NOT_FOUND_MESSAGE)
         
         result = await audio_formatter.change_speed(
             input_path=input_path,
@@ -540,7 +544,7 @@ async def run_batch_job_background(job_id: str, max_concurrent: int = 3):
     Used when job is started without WebSocket connection
     """
     try:
-        async for progress in audio_formatter.batch_convert(job_id, max_concurrent):
+        async for _ in audio_formatter.batch_convert(job_id, max_concurrent):
             # Progress is handled by WebSocket connections
             # This just ensures the job runs
             pass

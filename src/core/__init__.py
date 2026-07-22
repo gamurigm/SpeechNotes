@@ -1,15 +1,16 @@
 """Core functionality exposed through lazy imports."""
 
 from importlib import import_module
+_ENVIRONMENT_FACTORY_MODULE = ".environment_factory"
 
 _EXPORTS = {
     "ConfigManager": (".config", "ConfigManager"),
     "RivaConfig": (".config", "RivaConfig"),
-    "TranscriptionEnvironmentFactory": (".environment_factory", "TranscriptionEnvironmentFactory"),
-    "TranscriptionEnvironmentFactoryProvider": (".environment_factory", "TranscriptionEnvironmentFactoryProvider"),
-    "RivaLiveFactory": (".environment_factory", "RivaLiveFactory"),
-    "LocalBatchFactory": (".environment_factory", "LocalBatchFactory"),
-    "EnvironmentType": (".environment_factory", "EnvironmentType"),
+    "TranscriptionEnvironmentFactory": (_ENVIRONMENT_FACTORY_MODULE, "TranscriptionEnvironmentFactory"),
+    "TranscriptionEnvironmentFactoryProvider": (_ENVIRONMENT_FACTORY_MODULE, "TranscriptionEnvironmentFactoryProvider"),
+    "RivaLiveFactory": (_ENVIRONMENT_FACTORY_MODULE, "RivaLiveFactory"),
+    "LocalBatchFactory": (_ENVIRONMENT_FACTORY_MODULE, "LocalBatchFactory"),
+    "EnvironmentType": (_ENVIRONMENT_FACTORY_MODULE, "EnvironmentType"),
 }
 
 __all__ = list(_EXPORTS)

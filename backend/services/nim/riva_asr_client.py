@@ -164,7 +164,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
 
         transcript = " ".join(texts).strip()
         logger.info(
-            "[Riva:ASR] Transcribed %d bytes -> %d chars (lang=%s, source_language=%s)",
+            "[Riva:ASR] Transcribed %d bytes -> %d chars (lang=%s)",
             len(audio_bytes),
             len(transcript),
             lang_code,

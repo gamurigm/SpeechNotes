@@ -284,7 +284,7 @@ class RivaTranscriber:
             if len(words) >= 4:
                 from collections import Counter
                 word_counts = Counter(words)
-                most_common_word, most_common_count = word_counts.most_common(1)[0]
+                _, most_common_count = word_counts.most_common(1)[0]
                 
                 # If one word makes up more than 75% of all words
                 if most_common_count / len(words) > 0.75:

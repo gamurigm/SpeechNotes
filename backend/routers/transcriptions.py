@@ -19,6 +19,7 @@ from backend.repositories.transcription_repository import TranscriptionRepositor
 from backend.services.knowledge.content_renderer import ContentRenderer
 
 router = APIRouter()
+NOT_FOUND_MESSAGE = "Not found"
 
 
 # ──────────────────────────────────────────────
@@ -90,7 +91,7 @@ async def get_transcription_by_id(
     try:
         doc = service.get_by_id(transcription_id)
         if not doc:
-            raise HTTPException(404, "Not found")
+            raise HTTPException(404, NOT_FOUND_MESSAGE)
         return doc
     except HTTPException:
         raise
@@ -107,7 +108,7 @@ async def update_transcription(
     """Update transcription content."""
     if service.update_content(transcription_id, update.content):
         return {"status": "updated"}
-    raise HTTPException(404, "Not found")
+    raise HTTPException(404, NOT_FOUND_MESSAGE)
 
 
 @router.delete("/{transcription_id}")
@@ -118,4 +119,4 @@ async def delete_transcription(
     """Logically delete a transcription."""
     if service.delete(transcription_id):
         return {"status": "deleted"}
-    raise HTTPException(404, "Not found")
+    raise HTTPException(404, NOT_FOUND_MESSAGE)

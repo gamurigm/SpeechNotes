@@ -36,6 +36,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from dotenv import load_dotenv
 import asyncio
+import math
 import re
 import traceback
 import unicodedata
@@ -765,7 +766,7 @@ def register_socket_events(sio):
     async def _process_pcm_chunk(sio_inst, sid: str, pcm_data: bytes, session: dict):
         """Process bounded PCM chunks and enqueue stable ASR segments."""
         mic_gain = session.get("mic_gain", 1.0)
-        if mic_gain != 1.0:
+        if not math.isclose(mic_gain, 1.0):
             pcm_data = AudioUtils.apply_gain(pcm_data, mic_gain)
 
         writer: IncrementalWavWriter | None = session.get("audio_writer")
@@ -857,7 +858,7 @@ def register_socket_events(sio):
 
         active_sessions[sid]["active"] = False
         active_sessions[sid]["stopping"] = True
-        asyncio.create_task(_handle_stop_recording(sid))
+        active_sessions[sid]["stop_task"] = asyncio.create_task(_handle_stop_recording(sid))
 
         try:
             await sio.emit('recording_stopped', {
@@ -875,9 +876,6 @@ def register_socket_events(sio):
         session = active_sessions.get(sid)
         if not session:
             return
-
-        from backend.repositories.transcription_repository import TranscriptionRepository
-        repo = TranscriptionRepository()
 
         try:
             stop_elapsed = (datetime.now() - session["start_time"]).total_seconds()
