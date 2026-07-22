@@ -86,6 +86,19 @@ describe('AudioGraph', () => {
         expect(debugInfo.inputSampleRate).toBe(44100);
     });
 
+    test('initialize accepts an explicit microphone device', async () => {
+        await audioGraph.initialize(16000, 'mic-usb');
+        expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+            audio: expect.objectContaining({ deviceId: { exact: 'mic-usb' } }),
+        });
+    });
+
+    test('rejects graph creation before initialization', () => {
+        expect(() => audioGraph.createGraph({ sampleRate: 16000, fftSize: 1024, gain: 1 })).toThrow(
+            'AudioGraph not initialized'
+        );
+    });
+
     test('createGraph connects audio nodes and sets gain/fftSize', async () => {
         await audioGraph.initialize(16000);
         const analyser = audioGraph.createGraph({
@@ -111,5 +124,21 @@ describe('AudioGraph', () => {
 
         audioGraph.dispose();
         expect(audioGraph.getDebugInfo()).toBeDefined();
+    });
+
+    test('processes a full PCM chunk and emits silence to the output buffer', async () => {
+        await audioGraph.initialize(16000);
+        audioGraph.createGraph({ sampleRate: 16000, fftSize: 1024, gain: 1.0 });
+        const graph = audioGraph as unknown as {
+            scriptProcessor: { onaudioprocess: (event: AudioProcessingEvent) => void };
+        };
+        const input = new Float32Array(44100).fill(0.25);
+        const output = new Float32Array(44100).fill(1);
+        graph.scriptProcessor.onaudioprocess({
+            inputBuffer: { getChannelData: () => input },
+            outputBuffer: { getChannelData: () => output },
+        } as unknown as AudioProcessingEvent);
+        expect(onAudioDataMock).toHaveBeenCalledTimes(2);
+        expect(output.every(sample => sample === 0)).toBe(true);
     });
 });

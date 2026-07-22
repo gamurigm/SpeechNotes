@@ -32,7 +32,9 @@ jest.mock('@heroui/react', () => {
         ),
         ModalFooter: Container,
         ModalHeader: Container,
-        Slider: () => <input aria-label="slider simulado" type="range" />,
+        Slider: ({ label, value, onChange }: { label?: string; value?: number; onChange?: (value: number) => void }) => (
+            <label>{label}<input aria-label={label ?? 'slider simulado'} type="range" value={value ?? 0} onChange={event => onChange?.(Number(event.target.value))} /></label>
+        ),
         useDisclosure: () => {
             const [isOpen, setIsOpen] = React.useState(false);
             return {
@@ -100,5 +102,41 @@ describe('RecordingPanel', () => {
         await userEvent.click(await screen.findByRole('button', { name: 'Si, detener ahora' }));
 
         expect(state.stopRecording).toHaveBeenCalledTimes(1);
+    });
+
+    it('permite abrir configuración y actualizar controles de audio', async () => {
+        const state = recordingState({
+            audioDevices: [{ deviceId: 'mic-1', label: 'Micrófono USB' }],
+        });
+        mockedUseRecording.mockReturnValue(state as ReturnType<typeof useRecording>);
+
+        const view = render(<RecordingPanel />);
+        await userEvent.click(screen.getByTitle('Configuracion de Audio'));
+        expect(screen.getByText('Configuracion de Audio')).toBeInTheDocument();
+
+        await userEvent.selectOptions(screen.getByLabelText('Entrada de microfono'), 'mic-1');
+        expect(state.setSelectedDeviceId).toHaveBeenCalledWith('mic-1');
+        await userEvent.click(screen.getByRole('button', { name: 'Actualizar' }));
+        expect(state.refreshAudioDevices).toHaveBeenCalledTimes(1);
+
+        const diarizationLabel = screen.getByText(/Identificar Locutores/i);
+        const diarizationButton = diarizationLabel.parentElement?.parentElement?.querySelector('button');
+        expect(diarizationButton).not.toBeNull();
+        await userEvent.click(diarizationButton as HTMLElement);
+        expect(state.setDiarization).toHaveBeenCalledWith(true);
+    });
+
+    it('cambia el idioma cuando no está grabando y lo bloquea durante grabación', async () => {
+        const state = recordingState({ language: 'es' });
+        mockedUseRecording.mockReturnValue(state as ReturnType<typeof useRecording>);
+        const view = render(<RecordingPanel />);
+
+        await userEvent.click(screen.getByRole('button', { name: 'ES' }));
+        expect(state.setLanguage).toHaveBeenCalledWith('auto');
+
+        const recordingStateValue = recordingState({ isRecording: true, language: 'es' });
+        mockedUseRecording.mockReturnValue(recordingStateValue as ReturnType<typeof useRecording>);
+        view.rerender(<RecordingPanel />);
+        expect(screen.getByRole('button', { name: 'ES' })).toBeDisabled();
     });
 });
