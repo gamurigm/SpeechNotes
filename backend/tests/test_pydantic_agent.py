@@ -60,19 +60,23 @@ def test_chat_response_model():
 
 
 @pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic missing in test environment")
-@pytest.mark.asyncio
-async def test_chat_stream_direct_missing_key_returns_error():
-    doc = DocumentContext(
-        doc_id="doc-1",
-        content="test",
-        content_type="raw"
-    )
+def test_chat_stream_direct_missing_key_returns_error():
+    import asyncio
 
-    with patch("backend.services.agents.pydantic_agent.NVIDIA_API_KEY_THINKING", None):
-        with patch("backend.services.agents.pydantic_agent.NVIDIA_API_KEY_FAST", None):
-            chunks = []
-            async for chunk in chat_stream_direct("query", doc, thinking=True):
-                chunks.append(chunk)
+    async def _run():
+        doc = DocumentContext(
+            doc_id="doc-1",
+            content="test",
+            content_type="raw"
+        )
 
-            assert len(chunks) > 0
-            assert "Error" in chunks[0]
+        with patch("backend.services.agents.pydantic_agent.NVIDIA_API_KEY_THINKING", None):
+            with patch("backend.services.agents.pydantic_agent.NVIDIA_API_KEY_FAST", None):
+                chunks = []
+                async for chunk in chat_stream_direct("query", doc, thinking=True):
+                    chunks.append(chunk)
+
+                assert len(chunks) > 0
+                assert "Error" in chunks[0]
+
+    asyncio.run(_run())
