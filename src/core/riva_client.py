@@ -192,6 +192,7 @@ class RivaTranscriber:
                 response = self.asr_service.offline_recognize(audio_data, config)
                 
                 # If successful, break out of retry loop
+                last_error = None
                 break
                 
             except grpc.RpcError as e:
@@ -265,6 +266,11 @@ class RivaTranscriber:
             # Check exact match or prefix for short segments
             for h in hallucinations:
                 h_clean = re.sub(r'[!¡?¿.,;:\-–—]', '', h).strip()
+                # Punctuation-only entries (for example "...") normalize to an
+                # empty string. Every transcript starts with an empty string,
+                # so treating it as a prefix would reject valid short speech.
+                if not h_clean:
+                    continue
                 if cleaned == h_clean:
                     print(f"[Hallucination Filter] Blocked exact match: '{transcript}'")
                     return ""
