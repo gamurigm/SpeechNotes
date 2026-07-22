@@ -322,7 +322,7 @@ obtenido y estado final.
 % ── CP-03 ────────────────────────────────────────────────────────────────────
 \begin{tcolorbox}[enhanced, breakable, colback=white, colframe=critica,
   boxrule=1.5pt, arc=5pt,
-  title={\textbf{CP-03} \enspace Iniciar y detener grabaci\'on \hfill \prioChip{critica}{Cr\'itica} \enspace \statusChip{paso-green}{PASO}},
+  title={\textbf{CP-03} \enspace Iniciar y detener grabaci\'on \hfill \prioChip{critica}{Cr\'itica} \enspace \statusChip{falla-red}{FALLADO}},
   fonttitle=\color{white},
   attach boxed title to top left={yshift=-2mm,xshift=4mm},
   boxed title style={colback=critica,arc=3pt}]
@@ -359,6 +359,7 @@ obtenido y estado final.
   \item[$\checkmark$] Contador aumenta.
   \item[$\checkmark$] Estado de procesamiento al detener.
   \item[$\checkmark$] Transcripci\'on agregada a la lista.
+  \item[$\times$] Error en consola: ``No se encontr\'o la referencia'' (BUG-002)
 \end{itemize}
 \end{minipage}
 \end{tcolorbox}
@@ -412,7 +413,7 @@ obtenido y estado final.
 % ── CP-05 ────────────────────────────────────────────────────────────────────
 \begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
   boxrule=1pt, arc=5pt,
-  title={\textbf{CP-05} \enspace Upload de audio para transcribir \hfill \prioChip{alta}{Alta} \enspace \statusChip{paso-green}{PASO}},
+  title={\textbf{CP-05} \enspace Upload de audio para transcribir \hfill \prioChip{alta}{Alta} \enspace \statusChip{falla-red}{FALLADO}},
   fonttitle=\color{white},
   attach boxed title to top left={yshift=-2mm,xshift=4mm},
   boxed title style={colback=espe-blue,arc=3pt}]
@@ -448,6 +449,7 @@ obtenido y estado final.
   \item[$\checkmark$] Estado de procesamiento visible.
   \item[$\checkmark$] Transcripci\'on en lista.
   \item[$\checkmark$] Visor abre el texto.
+  \item[$\times$] Aparece texto de ayuda incorrecto en el modal (BUG-009)
 \end{itemize}
 \end{minipage}
 \end{tcolorbox}
@@ -498,7 +500,7 @@ obtenido y estado final.
 % ── CP-07 ────────────────────────────────────────────────────────────────────
 \begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
   boxrule=1pt, arc=5pt,
-  title={\textbf{CP-07} \enspace Editar y guardar una transcripci\'on \hfill \prioChip{media}{Media} \enspace \statusChip{paso-green}{PASO}},
+  title={\textbf{CP-07} \enspace Editar y guardar una transcripci\'on \hfill \prioChip{media}{Media} \enspace \statusChip{falla-red}{FALLADO}},
   fonttitle=\color{white},
   attach boxed title to top left={yshift=-2mm,xshift=4mm},
   boxed title style={colback=espe-blue,arc=3pt}]
@@ -531,6 +533,7 @@ obtenido y estado final.
   \item[$\checkmark$] Cambio guardado sin error.
   \item[$\checkmark$] L\'inea persiste tras recarga.
   \item[$\checkmark$] Markdown sin corrupci\'on.
+  \item[$\times$] Error grave al guardar transcripci\'on con texto muy largo (BUG-005)
 \end{itemize}
 \end{minipage}
 \end{tcolorbox}
@@ -690,7 +693,10 @@ obtenido y estado final.
   attach boxed title to top left={yshift=-2mm,xshift=4mm},
   boxed title style={colback=espe-blue}]
 \begin{itemize}
-  \item Los flujos cr\'iticos \textbf{CP-03} (Grabaci\'on) y \textbf{CP-04} (Transcripci\'on en vivo) pasaron satisfactoriamente.
+  \item \textbf{CP-03} (Grabaci\'on) fall\'o por BUG-002 (Error en consola: ``No se encontr\'o la referencia'').
+  \item El flujo cr\'itico \textbf{CP-04} (Transcripci\'on en vivo) pas\'o satisfactoriamente.
+  \item \textbf{CP-05} (Upload) fall\'o por BUG-009 (Texto de ayuda incorrecto en modal).
+  \item \textbf{CP-07} (Editar y guardar) fall\'o por BUG-005 (Error al guardar con texto largo).
   \item \textbf{CP-09} queda pendiente por dependencia de credenciales IA locales; se retomar\'a en el re-testing del D\'ia 3.
   \item Los defectos preliminares BUG-01 a BUG-04 documentados en la secci\'on B.c ser\'an registrados en Jira con evidencia.
 \end{itemize}
