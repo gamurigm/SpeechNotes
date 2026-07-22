@@ -1,5 +1,5 @@
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import { promisify } from "node:util";
 
 const scrypt = promisify(scryptCallback);
 const HASH_PREFIX = "scrypt";

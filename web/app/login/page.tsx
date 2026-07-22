@@ -12,10 +12,63 @@ type ApiError = {
 
 const USERNAME_PATTERN = /^[a-z0-9._-]{3,32}$/;
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,79}$/u;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 128;
 const MAX_EMAIL_LENGTH = 254;
+
+function isValidEmailAddress(value: string): boolean {
+    if (value.length === 0 || /\s/.test(value)) return false;
+    const at = value.indexOf('@');
+    if (at <= 0 || at !== value.lastIndexOf('@')) return false;
+    const domain = value.slice(at + 1);
+    const dot = domain.indexOf('.');
+    return dot > 0 && dot < domain.length - 1;
+}
+
+function getRegistrationError(
+    normalizedName: string,
+    normalizedEmail: string,
+    normalizedUsername: string,
+    password: string,
+    confirmPassword: string,
+): string | null {
+    if (!NAME_PATTERN.test(normalizedName)) return 'Ingresa un nombre completo valido de 2 a 80 caracteres.';
+    if (normalizedEmail.length > MAX_EMAIL_LENGTH || !isValidEmailAddress(normalizedEmail)) {
+        return 'Ingresa un correo electronico valido.';
+    }
+    if (!USERNAME_PATTERN.test(normalizedUsername)) {
+        return 'El usuario solo puede usar letras, numeros, punto, guion o guion bajo.';
+    }
+    if (password.length > MAX_PASSWORD_LENGTH) return 'La contrasena no puede superar 128 caracteres.';
+    if (password.length < MIN_PASSWORD_LENGTH || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+        return 'La contrasena debe tener al menos 8 caracteres, letras y numeros.';
+    }
+    if (password.toLowerCase() === normalizedUsername) return 'La contrasena no puede ser igual al usuario.';
+    if (password !== confirmPassword) return 'Las contrasenas no coinciden.';
+    return null;
+}
+
+function getSubmitLabel(mode: AuthMode, loading: boolean): string {
+    if (loading) return mode === 'login' ? 'Ingresando...' : 'Creando usuario...';
+    return mode === 'login' ? 'Iniciar sesion' : 'Registrar usuario';
+}
+
+function getFormError(
+    mode: AuthMode,
+    normalizedName: string,
+    normalizedEmail: string,
+    normalizedUsername: string,
+    password: string,
+    confirmPassword: string,
+): string | null {
+    if (mode === 'register') {
+        return getRegistrationError(normalizedName, normalizedEmail, normalizedUsername, password, confirmPassword);
+    }
+    if (!normalizedUsername) return 'Ingresa un usuario.';
+    if (!password) return 'Ingresa una contrasena.';
+    if (password.length > MAX_PASSWORD_LENGTH) return 'La contrasena no puede superar 128 caracteres.';
+    return null;
+}
 
 export default function LoginPage() {
     const router = useRouter();
@@ -33,57 +86,13 @@ export default function LoginPage() {
     const normalizedUsername = username.trim().toLowerCase();
 
     const validateForm = () => {
-        if (mode === 'register' && !NAME_PATTERN.test(normalizedName)) {
-            setError('Ingresa un nombre completo valido de 2 a 80 caracteres.');
+        const validationError = getFormError(
+            mode, normalizedName, normalizedEmail, normalizedUsername, password, confirmPassword,
+        );
+        if (validationError) {
+            setError(validationError);
             return false;
         }
-
-        if (
-            mode === 'register' &&
-            (normalizedEmail.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(normalizedEmail))
-        ) {
-            setError('Ingresa un correo electronico valido.');
-            return false;
-        }
-
-        if (!normalizedUsername) {
-            setError('Ingresa un usuario.');
-            return false;
-        }
-
-        if (mode === 'register' && !USERNAME_PATTERN.test(normalizedUsername)) {
-            setError('El usuario solo puede usar letras, numeros, punto, guion o guion bajo.');
-            return false;
-        }
-
-        if (!password) {
-            setError('Ingresa una contrasena.');
-            return false;
-        }
-
-        if (password.length > MAX_PASSWORD_LENGTH) {
-            setError('La contrasena no puede superar 128 caracteres.');
-            return false;
-        }
-
-        if (
-            mode === 'register' &&
-            (password.length < MIN_PASSWORD_LENGTH || !/[A-Za-z]/.test(password) || !/\d/.test(password))
-        ) {
-            setError('La contrasena debe tener al menos 8 caracteres, letras y numeros.');
-            return false;
-        }
-
-        if (mode === 'register' && password.toLowerCase() === normalizedUsername) {
-            setError('La contrasena no puede ser igual al usuario.');
-            return false;
-        }
-
-        if (mode === 'register' && password !== confirmPassword) {
-            setError('Las contrasenas no coinciden.');
-            return false;
-        }
-
         return true;
     };
 
@@ -324,13 +333,7 @@ export default function LoginPage() {
                             disabled={loading}
                             className="group relative flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {loading
-                                ? mode === 'login'
-                                    ? 'Ingresando...'
-                                    : 'Creando usuario...'
-                                : mode === 'login'
-                                  ? 'Iniciar sesion'
-                                  : 'Registrar usuario'}
+                            {getSubmitLabel(mode, loading)}
                         </button>
                     </div>
 

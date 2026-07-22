@@ -7,14 +7,25 @@ export const runtime = "nodejs";
 
 const USERNAME_PATTERN = /^[a-z0-9._-]{3,32}$/;
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,79}$/u;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 254;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 128;
-const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 const MAX_REQUEST_BYTES = 4096;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_REGISTER_ATTEMPTS = 10;
+
+function isValidEmailAddress(value: string): boolean {
+  if (value.length === 0 || /\s/.test(value)) return false;
+  const at = value.indexOf("@");
+  if (at <= 0 || at !== value.lastIndexOf("@")) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.indexOf(".");
+  return dot > 0 && dot < domain.length - 1;
+}
+
+function hasLetterAndNumber(value: string): boolean {
+  return /[A-Za-z]/.test(value) && /\d/.test(value);
+}
 
 type RateLimitEntry = {
   count: number;
@@ -156,7 +167,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (email.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(email)) {
+  if (email.length > MAX_EMAIL_LENGTH || !isValidEmailAddress(email)) {
     return NextResponse.json(
       { error: "Ingresa un correo electronico valido." },
       { status: 400 },
@@ -166,7 +177,7 @@ export async function POST(request: Request) {
   if (
     password.length < MIN_PASSWORD_LENGTH ||
     password.length > MAX_PASSWORD_LENGTH ||
-    !PASSWORD_PATTERN.test(password)
+    !hasLetterAndNumber(password)
   ) {
     return NextResponse.json(
       {
