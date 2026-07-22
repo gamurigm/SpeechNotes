@@ -266,7 +266,7 @@ export default function SettingsPage() {
                                                 onChange={e => handleChange(setting.key, e.target.value)}
                                                 variant="bordered"
                                                 className="flex-1"
-                                                color={getSettingColor(isMissing, isEdited)}
+                                                color={getSettingColor(Boolean(isMissing), isEdited)}
                                                 description={
                                                     setting.required
                                                         ? '⚡ Requerido'

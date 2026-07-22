@@ -137,8 +137,8 @@ export function useTranscriptionService() {
         return () => {
             socket.off('recording_stopped', handleRecordingStopped);
             socket.off('processing_complete', handleProcessingComplete);
-            socket.off('warning', handleRecordingWarning);
-            socket.off('error', handleRecordingError);
+            socket.off('warning', handleRecordingIssue);
+            socket.off('error', handleRecordingIssue);
         };
     }, [loadTranscriptionsList]);
 

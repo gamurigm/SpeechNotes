@@ -795,8 +795,8 @@ function DashboardContent() {
                                 <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-blue-500 mb-4" size={32} /><p className="text-sm font-bold opacity-40 uppercase tracking-widest">Buscando...</p></div>
                             ) : searchQuery.length >= 2 ? (
                                 <div className="p-4 space-y-2">
-                                    {searchResults.length > 0 ? searchResults.map((item, i) => (
-                                        <Card key={i} isPressable onPress={() => handleSelectSearchResult(item)} className="w-full bg-white/5 hover:bg-white/10 border-none transition-all group p-1">
+                                    {searchResults.length > 0 ? searchResults.map((item) => (
+                                        <Card key={item.id} isPressable onPress={() => handleSelectSearchResult(item)} className="w-full bg-white/5 hover:bg-white/10 border-none transition-all group p-1">
                                             <CardBody className="p-4 flex flex-col gap-2">
                                                 <div className="flex justify-between items-center">
                                                     <div className="flex items-center gap-3">
