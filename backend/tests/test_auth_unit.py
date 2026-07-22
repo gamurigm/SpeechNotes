@@ -153,7 +153,9 @@ def test_require_auth_prefers_session_then_falls_back_to_api_key(monkeypatch):
     assert asyncio.run(auth.require_auth(_request())) is True
     auth.require_api_key.assert_not_awaited()
 
-    auth.require_session = AsyncMock(side_effect=HTTPException(401, "no session"))
+    monkeypatch.setattr(
+        auth, "require_session", AsyncMock(side_effect=HTTPException(401, "no session"))
+    )
     assert asyncio.run(auth.require_auth(_request(), "production-key", None)) is True
     auth.require_api_key.assert_awaited_once_with("production-key", None)
 

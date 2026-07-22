@@ -27,8 +27,10 @@ describe('AudioGraph', () => {
             disconnect: jest.fn(),
         };
 
-        const mockScriptProcessor = {
-            onaudioprocess: null as ((ev: AudioProcessingEvent) => void) | null,
+        const mockWorkletNode = {
+            port: {
+                onmessage: null as ((event: MessageEvent<Float32Array>) => void) | null,
+            },
             connect: jest.fn(),
             disconnect: jest.fn(),
         };
@@ -45,7 +47,7 @@ describe('AudioGraph', () => {
             createMediaStreamSource: jest.fn(() => mockSource),
             createGain: jest.fn(() => mockGainNode),
             createAnalyser: jest.fn(() => mockAnalyser),
-            createScriptProcessor: jest.fn(() => mockScriptProcessor),
+            audioWorklet: { addModule: jest.fn().mockResolvedValue(undefined) },
             destination: {},
         };
 
@@ -60,6 +62,10 @@ describe('AudioGraph', () => {
 
         Object.defineProperty(global, 'AudioContext', {
             value: jest.fn(() => mockAudioContext),
+            writable: true,
+        });
+        Object.defineProperty(global, 'AudioWorkletNode', {
+            value: jest.fn(() => mockWorkletNode),
             writable: true,
         });
     });
@@ -118,7 +124,7 @@ describe('AudioGraph', () => {
         expect(() => audioGraph.setGain(3.5)).not.toThrow();
     });
 
-    test('dispose cleans up script processor, gain, analyser, tracks and context', async () => {
+    test('dispose cleans up worklet, gain, analyser, tracks and context', async () => {
         await audioGraph.initialize(16000);
         audioGraph.createGraph({ sampleRate: 16000, fftSize: 1024, gain: 1.0 });
 
@@ -126,19 +132,14 @@ describe('AudioGraph', () => {
         expect(audioGraph.getDebugInfo()).toBeDefined();
     });
 
-    test('processes a full PCM chunk and emits silence to the output buffer', async () => {
+    test('processes a full PCM chunk received from the worklet', async () => {
         await audioGraph.initialize(16000);
         audioGraph.createGraph({ sampleRate: 16000, fftSize: 1024, gain: 1.0 });
         const graph = audioGraph as unknown as {
-            scriptProcessor: { onaudioprocess: (event: AudioProcessingEvent) => void };
+            workletNode: { port: { onmessage: (event: MessageEvent<Float32Array>) => void } };
         };
         const input = new Float32Array(44100).fill(0.25);
-        const output = new Float32Array(44100).fill(1);
-        graph.scriptProcessor.onaudioprocess({
-            inputBuffer: { getChannelData: () => input },
-            outputBuffer: { getChannelData: () => output },
-        } as unknown as AudioProcessingEvent);
+        graph.workletNode.port.onmessage({ data: input } as MessageEvent<Float32Array>);
         expect(onAudioDataMock).toHaveBeenCalledTimes(2);
-        expect(output.every(sample => sample === 0)).toBe(true);
     });
 });

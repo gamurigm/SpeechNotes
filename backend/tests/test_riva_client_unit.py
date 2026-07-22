@@ -67,13 +67,13 @@ def _response(text=None, final=True, results=True, alternatives=True):
     return SimpleNamespace(results=[SimpleNamespace(alternatives=alts, is_final=final)])
 
 
-def test_asr_service_is_created_lazily_and_cached():
+def test_asr_service_is_created_lazily_and_cached(monkeypatch):
     auth = MagicMock(name="auth")
     service = MagicMock(name="service")
     module.Auth.reset_mock()
     module.ASRService.reset_mock()
-    module.Auth.return_value = auth
-    module.ASRService.return_value = service
+    monkeypatch.setattr(module.Auth, "return_value", auth)
+    monkeypatch.setattr(module.ASRService, "return_value", service)
     transcriber = module.RivaTranscriber(_config())
 
     assert transcriber.asr_service is service
@@ -163,7 +163,7 @@ def test_offline_transcribe_retries_unavailable(monkeypatch):
     second_service.offline_recognize.return_value = _response("recuperado")
     module.Auth.reset_mock()
     module.ASRService.reset_mock()
-    module.ASRService.side_effect = [first_service, second_service]
+    monkeypatch.setattr(module.ASRService, "side_effect", [first_service, second_service])
     monkeypatch.setattr("time.sleep", MagicMock())
     transcriber = module.RivaTranscriber(_config())
     assert transcriber.offline_transcribe(b"audio", max_retries=2) == "recuperado"

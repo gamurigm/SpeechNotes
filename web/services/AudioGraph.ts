@@ -21,13 +21,15 @@ export interface AudioGraphDebugInfo {
 const CHUNK_SECONDS = 0.5;
 const INT16_MAX = 0x7FFF;
 const INT16_MIN = -0x8000;
+const PCM_PROCESSOR_NAME = 'speechnotes-pcm-capture';
+const PCM_PROCESSOR_URL = '/audio-worklet-processor.js';
 
 export class AudioGraph {
     private context: AudioContext | null = null;
     private stream: MediaStream | null = null;
     private analyser: AnalyserNode | null = null;
     private gainNode: GainNode | null = null;
-    private scriptProcessor: ScriptProcessorNode | null = null; // NOSONAR - compatibility fallback for browsers without AudioWorklet
+    private workletNode: AudioWorkletNode | null = null;
     private targetSampleRate = 16000;
     private inputSampleRate = 16000;
     private samplesPerChunk = 8000;
@@ -58,6 +60,7 @@ export class AudioGraph {
 
         this.context = new AudioContext();
         this.inputSampleRate = this.context.sampleRate;
+        await this.context.audioWorklet.addModule(PCM_PROCESSOR_URL);
     }
 
     createGraph(config: AudioGraphConfig): AnalyserNode {
@@ -77,25 +80,19 @@ export class AudioGraph {
         this.analyser = this.context.createAnalyser();
         this.analyser.fftSize = config.fftSize;
 
-        // createScriptProcessor is deprecated and has been removed from
-        // Chromium-based runtimes (Electron >= 136 / Chrome >= 136). We isolate
-        // the script-processor wiring so the rest of the graph (analyser,
-        // gain, visualizer) keeps working even when it is unavailable; the
-        // PCM chunk emission can later be migrated to AudioWorklet.
-        try {
-            this.scriptProcessor = this.context.createScriptProcessor(4096, 1, 1);
-            this.scriptProcessor.onaudioprocess = this.handleAudioProcess.bind(this);
+        this.workletNode = new AudioWorkletNode(this.context, PCM_PROCESSOR_NAME, {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            outputChannelCount: [1],
+        });
+        this.workletNode.port.onmessage = (event: MessageEvent<Float32Array>) => {
+            this.handleAudioSamples(event.data);
+        };
 
-            source.connect(this.gainNode);
-            this.gainNode.connect(this.analyser);
-            this.analyser.connect(this.scriptProcessor);
-            this.scriptProcessor.connect(this.context.destination);
-        } catch (error) {
-            this.scriptProcessor = null;
-            console.warn('[AudioGraph] ScriptProcessor no disponible, se omite el procesamiento local de PCM:', error);
-            source.connect(this.gainNode);
-            this.gainNode.connect(this.analyser);
-        }
+        source.connect(this.gainNode);
+        this.gainNode.connect(this.analyser);
+        this.analyser.connect(this.workletNode);
+        this.workletNode.connect(this.context.destination);
 
         if (this.context.state === 'suspended') {
             void this.context.resume();
@@ -118,8 +115,7 @@ export class AudioGraph {
         };
     }
 
-    private handleAudioProcess(event: AudioProcessingEvent) { // NOSONAR - compatibility fallback
-        const inputData = event.inputBuffer.getChannelData(0); // NOSONAR - compatibility fallback
+    private handleAudioSamples(inputData: Float32Array) {
         const resampled = this.downsample(inputData, this.inputSampleRate, this.targetSampleRate);
         const pcmData = this.floatToInt16(resampled);
 
@@ -129,8 +125,6 @@ export class AudioGraph {
         while (this.samplesAccumulated >= this.samplesPerChunk) {
             this.flushChunk(this.samplesPerChunk);
         }
-
-        event.outputBuffer.getChannelData(0).fill(0); // NOSONAR - compatibility fallback
     }
 
     private downsample(input: Float32Array, inputRate: number, outputRate: number): Float32Array {
@@ -209,10 +203,10 @@ export class AudioGraph {
             this.flushAccumulator();
         }
 
-        if (this.scriptProcessor) {
-            this.scriptProcessor.disconnect();
-            this.scriptProcessor.onaudioprocess = null; // NOSONAR - compatibility fallback
-            this.scriptProcessor = null;
+        if (this.workletNode) {
+            this.workletNode.port.onmessage = null;
+            this.workletNode.disconnect();
+            this.workletNode = null;
         }
         if (this.gainNode) {
             this.gainNode.disconnect();

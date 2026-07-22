@@ -18,20 +18,26 @@ describe('Flujos críticos de SpeechNotes', () => {
             destination = new FakeAudioNode();
             sampleRate = 16_000;
             state = 'running';
+            audioWorklet = { addModule: () => Promise.resolve() };
 
             createAnalyser() { return new FakeAnalyser(); }
             createGain() { return Object.assign(new FakeAudioNode(), { gain: { value: 1 } }); }
             createMediaStreamSource() { return new FakeAudioNode(); }
-            createScriptProcessor() {
-                return Object.assign(new FakeAudioNode(), { onaudioprocess: null });
-            }
             close() { return Promise.resolve(); }
             resume() { return Promise.resolve(); }
+        }
+
+        class FakeAudioWorkletNode extends FakeAudioNode {
+            port = { onmessage: null };
         }
 
         Object.defineProperty(win, 'AudioContext', {
             configurable: true,
             value: FakeAudioContext,
+        });
+        Object.defineProperty(win, 'AudioWorkletNode', {
+            configurable: true,
+            value: FakeAudioWorkletNode,
         });
         Object.defineProperty(win.navigator, 'mediaDevices', {
             configurable: true,

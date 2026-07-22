@@ -12,6 +12,7 @@ import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, Chevr
 import { useBackground } from '../providers';
 import { ThemeSettings } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
+import LogoutButton from './components/LogoutButton';
 
 // Hooks especializados (SRP / SOLID)
 import { useTranscriptionService } from './hooks/useTranscriptionService';
@@ -193,7 +194,7 @@ function DashboardContent() {
                 <div className={`flex-1 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'}`}>
                     <div className="h-full w-full flex flex-col" style={{ transform: `scale(${appZoom / 100})`, transformOrigin: 'top left', width: `${100 * (100 / appZoom)}%`, height: `${100 * (100 / appZoom)}%` }}>
                         <div className="px-6 pt-6 pb-2 flex justify-center">
-                            <div className="max-w-7xl w-full flex items-center justify-center gap-6">
+                            <div className="max-w-7xl w-full flex items-center justify-center gap-6 relative">
                                 <div className="flex flex-col gap-2 items-start">
                                     <div className="flex items-center gap-2">
                                         <ToolbarIcon
@@ -256,6 +257,9 @@ function DashboardContent() {
                                     {/* Componentes de Herramientas Dinámicas movidos a la barra lateral */}
                                 </div>
                                 <RecordingPanel />
+                                <div className="absolute right-0 top-0">
+                                    <LogoutButton />
+                                </div>
                             </div>
                         </div>
 
