@@ -74,7 +74,6 @@ class BatchTranslateResponse(BaseModel):
 
 @router.post(
     "/",
-    response_model=TranslateResponse,
     summary="Translate text using Mistral Large 3 675B",
 )
 @logfire.instrument("router.translate")
@@ -109,7 +108,6 @@ async def translate_text(req: TranslateRequest) -> TranslateResponse:
 
 @router.post(
     "/detect",
-    response_model=DetectResponse,
     summary="Detect language using Gemma 3n E4B",
 )
 @logfire.instrument("router.translate.detect")
@@ -134,7 +132,6 @@ async def detect_language(req: DetectRequest) -> DetectResponse:
 
 @router.post(
     "/batch",
-    response_model=BatchTranslateResponse,
     summary="Batch translate multiple text items",
 )
 @logfire.instrument("router.translate.batch")

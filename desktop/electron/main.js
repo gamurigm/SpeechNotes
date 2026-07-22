@@ -3,10 +3,10 @@
  */
 
 const { app, BrowserWindow, dialog, safeStorage, net: electronNet } = require('electron');
-const path = require('path');
-const { spawn } = require('child_process');
-const net = require('net');
-const http = require('http');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+const net = require('node:net');
+const http = require('node:http');
 
 // ---------------------------------------------------------------------------
 // Paths (differ between dev and packaged)
