@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeechNotes — Plan de Aseguramiento de la Calidad (SQAP)</title>
+  <meta name="description" content="Presentación del proyecto final de SQA para SpeechNotes — Consultora de Calidad Externa" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN SYSTEM
+       ═══════════════════════════════════════════════════════════ */
+    :root {
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      /* Dark theme palette */
+      --bg-deep: #06060e;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-glass: rgba(255, 255, 255, 0.06);
+      --border-glass: rgba(255, 255, 255, 0.08);
+
+      /* Accent gradient */
+      --accent-1: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #a855f7;
+      --accent-4: #06b6d4;
+      --accent-5: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-lime: #84cc16;
+
+      --text-primary: rgba(255, 255, 255, 0.95);
+      --text-secondary: rgba(255, 255, 255, 0.60);
+      --text-tertiary: rgba(255, 255, 255, 0.38);
+
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       SLIDE CONTAINER
+       ═══════════════════════════════════════════════════════════ */
+    #deck {
+      position: relative;
+      width: 100%; height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(30px) scale(0.97);
+      transition: opacity 0.55s cubic-bezier(.22,1,.36,1),
+                  transform 0.55s cubic-bezier(.22,1,.36,1);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Background blob */
+    .slide::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      filter: blur(160px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .slide:nth-child(odd)::before {
+      background: var(--accent-1);
+      top: -15%; right: -10%;
+    }
+    .slide:nth-child(even)::before {
+      background: var(--accent-3);
+      bottom: -15%; left: -10%;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TYPOGRAPHY
+       ═══════════════════════════════════════════════════════════ */
+    .slide-number {
+      position: absolute;
+      top: 28px; left: 40px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 2.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+      background: linear-gradient(135deg, #fff 20%, var(--accent-4) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent-2);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    p, li {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .subtitle {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    strong { color: var(--text-primary); font-weight: 600; }
+    em { color: var(--accent-4); font-style: normal; font-weight: 500; }
+
+    ul, ol {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    li::before {
+      content: '›';
+      color: var(--accent-2);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       GLASS CARDS
+       ═══════════════════════════════════════════════════════════ */
+    .glass {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      padding: 28px 32px;
+    }
+
+    .card-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-sm);
+      padding: 20px 24px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .card:hover {
+      border-color: var(--accent-2);
+      transform: translateY(-2px);
+    }
+
+    .card .icon {
+      font-size: 1.6rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .card .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card .card-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TABLES
+       ═══════════════════════════════════════════════════════════ */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-2);
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    thead th:first-child { border-radius: var(--radius-xs) 0 0 0; }
+    thead th:last-child  { border-radius: 0 var(--radius-xs) 0 0; }
+
+    tbody td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-glass);
+      color: var(--text-secondary);
+    }
+
+    tbody tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       BADGES & PILLS
+       ═══════════════════════════════════════════════════════════ */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge.green  { background: rgba(16,185,129,0.18); color: #34d399; }
+    .badge.red    { background: rgba(239,68,68,0.18); color: #f87171; }
+    .badge.amber  { background: rgba(245,158,11,0.18); color: #fbbf24; }
+    .badge.blue   { background: rgba(99,102,241,0.18); color: #818cf8; }
+    .badge.purple { background: rgba(168,85,247,0.18); color: #c084fc; }
+    .badge.cyan   { background: rgba(6,182,212,0.18); color: #22d3ee; }
+
+    /* ═══════════════════════════════════════════════════════════
+       CHART BARS (CSS-only)
+       ═══════════════════════════════════════════════════════════ */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bar-label {
+      width: 140px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 28px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #fff;
+      transition: width 1s cubic-bezier(.22,1,.36,1);
+    }
+
+    .bar-fill.grad-1 { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
+    .bar-fill.grad-2 { background: linear-gradient(90deg, var(--accent-4), var(--accent-5)); }
+    .bar-fill.grad-red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+    .bar-fill.grad-green { background: linear-gradient(90deg, #059669, #10b981); }
+
+    /* ═══════════════════════════════════════════════════════════
+       DONUT CHART (SVG)
+       ═══════════════════════════════════════════════════════════ */
+    .donut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .donut-center {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .donut-center span {
+      position: absolute;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PROGRESS NAVIGATION
+       ═══════════════════════════════════════════════════════════ */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-3), var(--accent-4));
+      transition: width 0.4s ease;
+      z-index: 100;
+    }
+
+    #nav {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 999px;
+      padding: 8px 20px;
+    }
+
+    #nav button {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    #nav button:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.08);
+    }
+
+    #nav .counter {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PORTADA SPECIAL
+       ═══════════════════════════════════════════════════════════ */
+    .portada {
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .portada h1 {
+      font-size: 4.5rem;
+      margin-bottom: 8px;
+    }
+
+    .portada .tagline {
+      font-size: 1.4rem;
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+      font-weight: 300;
+    }
+
+    .portada .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .portada .meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .portada .meta-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+    }
+
+    .portada .meta-value {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .team-row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .team-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: 999px;
+      padding: 8px 18px;
+    }
+
+    .team-pill .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+
+    .team-pill .avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .team-pill .name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TWO-COLUMN LAYOUTS
+       ═══════════════════════════════════════════════════════════ */
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .split-wide {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       CODE BLOCKS
+       ═══════════════════════════════════════════════════════════ */
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #a5b4fc;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HIGHLIGHT BOX
+       ═══════════════════════════════════════════════════════════ */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.08));
+      border-left: 3px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 12px 0;
+    }
+
+    .highlight-box p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       STAT BLOCKS
+       ═══════════════════════════════════════════════════════════ */
+    .stat-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-sm);
+    }
+
+    .stat .number {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-4), var(--accent-5));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat .label {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TIMELINE
+       ═══════════════════════════════════════════════════════════ */
+    .timeline {
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-3), var(--accent-4));
+      opacity: 0.3;
+    }
+
+    .timeline-item {
+      flex: 1;
+      position: relative;
+      padding-top: 40px;
+      text-align: center;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      top: 17px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 12px rgba(139,92,246,0.5);
+    }
+
+    .timeline-item .tl-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .timeline-item .tl-desc {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      line-height: 1.4;
+    }
+
+    /* Scrollbar */
+    .slide::-webkit-scrollbar { width: 4px; }
+    .slide::-webkit-scrollbar-track { background: transparent; }
+    .slide::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide.active .anim {
+      animation: fadeInUp 0.6s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    .slide.active .anim:nth-child(1) { animation-delay: 0.05s; }
+    .slide.active .anim:nth-child(2) { animation-delay: 0.12s; }
+    .slide.active .anim:nth-child(3) { animation-delay: 0.19s; }
+    .slide.active .anim:nth-child(4) { animation-delay: 0.26s; }
+    .slide.active .anim:nth-child(5) { animation-delay: 0.33s; }
+    .slide.active .anim:nth-child(6) { animation-delay: 0.40s; }
+
+    /* Logo area for portada */
+    .logo-glow {
+      font-size: 5rem;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 40px rgba(139,92,246,0.4));
+    }
+
+    /* Comparison Arrows */
+    .compare {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .compare-arrow {
+      font-size: 2rem;
+      color: var(--accent-5);
+      flex-shrink: 0;
+    }
+
+    .compare-box {
+      flex: 1;
+      padding: 20px;
+      border-radius: var(--radius-sm);
+    }
+
+    .compare-box.before {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+
+    .compare-box.after {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+    }
+
+    .compare-box h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .compare-box.before h4 { color: #f87171; }
+    .compare-box.after h4 { color: #34d399; }
+
+    /* Subtle tag for slide topic */
+    .topic-tag {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent-2);
+      border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .slide { padding: 40px 40px; }
+      h1 { font-size: 2.4rem; }
+      .portada h1 { font-size: 3rem; }
+      h2 { font-size: 1.6rem; }
+      .split, .split-wide { grid-template-columns: 1fr; gap: 20px; }
+      .card-grid.cols-3, .card-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+      .team-row { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="deck">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 1 — PORTADA
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide portada active" data-slide="1">
+    <div class="anim logo-glow">🎙️</div>
+    <h1 class="anim">SpeechNotes</h1>
+    <p class="tagline anim">Plan de Aseguramiento de la Calidad — SQAP</p>
+    <div class="meta anim">
+      <div class="meta-item">
+        <span class="meta-label">Asignatura</span>
+        <span class="meta-value">Calidad de Software</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Docente</span>
+        <span class="meta-value">Ing. Diego Gamboa Mgtr.</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Fecha</span>
+        <span class="meta-value">Julio 2026</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Universidad</span>
+        <span class="meta-value">ESPE</span>
+      </div>
+    </div>
+    <div class="team-row anim">
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/AMVMesias.png" alt="Mesias Mariscal"></div><span class="name">Mesias Mariscal</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/gamurigm.png" alt="Gabriel Murillo"></div><span class="name">Gabriel Murillo</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/DeniseRea.png" alt="Denise Rea"></div><span class="name">Denise Rea</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/JulioViche.png" alt="Julio Viche"></div><span class="name">Julio Viche</span></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 2 — CONTEXTO / ESCENARIO
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="2">
+    <span class="slide-number">02 / 17</span>
+    <div class="topic-tag anim">Escenario</div>
+    <h2 class="anim">Contexto del Proyecto</h2>
+    <div class="split anim">
+      <div>
+        <div class="highlight-box" style="margin-bottom:20px;">
+          <p><strong>Rol:</strong> Consultora de Calidad Externa</p>
+          <p style="margin-top:8px;">Auditamos un sistema Legacy (SUT) desarrollado previamente, definiendo y ejecutando una estrategia de calidad bajo un marco metodológico riguroso.</p>
+        </div>
+        <h3>Objetivo General</h3>
+        <p>Demostrar la capacidad de <strong>planificar, documentar y ejecutar</strong> un proceso de SQA, evidenciando la mejora en la confiabilidad del producto final.</p>
+      </div>
+      <div>
+        <h3>Objetivos Específicos</h3>
+        <ul>
+          <li>Planificar la estrategia de calidad con un Plan Maestro de Pruebas</li>
+          <li>Evaluar la deuda técnica mediante análisis estático (SonarCloud, ESLint)</li>
+          <li>Ejecutar pruebas dinámicas y automatizadas (Pytest, Cypress, Jest)</li>
+          <li>Documentar resultados con artefactos trazables y métricas de defectos</li>
+        </ul>
+      </div>
+    </div>
+    <div class="timeline anim" style="margin-top:32px;">
+      <div class="timeline-item">
+        <div class="tl-title">Semana 1</div>
+        <div class="tl-desc">Planificación &<br>Análisis Estático</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-title">Semana 2</div>
+        <div class="tl-desc">Diseño &<br>Ejecución Dinámica</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-title">Semana 3</div>
+        <div class="tl-desc">Cierre &<br>Documentación</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 3 — EL SUT
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="3">
+    <span class="slide-number">03 / 17</span>
+    <div class="topic-tag anim">System Under Test</div>
+    <h2 class="anim">SpeechNotes — El SUT</h2>
+    <p class="subtitle anim">Transcripción inteligente asistida por IA — graba, limpia, transcribe y formatea en tiempo real</p>
+    <div class="split anim">
+      <div>
+        <div class="card-grid" style="gap:12px;">
+          <div class="card" style="grid-column: span 2;">
+            <span class="icon">🧠</span>
+            <div class="card-title">Pipeline de 5 Modelos NVIDIA NIM</div>
+            <div class="card-desc">BNR → Parakeet ASR → Gemma (idioma) → Mistral (traducción) → Qwen 3.5 (formateo)</div>
+          </div>
+          <div class="card">
+            <span class="icon">🌐</span>
+            <div class="card-title">Frontend</div>
+            <div class="card-desc">Next.js 16, HeroUI, Socket.IO Client, Electron/Tauri</div>
+          </div>
+          <div class="card">
+            <span class="icon">⚡</span>
+            <div class="card-title">Backend</div>
+            <div class="card-desc">FastAPI, Socket.IO, pydub, FFmpeg, Logfire</div>
+          </div>
+          <div class="card">
+            <span class="icon">🗄️</span>
+            <div class="card-title">Datos</div>
+            <div class="card-desc">MongoDB, SQLite/Prisma, ChromaDB</div>
+          </div>
+          <div class="card">
+            <span class="icon">🐳</span>
+            <div class="card-title">Infra</div>
+            <div class="card-desc">Docker, Python 3.12, pnpm, GitHub Actions</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Funcionalidades Principales</h3>
+        <ul>
+          <li>Grabación con VAD (Voice Activity Detection)</li>
+          <li>Transcripción en vivo via WebSocket</li>
+          <li>Upload de archivos de audio</li>
+          <li>Formateo IA con progreso en tiempo real</li>
+          <li>Búsqueda semántica RAG con ChromaDB</li>
+          <li>Chat contextual sobre notas</li>
+          <li>Procesamiento FFmpeg (normaliza, acelera)</li>
+          <li>App Desktop (Electron/Tauri)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 4 — SQAP ALCANCE
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="4">
+    <span class="slide-number">04 / 17</span>
+    <div class="topic-tag anim">SQAP</div>
+    <h2 class="anim">Alcance del Plan de Pruebas</h2>
+    <div class="split anim">
+      <div>
+        <h3 style="color: var(--accent-5);">✅ Módulos Incluidos</h3>
+        <div class="glass" style="margin-top:8px;">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Módulo</th><th>Área</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>RF-01</td><td>Autenticación (Login demo)</td><td>Auth</td></tr>
+              <tr><td>RF-02</td><td>Prueba de micrófono</td><td>Audio / Frontend</td></tr>
+              <tr><td>RF-03</td><td>Inicio/detención de grabación</td><td>Audio / Backend</td></tr>
+              <tr><td>RF-04</td><td>Transcripción en vivo</td><td>Realtime ASR</td></tr>
+              <tr><td>RF-05</td><td>Upload de audio</td><td>Upload / Backend</td></tr>
+              <tr><td>RF-06</td><td>Consulta de transcripciones</td><td>Transcripciones</td></tr>
+              <tr><td>RF-07</td><td>Edición y guardado</td><td>Editor</td></tr>
+              <tr><td>RF-08</td><td>Búsqueda en transcripciones</td><td>Búsqueda</td></tr>
+              <tr><td>RF-09</td><td>Formateo IA</td><td>IA / Formatter</td></tr>
+              <tr><td>RF-10</td><td>Chat contextual</td><td>Chat / RAG</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 style="color: var(--accent-red);">❌ Módulos Excluidos</h3>
+        <div class="glass" style="margin-top:8px;">
+          <ul>
+            <li>Pruebas formales de carga (>2h) — <em>riesgo identificado</em></li>
+            <li>Automatización completa — <em>se documentan scripts, no se exige 100%</em></li>
+            <li>Corrección de código — <em>responsabilidad del equipo de desarrollo</em></li>
+            <li>Configuración inicial de SonarCloud — <em>se usa reporte existente como línea base</em></li>
+          </ul>
+        </div>
+        <div class="highlight-box" style="margin-top:16px;">
+          <p><strong>Justificación:</strong> Sprint comprimido de 4 días. Se priorizan flujos críticos (grabación, transcripción) sobre cobertura total. Mejor pocos casos perfectamente documentados que muchos sin evidencia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 5 — ESTRATEGIA DE PRUEBAS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="5">
+    <span class="slide-number">05 / 17</span>
+    <div class="topic-tag anim">Estrategia</div>
+    <h2 class="anim">Estrategia de Pruebas</h2>
+    <div class="card-grid cols-4 anim">
+      <div class="card">
+        <span class="icon">🔬</span>
+        <div class="card-title">Pruebas Unitarias</div>
+        <div class="card-desc">Jest para componentes React (RecordingPanel, LiveTranscription). Pytest para endpoints FastAPI (~52 tests).</div>
+        <span class="badge blue" style="margin-top:8px;">Automatizadas</span>
+      </div>
+      <div class="card">
+        <span class="icon">🔗</span>
+        <div class="card-title">Pruebas de Integración</div>
+        <div class="card-desc">Pytest contra backend real (6 routers). Validación HTTP codes, estructura JSON y prevención de regresiones.</div>
+        <span class="badge purple" style="margin-top:8px;">Automatizadas</span>
+      </div>
+      <div class="card">
+        <span class="icon">🖱️</span>
+        <div class="card-title">Pruebas Funcionales</div>
+        <div class="card-desc">Cypress E2E para flujo de grabación. 10 casos manuales con precondiciones, pasos y resultado esperado.</div>
+        <span class="badge cyan" style="margin-top:8px;">Manual + E2E</span>
+      </div>
+      <div class="card">
+        <span class="icon">📊</span>
+        <div class="card-title">Análisis Estático</div>
+        <div class="card-desc">SonarCloud en CI/CD (GitHub Actions). ESLint para frontend Next.js/TypeScript.</div>
+        <span class="badge green" style="margin-top:8px;">Continuo</span>
+      </div>
+    </div>
+    <div class="split anim" style="margin-top:28px;">
+      <div class="glass">
+        <h3 style="color: var(--accent-5);">Entry Criteria</h3>
+        <ul>
+          <li>SUT compilable y ejecutable en entorno local</li>
+          <li>Backend respondiendo en <code>/health</code> → 200</li>
+          <li>MongoDB accesible y con datos seed</li>
+          <li>API keys NVIDIA NIM configuradas</li>
+          <li>Casos de prueba diseñados y aprobados</li>
+        </ul>
+      </div>
+      <div class="glass">
+        <h3 style="color: var(--accent-red);">Exit Criteria</h3>
+        <ul>
+          <li>100% de casos críticos ejecutados</li>
+          <li>Tasa de aprobación ≥ 90%</li>
+          <li>Todos los bugs Critical/Blocker corregidos</li>
+          <li>Reportes de SonarCloud generados (Antes/Después)</li>
+          <li>Matriz de rastreabilidad completa</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 6 — STACK DE HERRAMIENTAS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="6">
+    <span class="slide-number">06 / 17</span>
+    <div class="topic-tag anim">Herramientas</div>
+    <h2 class="anim">Stack de Herramientas</h2>
+    <div class="card-grid cols-3 anim">
+      <div class="card">
+        <span class="icon">☁️</span>
+        <div class="card-title">SonarCloud</div>
+        <div class="card-desc">Análisis estático continuo. Detecta vulnerabilidades, code smells y deuda técnica. Integrado con GitHub Actions para quality gates automáticos.</div>
+        <span class="badge purple" style="margin-top:8px;">Análisis Estático</span>
+      </div>
+      <div class="card">
+        <span class="icon">🔍</span>
+        <div class="card-title">ESLint</div>
+        <div class="card-desc">Linter para el frontend Next.js/TypeScript. Configurado con <code>eslint-config-next</code> para core web vitals y reglas de TypeScript.</div>
+        <span class="badge purple" style="margin-top:8px;">Linting</span>
+      </div>
+      <div class="card">
+        <span class="icon">🐍</span>
+        <div class="card-title">Pytest</div>
+        <div class="card-desc">Framework de testing Python para backend FastAPI. ~52 tests cubriendo 5 routers. Markers: smoke, regression, auth. Skip limpio si backend no accesible.</div>
+        <span class="badge blue" style="margin-top:8px;">Backend Testing</span>
+      </div>
+      <div class="card">
+        <span class="icon">🌲</span>
+        <div class="card-title">Cypress</div>
+        <div class="card-desc">Tests E2E para el frontend. Simula interacción de usuario real: grabación, transcripción, navegación. Ejecuta en Electron headless.</div>
+        <span class="badge cyan" style="margin-top:8px;">E2E Testing</span>
+      </div>
+      <div class="card">
+        <span class="icon">🃏</span>
+        <div class="card-title">Jest</div>
+        <div class="card-desc">Tests unitarios para componentes React. Testing Library para renderizado y simulación de eventos. Cobertura de componentes críticos.</div>
+        <span class="badge blue" style="margin-top:8px;">Unit Testing</span>
+      </div>
+      <div class="card">
+        <span class="icon">📋</span>
+        <div class="card-title">Jira Software</div>
+        <div class="card-desc">Gestión de incidencias y seguimiento de bugs. Flujo: To Do → In Progress → In Testing → Done. Épicas para SQA y métricas automáticas.</div>
+        <span class="badge amber" style="margin-top:8px;">Gestión</span>
+      </div>
+    </div>
+    <div class="glass anim" style="margin-top:20px;">
+      <p style="font-size:0.88rem;"><strong>CI/CD:</strong> GitHub Actions ejecuta SonarCloud en cada push a <code>planning-SQA</code>. El pipeline analiza <code>backend/</code>, <code>src/</code>, <code>web/</code> y <code>desktop/</code> con exclusiones para tests y archivos generados.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 7 — GESTIÓN DE RIESGOS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="7">
+    <span class="slide-number">07 / 17</span>
+    <div class="topic-tag anim">Riesgos</div>
+    <h2 class="anim">Gestión de Riesgos</h2>
+    <div class="glass anim">
+      <table>
+        <thead>
+          <tr>
+            <th>Riesgo</th>
+            <th>Probabilidad</th>
+            <th>Impacto</th>
+            <th>Severidad</th>
+            <th>Plan de Mitigación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Disponibilidad API NVIDIA NIM</strong></td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td>Clave de respaldo; scripts con modo desconectado</td>
+          </tr>
+          <tr>
+            <td><strong>Inestabilidad del frontend local</strong></td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge amber">Medio</span></td>
+            <td><span class="badge amber">Medio</span></td>
+            <td>Múltiples formas de probar; registro de fallos</td>
+          </tr>
+          <tr>
+            <td><strong>Tiempo insuficiente para automatización</strong></td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge amber">Medio</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td>Priorizar pruebas críticas; manual como default</td>
+          </tr>
+          <tr>
+            <td><strong>Problemas de compatibilidad de dependencias</strong></td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td>Docker para entornos replicables</td>
+          </tr>
+          <tr>
+            <td><strong>Falta de documentación de API</strong></td>
+            <td><span class="badge green">Baja</span></td>
+            <td><span class="badge red">Alto</span></td>
+            <td><span class="badge amber">Medio</span></td>
+            <td>Pruebas exploratorias; consulta al desarrollador</td>
+          </tr>
+          <tr>
+            <td><strong>Disponibilidad de micrófono en PC</strong></td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge green">Bajo</span></td>
+            <td><span class="badge green">Bajo</span></td>
+            <td>Pruebas diferenciadas con/sin micrófono</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="highlight-box anim" style="margin-top:16px;">
+      <p><strong>Resultados de Mitigación:</strong> Se usó la API key NVIDIA sin incidentes. Se documentó BUG-002 (React ref). Se priorizaron automatizaciones clave. Se reportaron <strong>8 bugs en Jira</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 8 — ANÁLISIS ESTÁTICO ANTES
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="8">
+    <span class="slide-number">08 / 17</span>
+    <div class="topic-tag anim">Análisis Estático</div>
+    <h2 class="anim">Análisis Estático — Antes</h2>
+    <p class="subtitle anim">Reporte inicial de SonarCloud tras primer escaneo del repositorio</p>
+    <div class="stat-row anim">
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #ef4444, #f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
+        <div class="label">Vulnerabilidades</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">12</div>
+        <div class="label">Code Smells</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">0</div>
+        <div class="label">Bugs Estáticos</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #06b6d4, #10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">2h</div>
+        <div class="label">Deuda Técnica</div>
+      </div>
+    </div>
+    <div class="split anim">
+      <div class="glass">
+        <h3>Hallazgos Principales</h3>
+        <ul>
+          <li><strong>Code Smells:</strong> Variables no utilizadas, funciones con complejidad ciclomática elevada</li>
+          <li><strong>Duplicación:</strong> Bloques de manejo de errores repetidos en routers</li>
+          <li><strong>Mantenibilidad:</strong> Archivos con más de 300 líneas sin modularizar</li>
+          <li><strong>ESLint:</strong> Violaciones de reglas next/core-web-vitals</li>
+        </ul>
+      </div>
+      <div class="glass">
+        <h3>Configuración del Escaneo</h3>
+        <div class="code-block">
+sonar.projectKey=speech-notes
+sonar.organization=julioviche-21
+sonar.host.url=https://sonarcloud.io
+
+sonar.sources=backend,src,web,desktop
+
+sonar.python.coverage.reportPaths=
+  coverage.xml
+sonar.javascript.lcov.reportPaths=
+  web/tests/evidence/coverage/lcov.info
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 9 — ANÁLISIS ESTÁTICO DESPUÉS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="9">
+    <span class="slide-number">09 / 17</span>
+    <div class="topic-tag anim">Comparativa</div>
+    <h2 class="anim">Análisis Estático — Después</h2>
+    <p class="subtitle anim">Comparativa tras refactorización y corrección de code smells</p>
+    <div class="compare anim">
+      <div class="compare-box before">
+        <h4>❌ Antes</h4>
+        <ul>
+          <li>12 Code Smells</li>
+          <li>~2h Deuda Técnica</li>
+          <li>Duplicación en handlers</li>
+          <li>Sin quality gate en CI</li>
+        </ul>
+      </div>
+      <div class="compare-arrow">→</div>
+      <div class="compare-box after">
+        <h4>✅ Después</h4>
+        <ul>
+          <li>4 Code Smells restantes</li>
+          <li>~45min Deuda Técnica</li>
+          <li>Handlers modularizados</li>
+          <li>Quality gate activo en CI/CD</li>
+        </ul>
+      </div>
+    </div>
+    <div class="bar-chart anim" style="margin-top:28px;">
+      <div class="bar-row">
+        <div class="bar-label">Code Smells</div>
+        <div class="bar-track">
+          <div class="bar-fill grad-red" style="width:100%;">12 → 4 (−67%)</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Deuda Técnica</div>
+        <div class="bar-track">
+          <div class="bar-fill grad-1" style="width:63%;">2h → 45min (−63%)</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Duplicación</div>
+        <div class="bar-track">
+          <div class="bar-fill grad-green" style="width:80%;">Reducida 80%</div>
+        </div>
+      </div>
+    </div>
+    <div class="highlight-box anim" style="margin-top:20px;">
+      <p><strong>Impacto:</strong> La integración de SonarCloud en GitHub Actions asegura que la calidad del código se mantenga en el tiempo. El quality gate previene regresiones en futuros commits.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 10 — MATRIZ DE RASTREABILIDAD
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="10">
+    <span class="slide-number">10 / 17</span>
+    <div class="topic-tag anim">Trazabilidad</div>
+    <h2 class="anim">Matriz de Rastreabilidad</h2>
+    <div class="glass anim">
+      <table>
+        <thead>
+          <tr>
+            <th>ID Req</th>
+            <th>Requisito</th>
+            <th>Caso</th>
+            <th>Módulo</th>
+            <th>Prioridad</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>RF-01</td>
+            <td>Inicio de sesión</td>
+            <td>CP-01</td>
+            <td>Auth</td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-02</td>
+            <td>Prueba de micrófono</td>
+            <td>CP-02</td>
+            <td>Audio / Frontend</td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-03</td>
+            <td>Iniciar/detener grabación</td>
+            <td>CP-03</td>
+            <td>Audio / Backend</td>
+            <td><span class="badge red">Crítica</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-04</td>
+            <td>Transcripción en vivo</td>
+            <td>CP-04</td>
+            <td>Realtime ASR</td>
+            <td><span class="badge red">Crítica</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-05</td>
+            <td>Upload de audio</td>
+            <td>CP-05</td>
+            <td>Upload / Backend</td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-06</td>
+            <td>Consultar transcripciones</td>
+            <td>CP-06</td>
+            <td>Transcripciones</td>
+            <td><span class="badge red">Alta</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-07</td>
+            <td>Editar y guardar</td>
+            <td>CP-07</td>
+            <td>Editor</td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-08</td>
+            <td>Búsqueda</td>
+            <td>CP-08</td>
+            <td>Búsqueda</td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+          <tr>
+            <td>RF-09</td>
+            <td>Formateo IA</td>
+            <td>CP-09</td>
+            <td>IA / Formatter</td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>RF-10</td>
+            <td>Chat contextual</td>
+            <td>CP-10</td>
+            <td>Chat / RAG</td>
+            <td><span class="badge amber">Media</span></td>
+            <td><span class="badge green">Paso</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="stat-row anim" style="margin-top:20px;">
+      <div class="stat">
+        <div class="number">10</div>
+        <div class="label">Requisitos Cubiertos</div>
+      </div>
+      <div class="stat">
+        <div class="number">9/10</div>
+        <div class="label">Casos Aprobados</div>
+      </div>
+      <div class="stat">
+        <div class="number">100%</div>
+        <div class="label">Cobertura de Req.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 11 — DISEÑO DE CASOS DE PRUEBA
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="11">
+    <span class="slide-number">11 / 17</span>
+    <div class="topic-tag anim">Diseño</div>
+    <h2 class="anim">Diseño de Casos de Prueba</h2>
+    <p class="subtitle anim">Muestra representativa de los 10 casos diseñados</p>
+    <div class="split anim">
+      <div class="glass">
+        <h3 style="color:#22d3ee;">CP-03 — Iniciar y detener grabación</h3>
+        <p style="margin-bottom:12px;"><span class="badge red">Crítica</span> <span class="badge blue" style="margin-left:6px;">RF-03</span></p>
+        <p><strong>Precondiciones:</strong></p>
+        <ul style="margin-bottom:12px;">
+          <li>Backend en puerto 9443, Frontend en 3006</li>
+          <li>Usuario autenticado, micrófono disponible</li>
+        </ul>
+        <p><strong>Pasos:</strong></p>
+        <ol style="margin-bottom:12px;">
+          <li>Entrar a <code>/dashboard</code></li>
+          <li>Presionar botón de micrófono</li>
+          <li>Aceptar permisos del navegador</li>
+          <li>Hablar durante 10 segundos</li>
+          <li>Presionar detener → Confirmar</li>
+        </ol>
+        <p><strong>Resultado Esperado:</strong></p>
+        <ul>
+          <li>Estado cambia a "grabando", contador avanza</li>
+          <li>Al detener: estado de procesamiento</li>
+          <li>Grabación se agrega a la lista</li>
+        </ul>
+        <p style="margin-top:10px;"><span class="badge green">✓ PASO</span></p>
+      </div>
+      <div class="glass">
+        <h3 style="color:#22d3ee;">CP-08 — Búsqueda en transcripciones</h3>
+        <p style="margin-bottom:12px;"><span class="badge amber">Media</span> <span class="badge blue" style="margin-left:6px;">RF-08</span></p>
+        <p><strong>Precondiciones:</strong></p>
+        <ul style="margin-bottom:12px;">
+          <li>Usuario autenticado</li>
+          <li>Al menos 1 transcripción con contenido conocido</li>
+        </ul>
+        <p><strong>Pasos:</strong></p>
+        <ol style="margin-bottom:12px;">
+          <li>Entrar a <code>/dashboard</code></li>
+          <li>Abrir búsqueda global</li>
+          <li>Buscar palabra existente</li>
+          <li>Abrir resultado</li>
+          <li>Buscar palabra inexistente</li>
+        </ol>
+        <p><strong>Resultado Esperado:</strong></p>
+        <ul>
+          <li>Palabra existente retorna resultados</li>
+          <li>Resultado abre nota correcta</li>
+          <li>Palabra inexistente muestra vacío sin error</li>
+        </ul>
+        <p style="margin-top:10px;"><span class="badge green">✓ PASO</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 12 — EJECUCIÓN DE PRUEBAS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="12">
+    <span class="slide-number">12 / 17</span>
+    <div class="topic-tag anim">Ejecución</div>
+    <h2 class="anim">Ejecución de Pruebas</h2>
+    <div class="stat-row anim">
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">92.86%</div>
+        <div class="label">Tasa de Aprobación</div>
+      </div>
+      <div class="stat">
+        <div class="number">58</div>
+        <div class="label">Tests Backend (Pytest)</div>
+      </div>
+      <div class="stat">
+        <div class="number">3</div>
+        <div class="label">Tests Frontend (Jest + Cypress)</div>
+      </div>
+      <div class="stat">
+        <div class="number">10</div>
+        <div class="label">Casos Manuales</div>
+      </div>
+    </div>
+    <div class="split anim">
+      <div>
+        <h3>Dashboard de Resultados</h3>
+        <div class="bar-chart" style="margin-top:12px;">
+          <div class="bar-row">
+            <div class="bar-label">Backend (Pytest)</div>
+            <div class="bar-track">
+              <div class="bar-fill grad-green" style="width:100%;">58 passed — 0 failed</div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Frontend (Jest)</div>
+            <div class="bar-track">
+              <div class="bar-fill grad-green" style="width:100%;">2 suites passed</div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">E2E (Cypress)</div>
+            <div class="bar-track">
+              <div class="bar-fill grad-2" style="width:100%;">1 spec passed</div>
+            </div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Manual</div>
+            <div class="bar-track">
+              <div class="bar-fill grad-green" style="width:90%;">9/10 passed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Suite de Pytest — Cobertura por Router</h3>
+        <div class="glass" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>Router</th><th>Tests</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td>Root + Health</td><td>7</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>Transcriptions</td><td>16</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>Documents</td><td>8</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>Settings</td><td>11</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>VAD Config</td><td>6</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>Auth (opt-in)</td><td>4</td><td><span class="badge green">Pass</span></td></tr>
+              <tr><td>Path Security</td><td>6</td><td><span class="badge green">Pass</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="code-block" style="margin-top:12px; font-size:0.78rem;">
+============= 58 passed, 0 failed, 0 skipped in 8.40s =============
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 13 — REPORTE DE DEFECTOS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="13">
+    <span class="slide-number">13 / 17</span>
+    <div class="topic-tag anim">Defectos</div>
+    <h2 class="anim">Reporte de Defectos</h2>
+    <div class="stat-row anim">
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #ef4444, #f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">8</div>
+        <div class="label">Bugs Reportados</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #10b981, #34d399); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">3</div>
+        <div class="label">Corregidos</div>
+      </div>
+      <div class="stat">
+        <div class="number" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">5</div>
+        <div class="label">Pendientes</div>
+      </div>
+    </div>
+    <div class="glass anim">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Severidad</th>
+            <th>Prioridad</th>
+            <th>Módulo</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BUG-01</td>
+            <td>Timeout al cargar lista de transcripciones</td>
+            <td><span class="badge red">Major</span></td>
+            <td><span class="badge red">Alta</span></td>
+            <td>Frontend / API</td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>BUG-02</td>
+            <td>Panel de transcripción en vivo no muestra segmentos</td>
+            <td><span class="badge red">Critical</span></td>
+            <td><span class="badge red">Alta</span></td>
+            <td>Audio / Realtime</td>
+            <td><span class="badge green">Corregido</span></td>
+          </tr>
+          <tr>
+            <td>BUG-03</td>
+            <td>Nota generada no se carga en visor al detener</td>
+            <td><span class="badge red">Major</span></td>
+            <td><span class="badge red">Alta</span></td>
+            <td>Frontend / Transcripciones</td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>BUG-04</td>
+            <td>Error OAuthSignin durante inicio de sesión</td>
+            <td><span class="badge red">Major</span></td>
+            <td><span class="badge red">Alta</span></td>
+            <td>Auth</td>
+            <td><span class="badge green">Corregido</span></td>
+          </tr>
+          <tr>
+            <td>BUG-05</td>
+            <td>Tooltip duplicado en panel de grabación</td>
+            <td><span class="badge blue">Minor</span></td>
+            <td><span class="badge amber">Media</span></td>
+            <td>Frontend / UX</td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>BUG-06</td>
+            <td>Icono play/pausa inconsistente</td>
+            <td><span class="badge blue">Minor</span></td>
+            <td><span class="badge green">Baja</span></td>
+            <td>Frontend / UX</td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>BUG-07</td>
+            <td>Placeholder incorrecto en formulario de registro</td>
+            <td><span class="badge blue">Minor</span></td>
+            <td><span class="badge green">Baja</span></td>
+            <td>Frontend / Auth</td>
+            <td><span class="badge amber">Pendiente</span></td>
+          </tr>
+          <tr>
+            <td>BUG-08</td>
+            <td>React ref no encontrada (BNR Component)</td>
+            <td><span class="badge red">Major</span></td>
+            <td><span class="badge red">Alta</span></td>
+            <td>Frontend</td>
+            <td><span class="badge green">Corregido</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 14 — MÉTRICAS DE CALIDAD
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="14">
+    <span class="slide-number">14 / 17</span>
+    <div class="topic-tag anim">Métricas</div>
+    <h2 class="anim">Métricas de Calidad</h2>
+    <div class="split anim">
+      <div>
+        <h3>Tasa de Éxito Global</h3>
+        <div class="donut-wrap" style="margin: 20px 0;">
+          <div class="donut-center">
+            <svg width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="64" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="16"/>
+              <circle cx="80" cy="80" r="64" fill="none" stroke="url(#grad-pass)" stroke-width="16"
+                stroke-dasharray="374.12" stroke-dashoffset="26.59" stroke-linecap="round"
+                transform="rotate(-90 80 80)"/>
+              <defs>
+                <linearGradient id="grad-pass" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981"/>
+                  <stop offset="100%" stop-color="#06b6d4"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span>92.9%</span>
+          </div>
+          <div>
+            <p style="font-size:0.9rem;"><strong>9 de 10</strong> casos manuales aprobados</p>
+            <p style="font-size:0.9rem;"><strong>58/58</strong> tests automatizados pasaron</p>
+            <p style="font-size:0.9rem;"><strong>1</strong> caso pendiente (CP-09: Formateo IA)</p>
+          </div>
+        </div>
+
+        <h3 style="margin-top:24px;">Densidad de Defectos por Módulo</h3>
+        <div class="bar-chart" style="margin-top:12px;">
+          <div class="bar-row">
+            <div class="bar-label">Frontend / UX</div>
+            <div class="bar-track"><div class="bar-fill grad-red" style="width:60%;">3 bugs</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Frontend / API</div>
+            <div class="bar-track"><div class="bar-fill grad-1" style="width:40%;">2 bugs</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Audio / Realtime</div>
+            <div class="bar-track"><div class="bar-fill grad-1" style="width:20%;">1 bug</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Auth</div>
+            <div class="bar-track"><div class="bar-fill grad-1" style="width:20%;">1 bug</div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Backend</div>
+            <div class="bar-track"><div class="bar-fill grad-green" style="width:20%;">1 bug</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Resumen por Severidad</h3>
+        <div class="card-grid cols-2" style="margin-top:12px; margin-bottom:24px;">
+          <div class="card" style="text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#f87171;">1</div>
+            <div style="font-size:0.78rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px;">Critical</div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#fbbf24;">4</div>
+            <div style="font-size:0.78rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px;">Major</div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#818cf8;">3</div>
+            <div style="font-size:0.78rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px;">Minor</div>
+          </div>
+          <div class="card" style="text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#34d399;">0</div>
+            <div style="font-size:0.78rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px;">Blocker</div>
+          </div>
+        </div>
+
+        <h3>Cobertura de Pruebas Automatizadas</h3>
+        <div class="glass" style="margin-top:12px;">
+          <table>
+            <thead><tr><th>Área</th><th>Tests</th><th>Cobertura</th></tr></thead>
+            <tbody>
+              <tr><td>Backend Endpoints</td><td>52</td><td><span class="badge green">5 Routers</span></td></tr>
+              <tr><td>Auth (opt-in)</td><td>4</td><td><span class="badge blue">1 Router</span></td></tr>
+              <tr><td>Path Security</td><td>2</td><td><span class="badge blue">Traversal</span></td></tr>
+              <tr><td>Frontend Components</td><td>2 suites</td><td><span class="badge cyan">Críticos</span></td></tr>
+              <tr><td>E2E Flows</td><td>1 spec</td><td><span class="badge purple">Grabación</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 15 — CONCLUSIONES
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="15">
+    <span class="slide-number">15 / 17</span>
+    <div class="topic-tag anim">Conclusiones</div>
+    <h2 class="anim">Conclusiones</h2>
+    <div class="split anim">
+      <div>
+        <div class="highlight-box" style="border-left-color: var(--accent-5); margin-bottom:24px;">
+          <h3 style="color: var(--accent-5); margin-bottom:8px;">Veredicto: Apto para Producción con Observaciones</h3>
+          <p>El SUT se encuentra en un estado <strong>funcionalmente estable</strong>. El 92.86% de los casos de prueba fueron aprobados. Los 3 bugs Critical/Major fueron corregidos durante el sprint. Los 5 bugs restantes son de severidad menor y no bloquean el uso del sistema.</p>
+        </div>
+        <h3>Hallazgos Clave</h3>
+        <ul>
+          <li><strong>Funcionalidad Core Robusta:</strong> Auth, transcripción, upload, consulta, edición, búsqueda y chat pasaron todas las pruebas</li>
+          <li><strong>3 bugs UX Minor:</strong> No afectan funcionalidad pero impactan la calidad percibida</li>
+          <li><strong>Mejora en Calidad de Código:</strong> SonarCloud permitió identificar y corregir code smells (−67%)</li>
+          <li><strong>Base de Automatización:</strong> Pytest + Cypress proporcionan base sólida para regression testing futuro</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Lecciones Aprendidas</h3>
+        <div class="card-grid" style="gap:12px;">
+          <div class="card">
+            <span class="icon">📋</span>
+            <div class="card-title">Planificación Reduce Ambigüedad</div>
+            <div class="card-desc">La matriz de rastreabilidad y diseño previo de casos redujo incertidumbre durante la ejecución.</div>
+          </div>
+          <div class="card">
+            <span class="icon">🔄</span>
+            <div class="card-title">Integración Temprana de SonarCloud</div>
+            <div class="card-desc">Detectar code smells antes de que se acumulen es más eficiente que refactorizar después.</div>
+          </div>
+          <div class="card">
+            <span class="icon">🐛</span>
+            <div class="card-title">Jira para Comunicación</div>
+            <div class="card-desc">El seguimiento de bugs en Jira facilitó la coordinación entre QA y desarrollo.</div>
+          </div>
+          <div class="card">
+            <span class="icon">⏰</span>
+            <div class="card-title">Sprints Acelerados</div>
+            <div class="card-desc">En sprints cortos, priorizar flujos críticos sobre cobertura total da mejores resultados.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 16 — TRABAJO FUTURO
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide" data-slide="16">
+    <span class="slide-number">16 / 17</span>
+    <div class="topic-tag anim">Futuro</div>
+    <h2 class="anim">Trabajo Futuro</h2>
+    <div class="card-grid cols-3 anim">
+      <div class="card">
+        <span class="icon">🐛</span>
+        <div class="card-title">Corregir Bugs Pendientes</div>
+        <div class="card-desc">Resolver los 5 bugs abiertos (3 Minor + 2 Major) en el siguiente sprint de desarrollo.</div>
+        <span class="badge red" style="margin-top:8px;">Prioridad Alta</span>
+      </div>
+      <div class="card">
+        <span class="icon">🏋️</span>
+        <div class="card-title">Pruebas de Carga</div>
+        <div class="card-desc">Implementar pruebas de rendimiento con k6 o Locust para validar comportamiento bajo estrés del pipeline ASR.</div>
+        <span class="badge amber" style="margin-top:8px;">Prioridad Media</span>
+      </div>
+      <div class="card">
+        <span class="icon">🔒</span>
+        <div class="card-title">Pruebas de Seguridad</div>
+        <div class="card-desc">Integrar OWASP ZAP en el pipeline CI/CD para detectar vulnerabilidades de seguridad web.</div>
+        <span class="badge amber" style="margin-top:8px;">Prioridad Media</span>
+      </div>
+      <div class="card">
+        <span class="icon">🤖</span>
+        <div class="card-title">Ampliar Automatización</div>
+        <div class="card-desc">Incrementar cobertura de pruebas automatizadas: más specs Cypress, más tests Jest para componentes React.</div>
+        <span class="badge blue" style="margin-top:8px;">Continuo</span>
+      </div>
+      <div class="card">
+        <span class="icon">📄</span>
+        <div class="card-title">Documentación de API</div>
+        <div class="card-desc">Completar la documentación OpenAPI de los endpoints REST. Considerar Swagger UI integrado.</div>
+        <span class="badge blue" style="margin-top:8px;">Documentación</span>
+      </div>
+      <div class="card">
+        <span class="icon">🚀</span>
+        <div class="card-title">CI/CD Completo</div>
+        <div class="card-desc">Pipeline completo: SonarCloud + Pytest + Cypress + build + deploy staging. Quality gates como requisito para merge.</div>
+        <span class="badge purple" style="margin-top:8px;">DevOps</span>
+      </div>
+    </div>
+    <div class="highlight-box anim" style="margin-top:20px;">
+      <p><strong>Recomendación Final:</strong> Mantener el quality gate activo en SonarCloud y dedicar al menos un sprint completo para las mejoras de UX antes de considerar release a producción.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SLIDE 17 — CIERRE / PREGUNTAS
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="slide portada" data-slide="17">
+    <div class="anim logo-glow">💬</div>
+    <h1 class="anim" style="font-size:3.5rem;">¿Preguntas?</h1>
+    <p class="tagline anim">Gracias por su atención</p>
+    <div class="card-grid cols-2 anim" style="max-width:700px; margin:24px auto 0;">
+      <div class="card" style="text-align:center;">
+        <span class="icon">📦</span>
+        <div class="card-title">Repositorio GitHub</div>
+        <div class="card-desc" style="color: var(--accent-4);">github.com/gamurigm/SpeechNotes</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <span class="icon">🎥</span>
+        <div class="card-title">Video Demo</div>
+        <div class="card-desc" style="color: var(--accent-4);">5-7 minutos de evidencia</div>
+      </div>
+    </div>
+    <div class="team-row anim" style="margin-top:32px;">
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/AMVMesias.png" alt="Mesias Mariscal"></div><span class="name">Mesias Mariscal</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/gamurigm.png" alt="Gabriel Murillo"></div><span class="name">Gabriel Murillo</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/DeniseRea.png" alt="Denise Rea"></div><span class="name">Denise Rea</span></div>
+      <div class="team-pill"><div class="avatar"><img src="https://github.com/JulioViche.png" alt="Julio Viche"></div><span class="name">Julio Viche</span></div>
+    </div>
+    <p class="anim" style="margin-top:32px; font-size:0.85rem; color: var(--text-tertiary);">
+      Calidad de Software — Ing. Diego Gamboa Mgtr. — ESPE — Julio 2026
+    </p>
+  </section>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════════════════════ -->
+<nav id="nav">
+  <button id="btn-prev" onclick="navigate(-1)" title="Anterior (←)">‹</button>
+  <span id="counter" class="counter">1 / 17</span>
+  <button id="btn-next" onclick="navigate(1)" title="Siguiente (→)">›</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress-bar');
+  let current = 0;
+  const total = slides.length;
+
+  function goTo(index) {
+    if (index < 0 || index >= total) return;
+    slides[current].classList.remove('active');
+    current = index;
+    slides[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${total}`;
+    progress.style.width = `${((current + 1) / total) * 100}%`;
+  }
+
+  function navigate(dir) {
+    goTo(current + dir);
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      navigate(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigate(-1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].screenX;
+    if (Math.abs(diff) > 50) navigate(diff > 0 ? 1 : -1);
+  });
+
+  // Initialize
+  goTo(0);
+</script>
+
+</body>
+</html>
