@@ -16,21 +16,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy requirement file first for better caching
-COPY backend/requirements.txt /app/backend/requirements.txt
+# Copy the compiled lock file first for better caching
+COPY backend/requirements.lock /app/backend/requirements.lock
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --only-binary=:all: -r backend/requirements.txt
+# Reject dependency substitutions and artifacts whose hashes are not locked.
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes \
+  -r backend/requirements.lock
 
 # Copy the rest of the application
 COPY backend/ /app/backend/
 COPY src/ /app/src/
 
-# Create directories for notes, knowledge base, and SQLite data
-RUN mkdir -p /app/notas /app/knowledge_base /app/data
-
-# Add a non-root user for security
-RUN useradd -m appuser && chown -R appuser:appuser /app
+# Create runtime directories and add a non-root user in one image layer.
+RUN mkdir -p /app/notas /app/knowledge_base /app/data \
+  && useradd -m appuser \
+  && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port (matches backend default; overridable via PORT env var)
