@@ -122,7 +122,7 @@ function StopIcon() {
     );
 }
 
-function RecordingStatus({ isRecording, duration }: { isRecording: boolean; duration: number }) {
+function RecordingStatus({ isRecording, duration }: Readonly<{ isRecording: boolean; duration: number }>) {
     return (
         <div className="flex flex-col">
             <span className="text-[10px] font-bold uppercase tracking-widest text-theme-secondary/80">
@@ -204,17 +204,17 @@ function MicDeviceSelect({
     onChange,
     onRefresh,
     disabled,
-}: {
+}: Readonly<{
     devices: Array<{ deviceId: string; label: string }>;
     selectedDeviceId: string;
     onChange: (deviceId: string) => void;
     onRefresh: () => void | Promise<void>;
     disabled: boolean;
-}) {
+}>) {
     return (
         <div className="space-y-2 md:col-span-2">
             <div className="flex items-center justify-between gap-2">
-                <label className="label-technical">Entrada de microfono</label>
+                <label htmlFor="recording-microphone-device" className="label-technical">Entrada de microfono</label>
                 <button type="button"
                     onClick={() => void onRefresh()}
                     disabled={disabled}
@@ -225,6 +225,7 @@ function MicDeviceSelect({
                 </button>
             </div>
             <select
+                id="recording-microphone-device"
                 value={selectedDeviceId}
                 onChange={(event) => onChange(event.target.value)}
                 disabled={disabled}
@@ -241,7 +242,7 @@ function MicDeviceSelect({
         </div>
     );
 }
-function GainSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+function GainSlider({ value, onChange }: Readonly<{ value: number; onChange: (value: number) => void }>) {
     return (
         <div className="space-y-2">
             <Slider
@@ -266,7 +267,7 @@ function GainSlider({ value, onChange }: { value: number; onChange: (value: numb
     );
 }
 
-function VisualThresholdSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+function VisualThresholdSlider({ value, onChange }: Readonly<{ value: number; onChange: (value: number) => void }>) {
     return (
         <div className="space-y-2">
             <Slider
@@ -297,7 +298,7 @@ function DiarizationToggle({ isRecording, diarization, setDiarization }: Pick<Se
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Separa el texto indicando [Locutor 1], [Locutor 2]. Requiere mas recursos del servidor.</p>
                 </div>
-                <button
+                <button type="button"
                     onClick={() => setDiarization(!diarization)}
                     disabled={isRecording}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${isRecording ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${diarization ? 'bg-indigo-500' : 'bg-gray-400 dark:bg-gray-600'}`}

@@ -239,7 +239,6 @@ generado: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
         
         # Topics Content
         for i, topic in enumerate(topics, 1):
-            anchor = topic["title"].lower().replace(" ", "-").replace(",", "")
             md += f"## Tema {i}: {topic['title']}\n"
             md += f"**⏱️ Inicio**: {topic['start_time']}\n\n"
             

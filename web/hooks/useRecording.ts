@@ -141,9 +141,10 @@ function statusFromBackend(data: TranscriptionStatusPayload): LiveTranscriptionS
 
 function statusFromAudioLevel(data: AudioLevelPayload): LiveTranscriptionStatus {
     const rms = toFiniteNumber(data.rms);
+    const rmsLabel = rms === undefined ? '' : `, RMS ${rms}`;
     return {
         event: 'audio_level',
-        label: `Audio recibido${rms !== undefined ? `, RMS ${rms}` : ''}`,
+        label: `Audio recibido${rmsLabel}`,
         rms,
         updatedAt: Date.now(),
     };

@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "python-clients"))
 
 from riva.client import Auth, ASRService, AudioEncoding, StreamingRecognitionConfig, RecognitionConfig
 import riva.client
-# import riva.client.audio_io as audio_io
 
 from ..core.config import RivaConfig
 

@@ -35,7 +35,7 @@ export class AudioGraph {
     private pcmAccumulator: Int16Array[] = [];
     private samplesAccumulated = 0;
 
-    constructor(private onAudioData: (data: ArrayBuffer) => void) { }
+    constructor(private readonly onAudioData: (data: ArrayBuffer) => void) { }
 
     async initialize(sampleRate: number = 16000, deviceId?: string): Promise<void> {
         this.targetSampleRate = sampleRate;

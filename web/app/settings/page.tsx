@@ -148,7 +148,9 @@ export default function SettingsPage() {
 
     // Group settings by category
     const grouped = settings.reduce<Record<string, AppSetting[]>>((acc, s) => {
-        (acc[s.category] ??= []).push(s);
+        const category = acc[s.category] ?? [];
+        category.push(s);
+        acc[s.category] = category;
         return acc;
     }, {});
 

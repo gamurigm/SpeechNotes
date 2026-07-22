@@ -11,7 +11,7 @@
 
 export class ApiClient {
     private static instance: ApiClient;
-    private baseUrl: string = 'http://127.0.0.1:9443/api';
+    private readonly baseUrl: string = 'http://127.0.0.1:9443/api';
 
     private constructor() { }
 
