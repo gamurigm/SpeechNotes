@@ -241,6 +241,7 @@ export default function FormatterPage() {
                 >
                   <input
                     type="checkbox"
+                    aria-label={`Seleccionar ${file.name}`}
                     checked={selectedIds.has(file.id)}
                     onChange={() => toggleFile(file.id)}
                     className="mt-1 mr-3 h-4 w-4"

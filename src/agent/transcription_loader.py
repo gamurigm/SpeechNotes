@@ -325,7 +325,6 @@ procesado: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}
         
         # Add topics
         for i, topic in enumerate(topics, 1):
-            anchor = topic["title"].lower().replace(" ", "-").replace(",", "")
             md += f"## Tema {i}: {topic['title']}\n"
             md += f"**⏱️ Timestamp**: {topic['timestamp_start']}\n\n"
             

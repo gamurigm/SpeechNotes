@@ -171,10 +171,10 @@ function DashboardContent() {
 
     const extractTitleFromMarkdown = (md: string) => {
         if (!md) return 'Última Clase';
-        const headingMatch = md.match(/^#{1,3}\s*(.+)$/m);
-        if (headingMatch && headingMatch[1]) return headingMatch[1].trim();
-        const transMatch = md.match(/Transcripci[oó]n:\s*(\d{4}-\d{2}-\d{2})/i);
-        if (transMatch && transMatch[1]) return `Transcripción: ${transMatch[1]}`;
+        const headingMatch = /^#{1,3}\s*(.+)$/m.exec(md);
+        if (headingMatch?.[1]) return headingMatch[1].trim();
+        const transMatch = /Transcripci[oó]n:\s*(\d{4}-\d{2}-\d{2})/i.exec(md);
+        if (transMatch?.[1]) return `Transcripción: ${transMatch[1]}`;
         return 'Última Clase';
     };
 

@@ -39,9 +39,7 @@ export class ConfigManager {
      * @returns La única instancia de ConfigManager
      */
     public static getInstance(): ConfigManager {
-        if (ConfigManager._instance === null) {
-            ConfigManager._instance = new ConfigManager();
-        }
+        ConfigManager._instance ??= new ConfigManager();
         return ConfigManager._instance;
     }
 

@@ -59,7 +59,7 @@ export function useTranscriptionService() {
 
             if (targetId) {
                 const index = items.findIndex((item) => item.id === targetId);
-                setSelectedIndex(index >= 0 ? index : 0);
+                setSelectedIndex(Math.max(index, 0));
                 await loadTranscriptionById(targetId);
             } else if (items.length === 0) {
                 const latest = await ApiClient.getInstance().getLatestTranscription() as TranscriptionDocument | null;

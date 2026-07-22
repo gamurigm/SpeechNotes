@@ -109,11 +109,7 @@ export function AudioVisualizer({ analyser, isRecording, threshold = 0 }: AudioV
                     ctx.fillStyle = gradient;
                 } else {
                     // Below threshold: Subtle gray
-                    if (isLight) {
-                        ctx.fillStyle = 'rgba(203, 213, 225, 0.6)'; // slate-300
-                    } else {
-                        ctx.fillStyle = 'rgba(71, 85, 105, 0.6)'; // slate-600
-                    }
+                    ctx.fillStyle = isLight ? 'rgba(203, 213, 225, 0.6)' : 'rgba(71, 85, 105, 0.6)';
                 }
 
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);

@@ -293,7 +293,7 @@ function DiarizationToggle({ isRecording, diarization, setDiarization }: Pick<Se
             <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 p-3 rounded-lg border border-black/10 dark:border-white/10">
                 <div>
                     <p className="text-sm font-bold title-semi-neon flex items-center gap-2">
-                        Identificar Locutores (Diarizacion)
+                        Identificar Locutores (Diarizacion){' '}
                         <span className="px-1.5 py-0.5 text-[9px] bg-amber-500/20 text-amber-500 rounded border border-amber-500/30 uppercase tracking-widest font-black">Beta</span>
                     </p>
                     <p className="text-xs text-gray-500 mt-1">Separa el texto indicando [Locutor 1], [Locutor 2]. Requiere mas recursos del servidor.</p>
