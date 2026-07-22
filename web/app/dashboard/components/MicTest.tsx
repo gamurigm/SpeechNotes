@@ -4,6 +4,18 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, AlertCircle, CheckCircle, Volume2, Radio, X } from 'lucide-react';
 import { Button } from "@heroui/react";
 
+function getStatusClass(status: string): string {
+    if (status === 'success') return 'bg-emerald-500/15 border-emerald-500/30';
+    if (status === 'error') return 'bg-rose-500/15 border-rose-500/30';
+    return 'bg-content-glass border-white/5';
+}
+
+function getRmsClass(rmsLevel: number): string {
+    if (rmsLevel > 300) return 'bg-emerald-500/20 text-emerald-400';
+    if (rmsLevel > 150) return 'bg-amber-500/20 text-amber-400';
+    return 'bg-theme-secondary/20 text-theme-secondary';
+}
+
 export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
     const [isTesting, setIsTesting] = useState(false);
     const [rmsLevel, setRmsLevel] = useState(0);
@@ -167,10 +179,7 @@ export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
 
                 {/* Status Message */}
                 {message && (
-                    <div className={`flex items-center gap-2.5 p-3 rounded-xl border backdrop-blur-sm ${status === 'success' ? 'bg-emerald-500/15 border-emerald-500/30' :
-                        status === 'error' ? 'bg-rose-500/15 border-rose-500/30' :
-                            'bg-content-glass border-white/5'
-                        }`}>
+                    <div className={`flex items-center gap-2.5 p-3 rounded-xl border backdrop-blur-sm ${getStatusClass(status)}`}>
                         {status === 'success' && <CheckCircle size={16} className="text-emerald-400" />}
                         {status === 'error' && <AlertCircle size={16} className="text-rose-400" />}
                         {status === 'testing' && <Mic size={16} className="text-violet-400 animate-pulse" />}
@@ -185,10 +194,7 @@ export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-xs font-medium text-theme-secondary">Nivel Actual</span>
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${rmsLevel > 300 ? 'bg-emerald-500/20 text-emerald-400' :
-                                    rmsLevel > 150 ? 'bg-amber-500/20 text-amber-400' :
-                                        'bg-theme-secondary/20 text-theme-secondary'
-                                    }`}>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${getRmsClass(rmsLevel)}`}>
                                     {rmsLevel}
                                 </span>
                             </div>

@@ -34,6 +34,12 @@ type SearchResult = {
 
 const clampZoom = (value: number) => Math.max(50, Math.min(145, value));
 
+function getToolbarClass(isActive: boolean, isLight: boolean): string {
+    if (isActive) return 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg';
+    if (isLight) return 'text-slate-600 hover:text-black shadow-sm hover:shadow-md';
+    return 'text-slate-200 hover:text-white shadow-sm hover:shadow-md';
+}
+
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const { themeType } = useBackground();
@@ -43,12 +49,7 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
         <div className="relative group">
             <button
                 onClick={onClick}
-                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 backdrop-blur-md ${isActive
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg'
-                    : isLight
-                        ? 'text-slate-600 hover:text-black shadow-sm hover:shadow-md'
-                        : 'text-slate-200 hover:text-white shadow-sm hover:shadow-md'
-                    } ${className}`}
+                className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 backdrop-blur-md ${getToolbarClass(isActive ?? false, isLight)} ${className}`}
                 style={{
                     background: isActive ? undefined : 'var(--theme-glass-bg)',
                     border: '1px solid var(--theme-glass-border)'

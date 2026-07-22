@@ -5,6 +5,13 @@ import { useBackground, BackgroundTheme } from '../../providers';
 import { Palette, Check, Monitor, Moon, Sun, Zap, Upload, X } from 'lucide-react';
 import { Button, Popover, PopoverTrigger, PopoverContent, Divider, Slider } from "@heroui/react";
 
+function getCustomBackgroundClass(theme: string, isLight: boolean): string {
+    if (theme === 'custom') {
+        return isLight ? 'bg-slate-100 text-slate-900 border-slate-200' : 'bg-white/10 text-white border-white/10 shadow-lg';
+    }
+    return isLight ? 'text-slate-500 hover:bg-slate-50 border-transparent' : 'text-slate-400 hover:bg-white/5 border-transparent';
+}
+
 const themes: { id: BackgroundTheme; name: string; icon: React.ReactNode; color: string }[] = [
     { id: 'cyberpunk', name: 'Cyber Blue', icon: <Zap size={14} />, color: 'bg-blue-600' },
     { id: 'midnight', name: 'Midnight', icon: <Moon size={14} />, color: 'bg-violet-700' },
@@ -113,10 +120,7 @@ export function ThemeSettings() {
                         <div className="space-y-1.5">
                             <button
                                 onClick={() => setTheme('custom')}
-                                className={`flex items-center justify-between w-full px-3 py-1.5 rounded-xl transition-all duration-300 group ${theme === 'custom'
-                                    ? (isLight ? 'bg-slate-100 text-slate-900 border-slate-200' : 'bg-white/10 text-white border-white/10 shadow-lg')
-                                    : (isLight ? 'text-slate-500 hover:bg-slate-50 border-transparent' : 'text-slate-400 hover:bg-white/5 border-transparent')
-                                    } border`}
+                                className={`flex items-center justify-between w-full px-3 py-1.5 rounded-xl transition-all duration-300 group ${getCustomBackgroundClass(theme, isLight)} border`}
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-4 h-4 rounded-md bg-cover bg-center border border-white/20`} style={{ backgroundImage: `url(${customBg})` }} />
