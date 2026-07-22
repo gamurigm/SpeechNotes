@@ -47,7 +47,7 @@ const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: Toolb
 
     return (
         <div className="relative group">
-            <button
+            <button type="button"
                 onClick={onClick}
                 className={`p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 hover:rotate-3 active:scale-90 backdrop-blur-md ${getToolbarClass(isActive ?? false, isLight)} ${className}`}
                 style={{
@@ -250,7 +250,7 @@ function DashboardContent() {
                         <div className="flex-1 flex overflow-hidden w-full px-4 relative">
                             {/* Panel Toggle Sidebar */}
                             <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] flex items-center group/nav">
-                                <button
+                                <button type="button"
                                     onClick={() => setShowSidebar(!showSidebar)}
                                     className="relative flex items-center justify-center w-6 h-28 group/btn transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
                                 >
@@ -729,7 +729,7 @@ function DashboardContent() {
             </main>
 
             {/* Floating Chat Toggle */}
-            <button
+            <button type="button"
                 onClick={() => setShowChat(!showChat)}
                 className={`fixed top-10 right-10 z-[100] transition-all duration-500 hover:rotate-12 active:scale-90 group ${showChat ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 rotate-0 scale-100'}`}
             >

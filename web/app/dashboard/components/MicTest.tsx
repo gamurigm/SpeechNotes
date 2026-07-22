@@ -238,7 +238,7 @@ export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
                 )}
 
                 {/* Action Button */}
-                <button
+                <button type="button"
                     onClick={isTesting ? stopMicTest : startMicTest}
                     className={`w-full py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${isTesting
                         ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-lg shadow-rose-500/25'

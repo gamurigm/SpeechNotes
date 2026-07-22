@@ -71,7 +71,7 @@ export function ThemeSettings() {
                 <div className="grid grid-cols-6 gap-1.5 px-0.5">
                     {themes.map((t) => (
                         <div key={t.id} className="relative group">
-                            <button
+                            <button type="button"
                                 onClick={() => setTheme(t.id)}
                                 className={`w-5 h-5 rounded-full transition-all duration-300 transform hover:scale-110 active:scale-95 ${t.color} ${theme === t.id
                                     ? 'ring-1 ring-violet-500 ring-offset-1 ring-offset-transparent scale-110 shadow-lg'
@@ -118,7 +118,7 @@ export function ThemeSettings() {
 
                     {customBg && (
                         <div className="space-y-1.5">
-                            <button
+                            <button type="button"
                                 onClick={() => setTheme('custom')}
                                 className={`flex items-center justify-between w-full px-3 py-1.5 rounded-xl transition-all duration-300 group ${getCustomBackgroundClass(theme, isLight)} border`}
                             >
@@ -128,7 +128,7 @@ export function ThemeSettings() {
                                 </div>
                                 {theme === 'custom' && <Check size={12} className="text-violet-500" />}
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={() => {
                                     if (theme === 'custom') setTheme('cyberpunk');
                                     setCustomBg(null);

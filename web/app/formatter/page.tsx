@@ -210,7 +210,7 @@ export default function FormatterPage() {
         <div className="border rounded-lg p-6 bg-white shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Archivos Disponibles</h2>
-            <button
+            <button type="button"
               onClick={selectAll}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
@@ -261,7 +261,7 @@ export default function FormatterPage() {
             </div>
           )}
 
-          <button
+          <button type="button"
             onClick={startFormatting}
             disabled={selectedIds.size === 0 || isRunning}
             className={`mt-6 w-full py-3 px-4 rounded-lg font-medium transition-colors ${
@@ -321,7 +321,7 @@ export default function FormatterPage() {
               <div className="text-sm text-green-700">
                 ✅ Exitosos: {summary.successful} | ❌ Fallidos: {summary.failed}
               </div>
-              <button
+              <button type="button"
                 className="mt-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-800 bg-green-100 rounded hover:bg-green-200"
                 onClick={() => {
                   setProgress([]);
