@@ -970,13 +970,19 @@ def register_socket_events(sio):
                     "word_count": len(raw_content.split()),
                     "source_type": "live_recording",
                     "processed": False,
-                    "ingested_at": datetime.now(),
-                    "audio_file": audio_filename or "N/A",
-                    "duration_seconds": stop_elapsed,
-                    "language": session.get("language", "es"),
+                    "ingested_at": datetime.now().isoformat(),
+                    "source_filename": audio_filename or "N/A",
                 }
                 result = db.transcriptions.insert_one(doc)
                 print(f"[Socket.IO] Inserted transcription {result.inserted_id} into DB")
+
+                for sequence, item in enumerate(ordered_segments):
+                    db.segments.insert_one({
+                        "transcription_id": result.inserted_id,
+                        "timestamp": item.get("timestamp", "00:00:00"),
+                        "content": item["text"],
+                        "sequence": sequence,
+                    })
 
                 # Post-processing: analyze and generate
                 try:

@@ -59,3 +59,11 @@ class MongoManager:
     def segments(self) -> Collection:
         """Get segments collection."""
         return self.db.segments
+
+
+# Compatibility import for legacy callers. The application repository uses
+# SQLite as its canonical store; direct imports of this historical module must
+# resolve to the same adapter instead of writing to a separate Mongo database.
+from .sqlite_manager import SQLiteManager
+
+MongoManager = SQLiteManager
