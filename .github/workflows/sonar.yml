@@ -35,17 +35,19 @@ jobs:
           sleep 5
           cd ..
 
-          # Ejecutar pruebas contra el backend vivo (sin || true: debe fallar si hay tests rotos)
+          # Asegurar que el cleanup (detener server + generar coverage.xml) corra
+          # aunque pytest falle, para que el artifact quede disponible
+          cleanup() {
+            kill -INT "$SERVER_PID" 2>/dev/null || true
+            sleep 3
+            cd backend
+            coverage xml -o ../coverage.xml 2>/dev/null || true
+            sed -i 's/filename="/filename="backend\//g' ../coverage.xml
+          }
+          trap cleanup EXIT
+
+          # Ejecutar pruebas contra el backend vivo (debe fallar si hay tests rotos)
           pytest backend/tests/ -v --tb=short --junitxml=test-results.xml
-
-          # Detener el servidor de forma segura para guardar .coverage
-          kill -INT $SERVER_PID || true
-          sleep 3
-
-          # Exportar XML y ajustar rutas para SonarCloud
-          cd backend
-          coverage xml -o ../coverage.xml
-          sed -i 's/filename="/filename="backend\//g' ../coverage.xml
 
       - name: Upload backend coverage
         if: always()
@@ -53,6 +55,7 @@ jobs:
         with:
           name: backend-coverage
           path: coverage.xml
+          if-no-files-found: ignore
 
       - name: Upload backend test results
         if: always()
@@ -60,6 +63,7 @@ jobs:
         with:
           name: backend-test-results
           path: test-results.xml
+          if-no-files-found: ignore
 
       - name: Notify Discord - Backend Tests Failed
         if: failure()
