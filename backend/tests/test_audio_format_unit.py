@@ -23,6 +23,8 @@ sys.modules.setdefault("services.audio", audio_package)
 sys.modules.setdefault("services.audio.audio_formatter", service_module)
 
 import backend.routers.audio_format as module
+for _name in ("services.audio.audio_formatter", "services.audio", "services"):
+    sys.modules.pop(_name, None)
 
 
 class FakeTask:

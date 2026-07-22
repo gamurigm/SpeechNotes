@@ -34,6 +34,8 @@ if "services.agents.pydantic_agent" not in sys.modules:
                         "services.agents.pydantic_agent": agent_module})
 
 import backend.routers.chat as module
+for _name in ("services.agents.pydantic_agent", "services.agents", "services"):
+    sys.modules.pop(_name, None)
 
 
 def _doc(**values):
