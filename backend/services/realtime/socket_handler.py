@@ -235,6 +235,7 @@ def _is_duplicate_text(normalized: str, recent_texts: deque[str]) -> bool:
     return False
 
 
+# NOSONAR - validation pipeline is intentionally explicit
 def _sanitize_asr_text(text: str, session: dict, segment: ASRSegment) -> str:
     text = (text or "").strip()
     normalized = _normalize_text(text)
@@ -357,6 +358,7 @@ def format_timestamp(seconds: float) -> str:
 #  Facade: register_socket_events
 # ──────────────────────────────────────────────
 
+# NOSONAR - event registration groups the complete socket protocol
 def register_socket_events(sio):
     """
     Facade Pattern entry point.

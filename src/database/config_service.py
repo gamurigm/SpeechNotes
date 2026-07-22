@@ -109,10 +109,7 @@ class ConfigService:
     def __new__(cls) -> "ConfigService":
         if cls._instance is None:
             instance = super().__new__(cls)
-            try:
-                instance._initialize()
-            except Exception:
-                raise
+            instance._initialize()
             cls._instance = instance
         return cls._instance
 

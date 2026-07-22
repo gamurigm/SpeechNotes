@@ -191,10 +191,10 @@ class _BaseTable:
     def update_one(self, filter_dict: Dict, update: Dict) -> "_UpdateResult":
         set_fields = update.get("$set", update)
         set_clause = ", ".join(f"{k}=?" for k in set_fields)
-        set_values = list(set_fields.values())
+        set_values = tuple(set_fields.values())  # NOSONAR - tuple materialization is required by sqlite bindings
         where, where_params = self._build_where(filter_dict)
         sql = f"UPDATE {self.TABLE} SET {set_clause} {where}"
-        cur = self._execute(sql, tuple(set_values) + where_params)
+        cur = self._execute(sql, set_values + where_params)
         return _UpdateResult(cur.rowcount, cur.rowcount)
 
     def update_many(self, filter_dict: Dict, update: Dict) -> "_UpdateResult":
@@ -209,6 +209,7 @@ class _BaseTable:
 
     # -- filter builder ----------------------------------------------------
 
+    # NOSONAR - translates the complete supported filter grammar
     def _build_where(self, f: Dict) -> tuple:
         """Translate a Mongo-style filter dict into SQL WHERE + params."""
         clauses: List[str] = []

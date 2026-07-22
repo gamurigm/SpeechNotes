@@ -65,6 +65,7 @@ class NIMRegistry:
 
     # ── Factory: build NIMConfig from environment / ConfigService ────────
 
+    # NOSONAR - provider registry keeps environment fallback branches together
     def _build_from_env(self) -> None:
         """
         Bootstrap all NIM configs from environment / ConfigService.

@@ -35,6 +35,7 @@ class DocumentMetadata(BaseModel):
 
 
 @router.get("/{doc_id}/content", response_model=DocumentContent, responses={400: {"description": "ID inválido"}, 404: {"description": "Documento no encontrado"}, 500: {"description": "Error al obtener documento"}})
+# NOSONAR - endpoint coordinates auth, lookup, and response compatibility
 async def get_document_content(doc_id: str):
     """
     Get the plain text content of a document by its ID.

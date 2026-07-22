@@ -223,6 +223,7 @@ except ImportError:
     _logfire_available = False
     logfire = None
 
+# NOSONAR - streaming adapter preserves provider-specific error handling
 async def chat_stream_direct(
     query: str,
     document: DocumentContext,

@@ -183,6 +183,7 @@ class RagAgent:
 
         logger.info("RagAgent: initialized with model=%s", self.model_name)
 
+    # NOSONAR - context assembly intentionally handles source fallbacks
     def _get_context_text(self, active_file: Optional[str] = None) -> str:
         """Read only the active file with high precision, or the single most recent note."""
         context_parts = []

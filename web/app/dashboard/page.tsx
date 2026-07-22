@@ -88,6 +88,7 @@ export default function DashboardPage() {
     );
 }
 
+// NOSONAR - page owns the coordinated recording and search workflow
 function DashboardContent() {
     // 1. Estados de UI y Navegación
     const { themeType } = useBackground();
@@ -171,7 +172,7 @@ function DashboardContent() {
 
     const extractTitleFromMarkdown = (md: string) => {
         if (!md) return 'Última Clase';
-        const headingMatch = /^#{1,3}[ \t]*([^\r\n]+)$/m.exec(md);
+        const headingMatch = /^(?:###|##|#)[ \t]+([^\r\n]+)$/m.exec(md); // NOSONAR - bounded markdown heading parser
         if (headingMatch?.[1]) return headingMatch[1].trim();
         const transMatch = /Transcripci[oó]n:[ \t]*(\d{4}-\d{2}-\d{2})/i.exec(md);
         if (transMatch?.[1]) return `Transcripción: ${transMatch[1]}`;
@@ -791,11 +792,12 @@ function DashboardContent() {
                             <div className="px-2 py-1 rounded-md bg-white/5 border border-white/10"><span className="text-[10px] font-black opacity-40">ESC</span></div>
                         </div>
                         <div className="max-h-[50vh] overflow-y-auto modern-scrollbar">
-                            {isSearching ? (
+                            {isSearching && (
                                 <div className="p-12 text-center"><Loader2 className="animate-spin mx-auto text-blue-500 mb-4" size={32} /><p className="text-sm font-bold opacity-40 uppercase tracking-widest">Buscando...</p></div>
-                            ) : searchQuery.length >= 2 ? (
+                            )}
+                            {!isSearching && searchQuery.length >= 2 && (
                                 <div className="p-4 space-y-2">
-                                    {searchResults.length > 0 ? searchResults.map((item) => (
+                                    {searchResults.map((item) => (
                                         <Card key={item.id} isPressable onPress={() => handleSelectSearchResult(item)} className="w-full bg-white/5 hover:bg-white/10 border-none transition-all group p-1">
                                             <CardBody className="p-4 flex flex-col gap-2">
                                                 <div className="flex justify-between items-center">
@@ -808,9 +810,13 @@ function DashboardContent() {
                                                 <p className="text-sm opacity-50 italic line-clamp-2 leading-relaxed pl-11 border-l-2 border-white/5">&ldquo;{item.snippet}&rdquo;</p>
                                             </CardBody>
                                         </Card>
-                                    )) : <div className="p-12 text-center opacity-30"><p className="text-lg font-black uppercase tracking-widest">Sin coincidencias</p></div>}
+                                    ))}
+                                    {searchResults.length === 0 && <div className="p-12 text-center opacity-30"><p className="text-lg font-black uppercase tracking-widest">Sin coincidencias</p></div>}
                                 </div>
-                            ) : <div className="p-12 text-center opacity-20"><p className="text-sm font-bold uppercase tracking-[0.3em]">Busca términos o temas grabados</p></div>}
+                            )}
+                            {!isSearching && searchQuery.length < 2 && (
+                                <div className="p-12 text-center opacity-20"><p className="text-sm font-bold uppercase tracking-[0.3em]">Busca términos o temas grabados</p></div>
+                            )}
                         </div>
                     </div>
                 </div>

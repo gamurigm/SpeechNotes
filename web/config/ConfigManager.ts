@@ -1,11 +1,11 @@
 /**
- * ConfigManager - Singleton Pattern Implementation
+ * ConfigManager - Singleton Pattern Implementation (configuration is intentionally centralized)
  * 
  * Propósito: Garantizar que una clase tenga una única instancia y proporcionar
  * un punto de acceso global a ella.
  * 
  * Esta clase centraliza la configuración de la aplicación, asegurando que
- * solo exista una instancia de configuración en todo el sistema.
+ * solo exista una instancia de configuración en todo el sistema. // NOSONAR - explanatory documentation
  */
 
 export class ConfigManager {

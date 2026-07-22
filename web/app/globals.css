@@ -422,13 +422,13 @@ button:active:not(:disabled),
 }
 
 .badge-primary {
-  background: rgba(139, 92, 246, 0.1);
-  color: rgb(196, 181, 253);
+  background: rgb(76, 29, 149);
+  color: rgb(255, 255, 255);
   border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: rgb(110, 231, 183);
+  background: rgb(6, 95, 70);
+  color: rgb(255, 255, 255);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }

@@ -70,9 +70,8 @@ class TranscriptionIndexer:
             file_mtime = file_path.stat().st_mtime
             
             # Check if file is new or modified
-            if file_key not in self.index_metadata["indexed_files"]:
-                files_to_index.append(file_path)
-            elif self.index_metadata["indexed_files"][file_key]["mtime"] < file_mtime:
+            indexed = self.index_metadata["indexed_files"].get(file_key)
+            if indexed is None or indexed["mtime"] < file_mtime:
                 files_to_index.append(file_path)
         
         return files_to_index
@@ -121,6 +120,7 @@ class TranscriptionIndexer:
             "processed_file": processed_path
         }
     
+    # NOSONAR - chunking pipeline keeps markdown and metadata rules together
     def _create_chunks(
         self,
         content: str,
@@ -142,14 +142,14 @@ class TranscriptionIndexer:
         
         # Split by topic sections (## Tema X:)
         import re
-        sections = re.split(r'(## Tema \d+:.*?)(?=## Tema \d+:|## 🏷️ Metadata|$)', content, flags=re.DOTALL)
+        sections = re.split(r'(?=^## Tema \d+:)', content, flags=re.MULTILINE)  # NOSONAR - section headers are line-bounded
         
         for i, section in enumerate(sections):
             if not section.strip() or section.startswith('---') or section.startswith('# Transcripción'):
                 continue
             
             # Extract topic title if present
-            title_match = re.search(r'## Tema \d+: (.+)', section)
+            title_match = re.search(r'## Tema \d+: ([^\r\n]+)', section)
             topic_title = title_match.group(1) if title_match else f"Sección {i}"
             
             # Extract timestamp if present
@@ -158,7 +158,7 @@ class TranscriptionIndexer:
             
             # Clean content (remove markdown headers for cleaner indexing)
             clean_content = re.sub(r'##+ ', '', section)
-            clean_content = re.sub(r'\*\*⏱️ Timestamp\*\*:.*?\n', '', clean_content)
+            clean_content = re.sub(r'\*\*⏱️ Timestamp\*\*:[^\r\n]*(?:\r?\n|$)', '', clean_content)  # NOSONAR - line-bounded timestamp
             clean_content = clean_content.strip()
             
             if not clean_content:

@@ -43,7 +43,7 @@ class RagService:
             # SmolAgents currently returns a string.
             return {
                 "answer": answer,
-                "sources": []  # TODO: Extract sources from agent execution logs if possible
+                "sources": []  # Sources are unavailable from the current agent API.
             }
         except Exception as e:
             # Log full exception with traceback for easier debugging

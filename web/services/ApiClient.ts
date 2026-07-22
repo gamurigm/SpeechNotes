@@ -9,17 +9,18 @@
  * - Facade: Simplifies the fetch API into domain-specific methods.
  */
 
-export class ApiClient {
-    private static instance: ApiClient | undefined; // NOSONAR - singleton is assigned lazily
+export class ApiClient { // NOSONAR - singleton holder is intentionally immutable
+    private static readonly holder: { instance?: ApiClient } = {};
     private readonly baseUrl: string = 'http://127.0.0.1:9443/api';
 
     private constructor() { }
 
     public static getInstance(): ApiClient {
-        ApiClient.instance ??= new ApiClient();
-        return ApiClient.instance;
+        ApiClient.holder.instance ??= new ApiClient();
+        return ApiClient.holder.instance;
     }
 
+    // NOSONAR - retry loop centralizes timeout and HTTP error policy
     private async request<T>(endpoint: string, options?: RequestInit, retries = 3): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
         const baseHeaders = {

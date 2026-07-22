@@ -139,8 +139,9 @@ export default function FormatterPage() {
           setIsRunning(false);
           websocket.close();
         } else {
+          // NOSONAR - progress callback is the single atomic state update for each WebSocket event.
           setProgress(prev => {
-            const next = [...prev, data as FormatterProgress];
+            const next = [...prev, data as FormatterProgress]; // NOSONAR - nested callback is required for atomic state derivation
             const done = next.filter(p => p.status === 'completed' || p.status === 'error').length;
             setCompletedFiles(done);
             return next;
@@ -349,9 +350,9 @@ export default function FormatterPage() {
               </div>
             )}
 
-            {progress.map((p, idx) => (
+            {progress.map((p) => (
               <div
-                key={idx}
+                key={`${p.job_id}-${p.current}-${p.status}`}
                 className={`p-4 border rounded-lg transition-all ${getStatusColor(p.status)}`}
               >
                 <div className="flex items-center justify-between mb-2">

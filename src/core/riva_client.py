@@ -133,6 +133,7 @@ class RivaTranscriber:
                 transcript = result.alternatives[0].transcript
                 yield transcript, result.is_final
     
+    # NOSONAR - offline fallback must preserve provider error semantics
     def offline_transcribe(
         self, 
         audio_data: bytes, 

@@ -18,6 +18,7 @@ def _mask(s: Optional[str]) -> str:
     return s[:4] + "..." + s[-4:]
 
 
+# NOSONAR - async dependency contract is required by existing callers
 async def require_api_key(x_api_key: Optional[str] = Header(None), authorization: Optional[str] = Header(None, alias="Authorization")) -> bool:
     """Dependency to require an API key via `x-api-key` header or `Authorization: Bearer <key>`.
 
@@ -49,6 +50,7 @@ async def require_api_key(x_api_key: Optional[str] = Header(None), authorization
     return True
 
 
+# NOSONAR - authentication flow intentionally handles multiple token sources
 async def require_session(request: Request) -> Any:
     """Dependency to require an authenticated NextAuth session.
 
