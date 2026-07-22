@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:9443';
+// In Docker, localhost points to the frontend container. API_URL points to
+// the backend service; the loopback fallback keeps local development working.
+const BACKEND_URL = process.env.API_URL || 'http://127.0.0.1:9443';
 
 export async function GET() {
   try {

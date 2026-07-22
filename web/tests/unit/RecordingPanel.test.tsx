@@ -110,7 +110,7 @@ describe('RecordingPanel', () => {
         });
         mockedUseRecording.mockReturnValue(state as ReturnType<typeof useRecording>);
 
-        const view = render(<RecordingPanel />);
+        render(<RecordingPanel />);
         await userEvent.click(screen.getByTitle('Configuracion de Audio'));
         expect(screen.getByText('Configuracion de Audio')).toBeInTheDocument();
 

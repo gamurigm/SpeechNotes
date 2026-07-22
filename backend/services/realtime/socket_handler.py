@@ -581,7 +581,18 @@ def register_socket_events(sio):
             return
 
         session = active_sessions[sid]
-        pcm_data = bytes(data) if not isinstance(data, bytes) else data
+        if isinstance(data, bytes):
+            pcm_data = data
+        elif isinstance(data, (bytearray, memoryview)):
+            pcm_data = bytes(data)
+        elif isinstance(data, list):
+            # Socket.IO may decode a typed-array payload as a JSON byte list.
+            try:
+                pcm_data = bytes(data)
+            except (TypeError, ValueError):
+                pcm_data = b""
+        else:
+            pcm_data = b""
 
         if not pcm_data or len(pcm_data) < 100:
             return
