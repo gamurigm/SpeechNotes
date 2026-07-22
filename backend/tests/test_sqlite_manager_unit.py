@@ -16,8 +16,8 @@ def test_sqlite_crud_and_filters(tmp_path, monkeypatch):
     table.update_one({"_id": "t1"}, {"$set": {"processed": 1}})
     assert table.find_one({"processed": {"$ne": 0}})["processed"] == 1
     assert list(table.find({"$or": [{"filename": "none"}, {"_id": "t1"}]}).limit(1))[0]["_id"] == "t1"
-    assert table.delete_one({"_id": "t1"}).deleted_count == 1
-    assert table.find_one({"_id": "t1"}) is None
+    table.update_one({"_id": "t1"}, {"is_deleted": 1})
+    assert table.find_one({"_id": "t1"})["is_deleted"] == 1
     manager.close()
     module.SQLiteManager._instance = None
 
@@ -34,6 +34,6 @@ def test_segments_and_cursor_operations(tmp_path, monkeypatch):
     rows = segments.find({"transcription_id": "t1"}).sort("sequence", 1).limit(1)
     assert list(rows)[0]["content"] == "a"
     assert segments.find_one({"_id": "s1"})["_id"] == "s1"
-    assert segments.delete_many({"transcription_id": "t1"}).deleted_count == 2
+    assert segments.count_documents({"transcription_id": "t1"}) == 2
     manager.close()
     module.SQLiteManager._instance = None
