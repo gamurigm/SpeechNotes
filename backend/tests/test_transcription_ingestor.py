@@ -46,3 +46,41 @@ def test_ingest_file_skips_existing():
     dummy_path = Path("transcripcion_test.md")
     result = ingestor._ingest_file(dummy_path)
     assert result is False
+
+
+def test_ingest_all_adds_skips_and_counts_errors(tmp_path):
+    (tmp_path / "transcripcion_20260722_090000.md").write_text("**00:00:00** hola", encoding="utf-8")
+    (tmp_path / "mi_audio_20260722_100000.md").write_text("texto", encoding="utf-8")
+    ingestor = TranscriptionIngestor.__new__(TranscriptionIngestor)
+    ingestor.source_dir = tmp_path
+    ingestor._ingest_file = MagicMock(side_effect=[True, False])
+    assert ingestor.ingest_all() == {"added": 1, "skipped": 1, "errors": 0}
+    ingestor._ingest_file = MagicMock(side_effect=RuntimeError("broken"))
+    assert ingestor.ingest_all()["errors"] == 2
+
+
+def test_ingest_all_missing_directory_raises(tmp_path):
+    ingestor = TranscriptionIngestor.__new__(TranscriptionIngestor)
+    ingestor.source_dir = tmp_path / "missing"
+    with pytest.raises(FileNotFoundError):
+        ingestor.ingest_all()
+
+
+def test_ingest_file_success_inserts_document_and_segments(tmp_path):
+    file_path = tmp_path / "upload.md"
+    file_path.write_text("texto inicial\n**00:02:00** segundo", encoding="utf-8")
+    ingestor = TranscriptionIngestor.__new__(TranscriptionIngestor)
+    ingestor.db = MagicMock()
+    ingestor.db.transcriptions.find_one.return_value = None
+    ingestor.db.transcriptions.insert_one.return_value = MagicMock(inserted_id="new-id")
+    assert ingestor._ingest_file(str(file_path), "uploaded_file", "original.wav") is True
+    inserted = ingestor.db.transcriptions.insert_one.call_args.args[0]
+    assert inserted["source_filename"] == "original.wav" and inserted["source_type"] == "uploaded_file"
+    ingestor.db.segments.insert_many.assert_called_once()
+
+
+def test_initial_segmentation_handles_prefix_and_empty_content():
+    ingestor = TranscriptionIngestor.__new__(TranscriptionIngestor)
+    segments = ingestor._initial_segmentation("prefijo **00:01:00** texto", "id")
+    assert [item["sequence"] for item in segments] == [1, 2]
+    assert ingestor._initial_segmentation("", "id") == []

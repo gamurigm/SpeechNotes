@@ -167,7 +167,7 @@ class FormatterAgent:
                 job.successful += 1
                 yield progress
                 
-            except Exception:
+            except Exception as e:
                 error_id = doc_id if 'doc_id' in locals() else f"index-{idx}"
                 progress = FormatterProgress(
                     job_id=job_id,
