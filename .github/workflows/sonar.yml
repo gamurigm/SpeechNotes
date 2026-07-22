@@ -81,8 +81,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -95,14 +93,15 @@ jobs:
         run: npm ci
 
       - name: Run Jest unit tests
-        run: npm run test:unit
+        run: npm run test:unit -- --coverage
 
       - name: Upload frontend coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
-          path: web/coverage/
+          path: web/tests/evidence/coverage/
+          if-no-files-found: ignore
 
       - name: Notify Discord - Frontend Unit Tests Failed
         if: failure()
@@ -124,8 +123,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -147,14 +144,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cypress-videos
-          path: web/cypress/videos/
+          path: web/tests/evidence/videos/
+          if-no-files-found: ignore
 
       - name: Upload Cypress screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cypress-screenshots
-          path: web/cypress/screenshots/
+          path: web/tests/evidence/screenshots/
+          if-no-files-found: ignore
 
       - name: Notify Discord - E2E Tests Failed
         if: failure()
