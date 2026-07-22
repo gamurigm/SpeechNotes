@@ -1,5 +1,21 @@
-import pytest
+import sys
 from unittest.mock import patch, MagicMock
+import pytest
+
+def _ensure_mock(mod_name):
+    if mod_name not in sys.modules:
+        try:
+            __import__(mod_name)
+        except ImportError:
+            sys.modules[mod_name] = MagicMock()
+
+for mod in ["langgraph", "langgraph.graph", "faiss", "dotenv", "openai", "numpy", "typing_extensions"]:
+    _ensure_mock(mod)
+
+if isinstance(sys.modules.get("langgraph"), MagicMock):
+    sys.modules["langgraph"].graph.add_messages = lambda x, y: (x or []) + (y or [])
+    sys.modules["langgraph.graph"] = sys.modules["langgraph"].graph
+
 from src.agent.nodes import router_node, semantic_search_node, writing_node, get_llm_client, get_vector_store
 from src.agent.state import AgentState
 

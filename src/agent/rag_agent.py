@@ -1,7 +1,7 @@
 """RAG Agent Module using NVIDIA NIM (OpenAI-compatible API)."""
 
 import os
-from typing import List
+from typing import List, Optional
 from dotenv import load_dotenv
 from smolagents import ToolCallingAgent, tool
 from langchain_chroma import Chroma
