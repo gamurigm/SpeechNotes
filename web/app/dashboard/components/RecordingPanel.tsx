@@ -9,26 +9,26 @@ import { useBackground } from '../../providers';
 
 type Language = 'auto' | 'en' | 'es';
 
-type RecordingButtonProps = {
+type RecordingButtonProps = Readonly<{
     isRecording: boolean;
     onStart: () => void | Promise<void>;
     onRequestStop: () => void;
-};
+}>;
 
-type LanguageToggleProps = {
+type LanguageToggleProps = Readonly<{
     isLight: boolean;
     isRecording: boolean;
     language: Language;
     setLanguage: (language: Language) => void;
-};
+}>;
 
-type SettingsButtonProps = {
+type SettingsButtonProps = Readonly<{
     isLight: boolean;
     showSettings: boolean;
     onToggle: () => void;
-};
+}>;
 
-type SettingsPanelProps = {
+type SettingsPanelProps = Readonly<{
     gainValue: number;
     setGainValue: (value: number) => void;
     visualThreshold: number;
@@ -40,15 +40,15 @@ type SettingsPanelProps = {
     selectedDeviceId: string;
     setSelectedDeviceId: (deviceId: string) => void;
     refreshAudioDevices: () => void | Promise<void>;
-};
+}>;
 
-type StopConfirmationModalProps = {
+type StopConfirmationModalProps = Readonly<{
     isLight: boolean;
     isOpen: boolean;
     duration: number;
     onOpenChange: (isOpen: boolean) => void;
     onConfirm: () => void;
-};
+}>;
 
 const LANGUAGE_CYCLE: Language[] = ['auto', 'en', 'es'];
 const LANGUAGE_LABELS: Record<Language, string> = {
