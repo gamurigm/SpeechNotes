@@ -50,9 +50,12 @@ export function useTranscriptionService() {
             setTranscriptions(items);
 
             const savedId = localStorage.getItem('sn-last-doc-id');
-            const targetId = savedId && items.find((item) => item.id === savedId)
-                ? savedId
-                : (items.length > 0 ? items[0].id : null);
+            let targetId: string | null = null;
+            if (savedId && items.some((item) => item.id === savedId)) {
+                targetId = savedId;
+            } else if (items.length > 0) {
+                targetId = items[0].id;
+            }
 
             if (targetId) {
                 const index = items.findIndex((item) => item.id === targetId);

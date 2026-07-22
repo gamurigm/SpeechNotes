@@ -114,12 +114,14 @@ function statusFromBackend(data: TranscriptionStatusPayload): LiveTranscriptionS
     const queueSize = toFiniteNumber(data.queue_size);
     const segmentId = toFiniteNumber(data.segment_id);
     const segmentText = segmentId ? ` #${segmentId}` : '';
+    const rmsSuffix = rms !== undefined ? `, RMS ${rms}` : '';
+    const capturingLabel = bufferSeconds && bufferSeconds > 0
+        ? `Audio recibido: ${bufferSeconds.toFixed(1)}s acumulados${rmsSuffix}`
+        : `Audio llegando${rmsSuffix}`;
 
     const labels: Record<string, string> = {
         recording_started: `Backend listo; corte maximo ${data.max_segment_seconds || 8}s`,
-        capturing: bufferSeconds && bufferSeconds > 0
-            ? `Audio recibido: ${bufferSeconds.toFixed(1)}s acumulados${rms !== undefined ? `, RMS ${rms}` : ''}`
-            : `Audio llegando${rms !== undefined ? `, RMS ${rms}` : ''}`,
+        capturing: capturingLabel,
         segment_queued: `Segmento${segmentText} en cola ASR`,
         asr_started: `ASR procesando segmento${segmentText}`,
         segment_discarded: `Segmento${segmentText} sin texto util`,

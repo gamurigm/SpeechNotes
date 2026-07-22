@@ -143,7 +143,7 @@ function LanguageToggle({ isLight, isRecording, language, setLanguage }: Languag
     };
 
     return (
-        <button
+        <button type="button"
             onClick={handleClick}
             disabled={isRecording}
             title={isRecording ? 'Deten la grabacion para cambiar idioma' : LANGUAGE_TITLES[language]}
@@ -215,7 +215,7 @@ function MicDeviceSelect({
         <div className="space-y-2 md:col-span-2">
             <div className="flex items-center justify-between gap-2">
                 <label className="label-technical">Entrada de microfono</label>
-                <button
+                <button type="button"
                     type="button"
                     onClick={() => void onRefresh()}
                     disabled={disabled}

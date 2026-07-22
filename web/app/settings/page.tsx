@@ -60,6 +60,12 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; desc
     },
 };
 
+function getSettingColor(isMissing: boolean, isEdited: boolean): 'warning' | 'primary' | 'default' {
+    if (isMissing) return 'warning';
+    if (isEdited) return 'primary';
+    return 'default';
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -258,7 +264,7 @@ export default function SettingsPage() {
                                                 onChange={e => handleChange(setting.key, e.target.value)}
                                                 variant="bordered"
                                                 className="flex-1"
-                                                color={isMissing ? 'warning' : isEdited ? 'primary' : 'default'}
+                                                color={getSettingColor(isMissing, isEdited)}
                                                 description={
                                                     setting.required
                                                         ? '⚡ Requerido'
