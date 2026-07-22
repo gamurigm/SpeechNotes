@@ -1,4 +1,4 @@
-# Transcripcion en vivo con NVIDIA Canary
+# Transcripcion en vivo con NVIDIA Riva (Parakeet + Whisper)
 
 Este documento resume los cambios hechos para estabilizar la transcripcion en vivo de SpeechNotes y dejar preparado el pipeline para grabaciones largas.
 
@@ -8,7 +8,7 @@ Resolver estos problemas observados en grabaciones largas o sesiones en vivo:
 
 - La transcripcion en vivo no aparecia en la UI.
 - Al presionar Stop no se cargaba el texto en el visor.
-- Whisper/Canary devolvian repeticiones de baja informacion como `si si`, `no no`, `ah`.
+- Los modelos ASR pueden devolver repeticiones de baja informacion como `si si`, `no no`, `ah`.
 - Las sesiones largas degradaban la calidad por acumulacion de audio en memoria y por cortes no controlados.
 - El navegador podia capturar audio a 44.1/48 kHz aunque el backend esperaba PCM mono de 16 kHz.
 
@@ -19,7 +19,7 @@ Resolver estos problemas observados en grabaciones largas o sesiones en vivo:
 3. El cliente Socket.IO envia paquetes PCM cada 0.5 s al backend.
 4. El backend escribe el WAV incrementalmente a disco para no acumular grabaciones largas en RAM.
 5. El backend acumula ventanas ASR de 10 s con 1 s de overlap.
-6. Cada ventana se manda a NVIDIA Canary via Riva gRPC.
+6. Cada ventana se manda a Parakeet (español) o Whisper (otros idiomas) via Riva gRPC.
 7. El backend emite eventos de estado y transcripcion en vivo por Socket.IO.
 8. Al detener, el backend drena la cola ASR, guarda el Markdown y emite `processing_complete`.
 9. La UI recarga la lista y selecciona el documento cuando recibe `processing_complete`, no cuando recibe solo `recording_stopped`.
@@ -34,25 +34,23 @@ Resolver estos problemas observados en grabaciones largas o sesiones en vivo:
 | Frecuencia de audio | 16 kHz | frontend y backend |
 | Formato de audio | PCM mono Int16 | frontend y backend |
 
-La ventana ASR se bajo de 45 s a 10 s para que la UI muestre texto mas rapido. El valor de 45 s se habia usado temporalmente para reducir alucinaciones de Canary con audio degradado; despues se corrigio la captura PCM, por eso ahora es viable usar 10 s.
+La ventana ASR se bajo de 45 s a 10 s para que la UI muestre texto mas rapido. El valor de 45 s se habia usado temporalmente para reducir alucinaciones con audio degradado; despues se corrigio la captura PCM, por eso ahora es viable usar 10 s.
 
-## Configuracion NVIDIA Canary
+## Configuracion NVIDIA Riva ASR
 
-Canary se usa por la API oficial Riva gRPC de NVIDIA Build:
+SpeechNotes usa los dos modelos Riva documentados:
 
 - Servidor: `grpc.nvcf.nvidia.com:443`
-- Modelo: `nvidia/canary-1b-asr`
-- Function ID: `b0e8b4a5-217c-40b7-9b96-17d84e666317`
-- Idioma para espanol: `language_code=es-ES`
-- Configuracion adicional: `custom_configuration["source_language"] = "es-ES"`
+- Parakeet español: `nvidia/parakeet-ctc-0.6b-es`, Function ID `a9eeee8f-b509-4712-b19d-194361fa5f31`, idioma `es-US`.
+- Whisper: `whisper-large-v3`, Function ID `b702f636-f60c-4a3d-a6f4-f3568c13bd7d`, con `multi` para autodetección.
 
 Variables esperadas en `.env`:
 
 ```dotenv
 NVIDIA_API_KEY_ASR=nvapi-...
-NVIDIA_API_KEY_ASR_ES=nvapi-...
 RIVA_SERVER=grpc.nvcf.nvidia.com:443
-RIVA_FUNCTION_ID_CANARY=b0e8b4a5-217c-40b7-9b96-17d84e666317
+RIVA_FUNCTION_ID_PARAKEET=a9eeee8f-b509-4712-b19d-194361fa5f31
+RIVA_FUNCTION_ID_WHISPER=b702f636-f60c-4a3d-a6f4-f3568c13bd7d
 ```
 
 El registro NIM ahora prioriza variables de entorno para ASR antes que valores persistidos en SQLite, evitando que una clave vieja guardada en `data/speechnotes.db` opaque el `.env`.
@@ -76,14 +74,14 @@ El registro NIM ahora prioriza variables de entorno para ASR antes que valores p
 
 ### `backend/services/nim/registry.py`
 
-- `asr_es` usa `nvidia/canary-1b-asr`.
-- Se agrego `RIVA_FUNCTION_ID_CANARY` con fallback al function ID oficial.
+- `asr_es` usa `nvidia/parakeet-ctc-0.6b-es`.
+- Se agrego `RIVA_FUNCTION_ID_PARAKEET` con fallback al Function ID oficial.
 - Se prioriza `.env` para claves ASR mediante `_env_first`.
 
 ### `backend/services/nim/riva_asr_client.py`
 
 - El cliente Riva ya no esta documentado solo como Whisper; sirve para ASR Riva en general.
-- Para Canary con `auto`, se evita `language_code=multi` porque el endpoint offline lo rechaza.
+- Para Parakeet se usa `language_code=es-US`, mientras Whisper puede usar `multi` para autodeteccion.
 - Se envia `source_language` en `custom_configuration` cuando el idioma es conocido.
 - Se normalizan codigos cortos: `es` -> `es-ES`, `en` -> `en-US`.
 
@@ -146,7 +144,7 @@ Pruebas funcionales realizadas:
 - Health backend: `GET http://127.0.0.1:9443/health` -> `200`.
 - Dashboard: `GET http://127.0.0.1:3006/dashboard` -> `200`.
 - Socket.IO `start_recording` confirma `max_segment_seconds=10`.
-- Canary responde con la clave ASR actual, sin `PERMISSION_DENIED`.
+- Parakeet y Whisper responden con la clave ASR actual, sin `PERMISSION_DENIED`.
 - Replay de WAVs reales demostro que el backend recibe audio y que el filtro descarta basura de baja informacion en vez de guardarla como transcripcion final.
 
 ## Diagnostico si vuelve a fallar
@@ -166,7 +164,7 @@ Pruebas funcionales realizadas:
 
 ## Limitaciones actuales
 
-- Canary puede seguir alucinando en audio pobre, ruido alto, musica o microfono equivocado.
+- Cualquier ASR puede seguir alucinando en audio pobre, ruido alto, musica o microfono equivocado.
 - La transcripcion en vivo depende de ventanas de 10 s; no es token streaming real.
 - El fallback automatico a otro ASR todavia no esta implementado.
 - Los jobs de formateo/Minimax siguen mostrando errores 404 en logs; no bloquean la transcripcion en vivo, pero deben corregirse por separado.

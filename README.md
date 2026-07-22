@@ -137,7 +137,7 @@ GET  /api/chat                      Chat con el agente (streaming)
 - [Patrones de diseño aplicados](./docs/patrones_diseno.md)
 - [Servicios NIM — arquitectura y referencia](./docs/internal/nim_services.md)
 - [Guía Docker](./docs/DOCKER.md)
-- [Transcripcion en vivo con NVIDIA Canary](./docs/realtime_transcription_canary.md)
+- [Transcripcion en vivo con NVIDIA Riva (Parakeet + Whisper)](./docs/realtime_transcription_canary.md)
 
 ---
 

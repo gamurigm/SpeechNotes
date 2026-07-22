@@ -127,7 +127,7 @@ class NIMRegistry:
 
         self._register(NIMConfig(
             name="asr",
-            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("API_KEY") or _env_first("NVIDIA_API_KEY"),
+            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("NVIDIA_API_KEY"),
             base_url="",  # unused for gRPC
             model_id="whisper",
             client_type=NIMClientType.RIVA_ASR,
@@ -136,22 +136,21 @@ class NIMRegistry:
             grpc_function_id=riva_func_id,
         ))
 
-        # ASR: Canary via Riva gRPC (Spanish & multilingual).
-        # NVIDIA Build documents canary-1b-asr as a Riva gRPC model with this function ID.
-        canary_func_id = (
-            _env_first("RIVA_FUNCTION_ID_CANARY")
+        # ASR: Parakeet CTC 0.6B Spanish via Riva gRPC.
+        parakeet_func_id = (
+            _env_first("RIVA_FUNCTION_ID_PARAKEET")
             or _env_first("RIVA_FUNCTION_ID_ASR_ES")
-            or "b0e8b4a5-217c-40b7-9b96-17d84e666317"
+            or "a9eeee8f-b509-4712-b19d-194361fa5f31"
         )
         self._register(NIMConfig(
             name="asr_es",
-            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("NVIDIA_API_KEY_ASR_ES") or _env_first("API_KEY") or _env_first("NVIDIA_API_KEY"),
+            api_key=_env_first("NVIDIA_API_KEY_ASR") or _env_first("NVIDIA_API_KEY_ASR_ES") or _env_first("NVIDIA_API_KEY"),
             base_url="",  # unused for gRPC
-            model_id="nvidia/canary-1b-asr",
+            model_id="nvidia/parakeet-ctc-0.6b-es",
             client_type=NIMClientType.RIVA_ASR,
             grpc_host=riva_host,
             grpc_port=riva_port,
-            grpc_function_id=canary_func_id,
+            grpc_function_id=parakeet_func_id,
         ))
         # ── Audio Enhancement: BNR (gRPC) ─────────────────────────────
         self._register(NIMConfig(
@@ -217,7 +216,7 @@ class NIMRegistry:
     def get_asr(self, language: str | None = None) -> AudioTranscriptionPort:
         """Return the ASR client for the given language.
 
-        - ``'es'`` → ``asr_es`` (Canary via Riva gRPC, es-ES locale)
+        - ``'es'`` → ``asr_es`` (Parakeet CTC Spanish via Riva gRPC, es-US locale)
         - anything else → ``asr`` (Whisper via Riva gRPC, en-US locale)
         """
         name = "asr_es" if language and language.startswith("es") else "asr"

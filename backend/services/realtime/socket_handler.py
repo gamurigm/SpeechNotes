@@ -61,7 +61,7 @@ from backend.services.audio.vad_service import (
 # ── Domain imports ──
 from src.transcription import FormatterFactory
 
-# NIM ASR import (Canary/Whisper via Riva gRPC)
+# NIM ASR import (Parakeet/Whisper via Riva gRPC)
 from backend.services.audio.asr import ASRService, ASRRequest
 
 # ──────────────────────────────────────────────
@@ -411,7 +411,7 @@ def register_socket_events(sio):
         try:
             await sio.emit('connected', {
                 'message': 'Connected to transcription server',
-                'transcriber': 'Canary 1B ASR (NVIDIA NIM)'
+                'transcriber': 'Parakeet CTC 0.6B ES (NVIDIA NIM)'
             }, room=sid)
         except Exception as e:
             print(f"[Socket.IO] emit connected error: {e}")

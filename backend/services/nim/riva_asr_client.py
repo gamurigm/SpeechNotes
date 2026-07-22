@@ -13,7 +13,7 @@ Design Patterns:
     - Adapter (Structural): Wraps the Riva gRPC SDK behind the
       ``AudioTranscriptionPort`` so callers never import riva.client
       directly.
-    - Strategy (Behavioral): Swappable with Parakeet, Canary, or
+    - Strategy (Behavioral): Swappable with Parakeet, Whisper, or
       any other ASR adapter registered in ``NIMRegistry``.
 
 Architecture Layer: Infrastructure
@@ -135,10 +135,9 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         asr_service = riva.client.ASRService(auth)
 
         # Map short BCP-47 codes to full locale codes expected by Riva.
-        # Canary offline ASR rejects language_code=multi, so default auto to Spanish.
         lang_code = self._normalize_language(language)
-        if lang_code == "multi" and "canary" in self._cfg.model_id.lower():
-            lang_code = "es-ES"
+        if "parakeet" in self._cfg.model_id.lower() and lang_code.startswith("es-"):
+            lang_code = "es-US"
 
         config = riva.client.RecognitionConfig(
             encoding=riva.client.AudioEncoding.LINEAR_PCM,
@@ -154,7 +153,25 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         # Extract raw PCM from WAV container
         pcm = self._wav_to_pcm(audio_bytes)
 
-        response = asr_service.offline_recognize(pcm, config)
+        if "parakeet" in self._cfg.model_id.lower():
+            streaming_config = riva.client.StreamingRecognitionConfig(
+                config=config,
+                interim_results=False,
+            )
+            responses = asr_service.streaming_response_generator(
+                audio_chunks=self._pcm_chunks(pcm, sample_rate),
+                streaming_config=streaming_config,
+            )
+        else:
+            responses = asr_service.offline_recognize(pcm, config)
+
+        if "parakeet" in self._cfg.model_id.lower():
+            texts = []
+            for response in responses:
+                for result in response.results:
+                    if result.alternatives:
+                        texts.append(result.alternatives[0].transcript)
+            return " ".join(texts).strip()
 
         # Extract best transcript from response
         texts = []
@@ -170,6 +187,12 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
             lang_code,
         )
         return transcript
+
+    @staticmethod
+    def _pcm_chunks(pcm: bytes, sample_rate: int) -> list[bytes]:
+        """Split PCM into bounded chunks for Riva streaming ASR."""
+        chunk_bytes = max(sample_rate * 2, 1)
+        return [pcm[offset:offset + chunk_bytes] for offset in range(0, len(pcm), chunk_bytes)]
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
