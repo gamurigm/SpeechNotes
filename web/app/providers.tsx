@@ -95,9 +95,9 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
 
 export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
-  const [theme, setThemeState] = useState<BackgroundTheme>('cyberpunk');
-  const [customBg, setCustomBgState] = useState<string | null>(null);
-  const [glassOpacity, setGlassOpacityState] = useState<number>(10);
+  const [theme, setTheme] = useState<BackgroundTheme>('cyberpunk');
+  const [customBg, setCustomBg] = useState<string | null>(null);
+  const [glassOpacity, setGlassOpacity] = useState<number>(10);
   const themeType = themeColors[theme]['--theme-type'] as 'light' | 'dark';
 
   // Load theme and custom image from localStorage on mount
@@ -108,13 +108,13 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
 
     const animationFrame = requestAnimationFrame(() => {
       if (savedTheme && themeColors[savedTheme]) {
-        setThemeState(savedTheme);
+        setTheme(savedTheme);
       }
       if (savedCustomBg) {
-        setCustomBgState(savedCustomBg);
+        setCustomBg(savedCustomBg);
       }
       if (savedOpacity) {
-        setGlassOpacityState(parseInt(savedOpacity, 10));
+        setGlassOpacity(Number.parseInt(savedOpacity, 10));
       }
     });
 
@@ -149,12 +149,8 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
     localStorage.setItem('sn-glass-opacity', glassOpacity.toString());
   }, [glassOpacity]);
 
-  const setTheme = (newTheme: BackgroundTheme) => {
-    setThemeState(newTheme);
-  };
-
-  const setCustomBg = (url: string | null) => {
-    setCustomBgState(url);
+  const updateCustomBg = (url: string | null) => {
+    setCustomBg(url);
     if (url) {
       try {
         // Safe check for quota - ~2MB is usually safe for the custom bg 
@@ -163,7 +159,7 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
           console.warn("La imagen es demasiado grande para guardarse permanentemente.");
         }
         localStorage.setItem('sn-custom-bg', url);
-        setThemeState('custom');
+        setTheme('custom');
       } catch (e) {
         console.error("Error saving custom background to localStorage:", e);
         // If it fails, we still set it in state so it works for the session,
@@ -174,12 +170,8 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
     }
   };
 
-  const setGlassOpacity = (opacity: number) => {
-    setGlassOpacityState(opacity);
-  };
-
   return (
-    <BackgroundContext.Provider value={{ theme, setTheme, customBg, setCustomBg, glassOpacity, setGlassOpacity, themeType }}>
+    <BackgroundContext.Provider value={{ theme, setTheme, customBg, setCustomBg: updateCustomBg, glassOpacity, setGlassOpacity, themeType }}>
       <HeroUIProvider navigate={router.push}>
         {children}
       </HeroUIProvider>
