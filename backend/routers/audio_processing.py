@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import io
 import logging
-from typing import Optional
+from typing import Annotated, Optional
 
 import logfire
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -38,9 +38,9 @@ EMPTY_UPLOAD_MESSAGE = "Uploaded file is empty"
 )
 @logfire.instrument("router.audio.transcribe")
 async def transcribe_audio(
-    file: UploadFile = File(..., description="WAV, MP3, WebM, or OGG audio file"),
-    language: Optional[str] = Form(None, description="BCP-47 language hint e.g. 'en', 'es'"),
-    translate_to: Optional[str] = Form(None, description="Translate result to this language (ISO 639-1)"),
+    file: Annotated[UploadFile, File(..., description="WAV, MP3, WebM, or OGG audio file")],
+    language: Annotated[Optional[str], Form(description="BCP-47 language hint e.g. 'en', 'es'")] = None,
+    translate_to: Annotated[Optional[str], Form(description="Translate result to this language (ISO 639-1)")] = None,
 ):
     """
     Transcribe an audio file using NVIDIA Parakeet TDT 0.6B v2.
@@ -81,8 +81,8 @@ async def transcribe_audio(
 )
 @logfire.instrument("router.audio.denoise")
 async def denoise_audio(
-    file: UploadFile = File(..., description="WAV audio file (16-bit PCM, 16kHz, mono)"),
-    sample_rate: int = Form(16000, description="Input sample rate in Hz"),
+    file: Annotated[UploadFile, File(..., description="WAV audio file (16-bit PCM, 16kHz, mono)")],
+    sample_rate: Annotated[int, Form(description="Input sample rate in Hz")] = 16000,
 ):
     """
     Clean background noise from a WAV file using NVIDIA BNR NIM.
@@ -120,11 +120,11 @@ async def denoise_audio(
 )
 @logfire.instrument("router.audio.pipeline")
 async def run_pipeline(
-    file: UploadFile = File(..., description="Audio file"),
-    pipeline: str = Form("full", description="Pipeline variant: full | asr_only | denoise | passthrough"),
-    language: Optional[str] = Form(None, description="Language hint (BCP-47)"),
-    translate_to: Optional[str] = Form(None, description="Translate transcript to this language"),
-    sample_rate: int = Form(16000, description="Input sample rate"),
+    file: Annotated[UploadFile, File(..., description="Audio file")],
+    pipeline: Annotated[str, Form(description="Pipeline variant: full | asr_only | denoise | passthrough")] = "full",
+    language: Annotated[Optional[str], Form(description="Language hint (BCP-47)")] = None,
+    translate_to: Annotated[Optional[str], Form(description="Translate transcript to this language")] = None,
+    sample_rate: Annotated[int, Form(description="Input sample rate")] = 16000,
 ):
     """
     Run the full audio processing pipeline:
