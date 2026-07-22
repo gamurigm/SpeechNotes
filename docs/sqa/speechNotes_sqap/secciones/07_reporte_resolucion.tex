@@ -1,0 +1,63 @@
+\chapter{Reporte y Resolución de No Cumplimientos}
+\label{sec:reporte-resolucion}
+
+\section{Proceso de Reporte de Defectos}
+\label{sec:reporte-defectos}
+
+Los defectos encontrados durante las pruebas se registraron en Jira siguiendo el siguiente flujo:
+
+\begin{enumerate}
+    \item \textbf{Reporte:} El tester crea un issue de tipo ``Bug'' en Jira.
+    \item \textbf{Clasificación:} El QA Lead asigna severidad (\texttt{Critical}, \texttt{Major}, \texttt{Minor}) y prioridad.
+    \item \textbf{Asignación:} El Project Manager asigna el bug al desarrollador responsable.
+    \item \textbf{Corrección:} El desarrollador implementa la corrección y mueve el issue a ``In Testing''.
+    \item \textbf{Verificación:} El tester re-ejecuta el caso de prueba y verifica la corrección.
+    \item \textbf{Cierre:} Si el defecto está corregido, se cierra el issue. En caso contrario, se reabre.
+\end{enumerate}
+
+\section{Defectos Encontrados}
+\label{sec:defectos-encontrados}
+
+Los defectos encontrados se detallan en el Apéndice~C. A continuación se presenta un resumen:
+
+\begin{longtable}{lccc}
+\caption{Resumen de defectos}
+\label{tab:resumen-defectos}\\
+\toprule
+\textbf{ID} & \textbf{Severidad} & \textbf{Estado} & \textbf{Caso Asociado}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Severidad} & \textbf{Estado} & \textbf{Caso Asociado}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+BUG-002 & Minor & Abierto & CP-04\\
+
+BUG-003 & Critical & Cerrado & CP-14\\
+
+BUG-004 & Major & Cerrado & CP-08\\
+
+BUG-005 & Major & Abierto & CP-08\\
+
+BUG-006 & Minor & Abierto & CP-01\\
+
+BUG-007 & Minor & Cerrado & CP-04\\
+
+BUG-008 & Minor & Abierto & CP-02\\
+
+BUG-009 & Minor & Abierto & CP-06\\
+
+\end{longtable}
+
+\section{Resumen de Resultados}
+\label{sec:resumen-resultados}
+
+\begin{itemize}
+    \item Total defectos: 8
+    \item Defectos cerrados: 3 (BUG-003, BUG-004, BUG-007)
+    \item Defectos abiertos: 5 (BUG-002, BUG-005, BUG-006, BUG-008, BUG-009)
+    \item Tasa de cierre: 37.5\%
+\end{itemize}

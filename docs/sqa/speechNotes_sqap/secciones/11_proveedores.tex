@@ -1,0 +1,47 @@
+\chapter{Control de Proveedores}
+\label{sec:proveedores}
+
+\section{Proveedores Identificados}
+\label{sec:proveedores-identificados}
+
+La tabla~\ref{tab:proveedores} lista los proveedores externos utilizados en el proyecto.
+
+\begin{longtable}{lll}
+\caption{Proveedores externos}
+\label{tab:proveedores}\\
+\toprule
+\textbf{Proveedor} & \textbf{Servicio} & \textbf{Dependencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Proveedor} & \textbf{Servicio} & \textbf{Dependencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+NVIDIA NIM & Modelos de IA (ASR, BNR, VAD, Chat, Formatter) & Alta\\
+
+MongoDB Atlas & Base de datos NoSQL en la nube & Alta\\
+
+Vercel / Netlify & Despliegue de frontend & Media\\
+
+Docker Hub & Imágenes de contenedores & Media\\
+
+GitHub & Repositorio y CI/CD & Alta\\
+
+Atlassian (Jira) & Gestión de incidencias & Baja\\
+
+SonarCloud & Análisis estático & Media\\
+
+\end{longtable}
+
+\section{Criterios de Aceptación de Proveedores}
+\label{sec:criterios-proveedores}
+
+\begin{itemize}
+    \item SLA definido y documentado.
+    \item Compatibilidad con la arquitectura del proyecto.
+    \item Disponibilidad de API pública documentada.
+    \item Historial de uptime superior al 99\%.
+\end{itemize}

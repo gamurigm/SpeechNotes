@@ -1,0 +1,94 @@
+\documentclass[12pt,letterpaper]{report}
+
+% ── Codificación e Idioma ──
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,mexico]{babel}
+
+% ── Geometría ──
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+
+% ── Gráficos y Tablas ──
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{ragged2e}
+
+% ── Color ──
+\usepackage[svgnames]{xcolor}
+\definecolor{PasoColor}{HTML}{2E7D32}
+\definecolor{FalloColor}{HTML}{C62828}
+\definecolor{PendienteColor}{HTML}{757575}
+\definecolor{AzulLink}{HTML}{1565C0}
+
+% ── Hipervínculos ──
+\usepackage[colorlinks=true, linkcolor=AzulLink, citecolor=AzulLink, urlcolor=AzulLink]{hyperref}
+\AtBeginDocument{\hypersetup{pdftitle={SQAP -- SpeechNotes}, pdfauthor={Consultora de Calidad Externa}}}
+
+% ── Encabezados y pies ──
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\textit{SpeechNotes -- SQAP}}
+\fancyhead[RO]{\textit{Sección \thesection\ -- \leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── Formato de títulos ──
+\usepackage{titlesec}
+\titleformat{\chapter}{\normalfont\huge\bfseries}{\thechapter}{20pt}{\huge}
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{16pt}{\Large}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{12pt}{\large}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{10pt}{\normalsize}
+
+% ── Listas ──
+\usepackage{enumitem}
+\setlist{nosep, leftmargin=*}
+
+% ── Captions y Floats ──
+\usepackage{caption}
+\usepackage{float}
+
+% ── Paisaje para tablas grandes ──
+\usepackage{pdflscape}
+
+\begin{document}
+
+% ─────────────────────────────────────────────
+%  PORTADA
+% ─────────────────────────────────────────────
+\input{secciones/00_portada}
+
+% ─────────────────────────────────────────────
+%  CUERPO PRINCIPAL
+% ─────────────────────────────────────────────
+\input{secciones/01_proposito}
+\input{secciones/02_gestion}
+\input{secciones/03_tareas_sqa}
+\input{secciones/04_documentacion}
+\input{secciones/05_estandares_metricas}
+\input{secciones/06_pruebas}
+\input{secciones/07_reporte_resolucion}
+\input{secciones/08_herramientas}
+\input{secciones/09_control_codigo}
+\input{secciones/10_control_medios}
+\input{secciones/11_proveedores}
+\input{secciones/12_registros}
+\input{secciones/13_capacitacion}
+\input{secciones/14_gestion_riesgos}
+\input{secciones/15_conclusiones}
+
+% ─────────────────────────────────────────────
+%  APÉNDICES
+% ─────────────────────────────────────────────
+\appendix
+\input{apendices/A_matriz_rastreabilidad}
+\input{apendices/B_casos_prueba}
+\input{apendices/C_reporte_defectos}
+\input{apendices/D_analisis_estatico}
+\input{apendices/E_informe_cierre}
+
+\end{document}

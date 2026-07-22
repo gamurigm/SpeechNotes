@@ -1,0 +1,340 @@
+\chapter{Casos de Prueba}
+\label{apendice:b}
+
+\section{Casos de Prueba Manuales}
+
+\subsection{CP-01: Inicio de sesión exitoso}
+\label{cp:01}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-01\\
+\textbf{RF} & RF-01 (Auth)\\
+\textbf{Título} & Inicio de sesión exitoso con credenciales demo\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Frontend corriendo, base de datos SQLite con usuario demo\\
+\textbf{Datos} & \texttt{demo@speechnotes.app} / \texttt{demo123}\\
+\textbf{Pasos} & 1) Acceder a la URL del frontend. 2) Ingresar correo y contraseña. 3) Hacer clic en ``Iniciar Sesión''.\\
+\textbf{Resultado Esperado} & El usuario es redirigido a la pantalla principal de la aplicación. Se muestra el nombre del usuario.\\
+\textbf{Resultado Obtenido} & OK (BUG-006: tooltip duplicado en botón de logout -- Minor)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-02: Inicio de sesión con credenciales inválidas}
+\label{cp:02}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-02\\
+\textbf{RF} & RF-01 (Auth)\\
+\textbf{Título} & Inicio de sesión con credenciales inválidas\\
+\textbf{Tipo} & Error\\
+\textbf{Precondiciones} & Frontend corriendo\\
+\textbf{Datos} & \texttt{test@test.com} / \texttt{wrongpass}\\
+\textbf{Pasos} & 1) Acceder a la URL del frontend. 2) Ingresar credenciales inválidas. 3) Hacer clic en ``Iniciar Sesión''.\\
+\textbf{Resultado Esperado} & Se muestra un mensaje de error ``Credenciales inválidas''. El usuario permanece en la pantalla de login.\\
+\textbf{Resultado Obtenido} & OK (BUG-008: placeholder visible en input de confirmación de registro -- Minor)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-03: Prueba de micrófono sin dispositivo}
+\label{cp:03}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-03\\
+\textbf{RF} & RF-02 (Audio / Frontend)\\
+\textbf{Título} & Prueba de micrófono --- Sin dispositivo conectado\\
+\textbf{Tipo} & Error\\
+\textbf{Precondiciones} & Frontend corriendo. Sin micrófono conectado a la PC.\\
+\textbf{Datos} & --\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Hacer clic en ``Probar Micrófono''.\\
+\textbf{Resultado Esperado} & Se muestra un mensaje indicando que no se detecta micrófono.\\
+\textbf{Resultado Obtenido} & OK (mensaje: ``No se detecta micrófono'')\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-04: Inicio y detención de grabación con VAD}
+\label{cp:04}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-04\\
+\textbf{RF} & RF-03 (Audio / Backend)\\
+\textbf{Título} & Inicio y detención de grabación con VAD\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Frontend corriendo. Micrófono conectado y funcionando.\\
+\textbf{Datos} & --\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Hacer clic en ``Iniciar Grabación''. 3) Hablar durante unos segundos. 4) Hacer clic en ``Detener Grabación''.\\
+\textbf{Resultado Esperado} & La grabación se inicia (icono rojo, timer). Al detener, se muestra la transcripción generada.\\
+\textbf{Resultado Obtenido} & OK (BUG-002: error en consola ``No se encontró la referencia'' al detener -- Minor; BUG-007: corregido, icono de play/pausa)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-05: Transcripción en vivo}
+\label{cp:05}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-05\\
+\textbf{RF} & RF-04 (Realtime ASR)\\
+\textbf{Título} & Transcripción en vivo durante la grabación\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Frontend y backend corriendo. Micrófono conectado.\\
+\textbf{Datos} & --\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Iniciar grabación. 3) Hablar ``Hola, esto es una prueba de transcripción''. 4) Observar la transcripción en vivo. 5) Detener grabación.\\
+\textbf{Resultado Esperado} & El texto ``Hola, esto es una prueba de transcripción'' aparece en tiempo real en la transcripción en vivo.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-06: Upload de archivo de audio}
+\label{cp:06}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-06\\
+\textbf{RF} & RF-05 (Upload / Backend)\\
+\textbf{Título} & Carga de archivo MP3 vacío (0 bytes)\\
+\textbf{Tipo} & Error\\
+\textbf{Precondiciones} & Backend corriendo. Sesión activa.\\
+\textbf{Datos} & Archivo MP3 de 0 bytes\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Subir Audio''. 3) Seleccionar archivo MP3 vacío de 0 bytes. 4) Hacer clic en ``Subir''.\\
+\textbf{Resultado Esperado} & El sistema rechaza el archivo con un mensaje de error: ``El archivo está vacío''.\\
+\textbf{Resultado Obtenido} & OK (BUG-009: texto de ayuda ``Eliminar completamente esta nota de voz'' -- Minor)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-07: Consulta de transcripciones guardadas}
+\label{cp:07}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-07\\
+\textbf{RF} & RF-06 (Transcripciones)\\
+\textbf{Título} & Consulta de lista de transcripciones guardadas\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Al menos una transcripción guardada en la base de datos.\\
+\textbf{Datos} & Transcripción previamente guardada\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Mis Transcripciones''.\\
+\textbf{Resultado Esperado} & Se muestra una lista con las transcripciones guardadas, incluyendo título y fecha.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-08: Edición de transcripción}
+\label{cp:08}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-08\\
+\textbf{RF} & RF-07 (Editor)\\
+\textbf{Título} & Editar y guardar transcripción\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Transcripción existente en la base de datos.\\
+\textbf{Datos} & Nuevo texto editado\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción existente. 3) Modificar el texto. 4) Hacer clic en ``Guardar''.\\
+\textbf{Resultado Esperado} & Los cambios se guardan correctamente. Se muestra un mensaje de confirmación.\\
+\textbf{Resultado Obtenido} & OK (BUG-004: mayor, corregido; BUG-005: mayor, abierto -- error al guardar con texto muy largo)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Major\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-09: Búsqueda textual en transcripciones}
+\label{cp:09}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-09\\
+\textbf{RF} & RF-08 (Búsqueda)\\
+\textbf{Título} & Búsqueda de texto dentro de transcripciones\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Transcripciones existentes con la palabra ``prueba''.\\
+\textbf{Datos} & Término de búsqueda: ``prueba''\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Mis Transcripciones''. 3) Usar la barra de búsqueda con el término ``prueba''.\\
+\textbf{Resultado Esperado} & Se filtran las transcripciones que contienen la palabra ``prueba''.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-10: Formateo de transcripción con IA}
+\label{cp:10}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-10\\
+\textbf{RF} & RF-09 (IA / Formatter)\\
+\textbf{Título} & Formateo de una transcripción existente con IA\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Transcripción existente. Conexión a API de NVIDIA NIM.\\
+\textbf{Datos} & Transcripción sin formato\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción. 3) Hacer clic en ``Formatear con IA''.\\
+\textbf{Resultado Esperado} & El texto de la transcripción se transforma a un formato estructurado con párrafos y puntuación adecuada.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-11: Chat contextual sobre una transcripción}
+\label{cp:11}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-11\\
+\textbf{RF} & RF-10 (Chat / RAG)\\
+\textbf{Título} & Chat contextual con pregunta sobre una transcripción\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Transcripción existente. Conexión a API de NVIDIA NIM.\\
+\textbf{Datos} & Pregunta: ``¿De qué trata esta transcripción?''\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción. 3) Hacer clic en ``Chat contextual''. 4) Escribir ``¿De qué trata esta transcripción?'' y presionar Enter.\\
+\textbf{Resultado Esperado} & El sistema responde con un resumen del contenido de la transcripción.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-12: Transcripción larga (límite de caracteres)}
+\label{cp:12}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-12\\
+\textbf{RF} & RF-09 (IA / Formatter), RF-10 (Chat / RAG)\\
+\textbf{Título} & Límite de caracteres en formateo y chat IA\\
+\textbf{Tipo} & Límite\\
+\textbf{Precondiciones} & Conexión a API de NVIDIA NIM.\\
+\textbf{Datos} & Transcripción de más de 4000 caracteres\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Subir o crear una transcripción de más de 4000 caracteres. 3) Intentar formatear con IA. 4) Intentar usar el chat contextual.\\
+\textbf{Resultado Esperado} & El sistema maneja el límite mostrando un mensaje indicando que la transcripción es muy larga o procesando parcialmente.\\
+\textbf{Resultado Obtenido} & El formateo procesó la transcripción completa exitosamente (no se alcanzó el límite real).\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-13: Upload de archivo WAV}
+\label{cp:13}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-13\\
+\textbf{RF} & RF-05 (Upload / Backend)\\
+\textbf{Título} & Carga de archivo WAV de 1 segundo\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Backend corriendo. Sesión activa.\\
+\textbf{Datos} & Archivo WAV de 1 segundo\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Subir Audio''. 3) Seleccionar archivo WAV. 4) Hacer clic en ``Subir''.\\
+\textbf{Resultado Esperado} & El archivo se sube exitosamente y se inicia la transcripción.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\subsection{CP-14: Chat IA con datos vacíos}
+\label{cp:14}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-14\\
+\textbf{RF} & RF-10 (Chat / RAG)\\
+\textbf{Título} & Chat contextual sin transcripción cargada\\
+\textbf{Tipo} & Happy Path\\
+\textbf{Precondiciones} & Frontend corriendo. Sin transcripción seleccionada.\\
+\textbf{Datos} & Pregunta: ``¿Qué dice esta transcripción?''\\
+\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar al chat contextual sin seleccionar ninguna transcripción. 3) Hacer clic en ``Enviar pregunta''.\\
+\textbf{Resultado Esperado} & Chat contextual sin transcripción cargada (BUG-003: Critical, corregido, el sistema crasheaba al hacer clic en el botón de enviar sin seleccionar transcripción).\\
+\textbf{Resultado Obtenido} & \textcolor{FalloColor}{Fallado} (BUG-003 corregido, re-test OK)\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado} (corregido)\\
+\bottomrule
+\end{longtable}

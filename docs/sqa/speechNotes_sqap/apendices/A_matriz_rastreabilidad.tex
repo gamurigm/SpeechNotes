@@ -1,0 +1,46 @@
+\chapter{Matriz de Rastreabilidad}
+\label{apendice:a}
+
+\section{Matriz Requisitos vs.\ Casos de Prueba}
+
+\begin{landscape}
+\begin{longtable}{clccl}
+\caption{Matriz de rastreabilidad requisitos funcionales vs.\ casos de prueba}
+\label{tab:matriz-rastreabilidad}\\
+\toprule
+\textbf{RF} & \textbf{Nombre} & \textbf{Tipo} & \textbf{Caso(s)} & \textbf{Estado}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{RF} & \textbf{Nombre} & \textbf{Tipo} & \textbf{Caso(s)} & \textbf{Estado}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+RF-01 & Auth & Funcional & CP-01, CP-02 & OK / Minor\\
+RF-02 & Audio / Frontend & Funcional & CP-03 & OK\\
+RF-03 & Audio / Backend & Funcional & CP-04 & Minor\\
+RF-04 & Realtime ASR & Funcional & CP-05 & OK\\
+RF-05 & Upload / Backend & Funcional & CP-06, CP-07 & OK / Minor\\
+RF-06 & Transcripciones & Funcional & CP-08 & Major\\
+RF-07 & Editor & Funcional & CP-09, CP-10 & OK\\
+RF-08 & Búsqueda & Funcional & CP-11 & OK\\
+RF-09 & IA / Formatter & Funcional & CP-12 & OK\\
+RF-10 & Chat / RAG & Funcional & CP-13, CP-14 & OK / Critical (closed)\\
+
+\bottomrule
+\end{longtable}
+\end{landscape}
+
+\section{Matriz de Cobertura de Requisitos}
+
+\begin{itemize}
+    \item Total de requisitos funcionales: 10
+    \item Requisitos cubiertos: 10 (100\%)
+    \item Total de casos de prueba: 14
+    \item Casos pasados: 13 (92.86\%)
+    \item Casos fallados: 1 (7.14\%)
+    \item Defectos encontrados: 8
+    \item Defectos corregidos: 3 (37.5\%)
+\end{itemize}

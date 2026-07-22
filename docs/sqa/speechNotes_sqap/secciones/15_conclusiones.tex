@@ -1,0 +1,45 @@
+\chapter{Conclusiones}
+\label{sec:conclusiones}
+
+\section{Desempeño General}
+\label{sec:desempenio-general}
+
+El sprint de calidad de SpeechNotes se ejecutó conforme al plan establecido, con una cobertura del 100\% de los requisitos funcionales y una tasa de aprobación del 92.86\% en los casos de prueba ejecutados. Los resultados indican que el sistema se encuentra en un estado funcionalmente estable, con oportunidades de mejora identificadas en areas de manejo de errores y experiencia de usuario.
+
+\section{Hallazgos Clave}
+\label{sec:hallazgos-clave}
+
+\begin{enumerate}
+    \item \textbf{Funcionalidad Core Robusta:} Los requisitos funcionales relacionados con autenticación, transcripción en vivo, upload de archivos, consulta y edición de transcripciones, búsqueda y formateo con IA pasaron todas las pruebas.
+
+    \item \textbf{Problemas de UX Detectados:} Se identificaron 3 bugs de severidad Minor relacionados con la experiencia de usuario (tooltip duplicado, icono de play/pausa inconsistente, placeholder en registro), los cuales no afectan la funcionalidad pero impactan la calidad percibida del producto.
+
+    \item \textbf{Mejora Significativa en Calidad de Código:} La integración de SonarCloud permitió identificar y corregir code smells. La configuración del pipeline CI/CD asegura que la calidad del código se mantenga en el tiempo.
+
+    \item \textbf{Automatización como Inversión:} Las suites de pytest y Cypress configuradas proporcionan una base sólida para regression testing en sprints futuros.
+
+    \item \textbf{Bugs Identificados:} Se encontraron 8 bugs (3 corregidos, 5 pendientes). Los bugs críticos y mayores fueron atendidos durante el sprint, mientras que los menores quedaron registrados para atención futura.
+\end{enumerate}
+
+\section{Recomendaciones}
+\label{sec:recomendaciones}
+
+\begin{enumerate}
+    \item \textbf{Corregir bugs pendientes:} Los 5 bugs abiertos deben ser atendidos en el siguiente sprint de desarrollo.
+    \item \textbf{Pruebas de carga:} Realizar pruebas de carga formal con k6 o Locust para validar el comportamiento bajo estrés.
+    \item \textbf{Documentación de API:} Completar la documentación de los endpoints REST de la API.
+    \item \textbf{Pruebas de seguridad:} Integrar OWASP ZAP en el pipeline CI/CD.
+    \item \textbf{Monitoreo de SonarCloud:} Mantener el quality gate activo en el pipeline de CI/CD para prevenir regresiones.
+    \item \textbf{Ampliar automatización:} Incrementar la cobertura de pruebas automatizadas, especialmente en flujos de error y casos límite.
+    \item \textbf{Mejoras de UX:} Implementar tooltip contextual en lugar del modal de error de micrófono.
+\end{enumerate}
+
+\section{Lecciones Aprendidas}
+\label{sec:lecciones}
+
+\begin{enumerate}
+    \item La planificación detallada (matriz de rastreabilidad, casos de prueba) antes de la ejecución redujo significativamente la ambigüedad durante las pruebas.
+    \item La integración temprana de SonarCloud permitió detectar code smells antes de que se acumularan.
+    \item El uso de Jira para el seguimiento de bugs facilitó la comunicación entre QA y desarrollo.
+    \item Para sprints futuros, se recomienda asignar tiempo adicional para pruebas exploratorias y de accesibilidad.
+\end{enumerate}

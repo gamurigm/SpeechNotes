@@ -1,0 +1,46 @@
+\chapter{Gestión de Riesgos}
+\label{sec:riesgos}
+
+\section{Identificación de Riesgos}
+\label{sec:identificacion-riesgos}
+
+La tabla~\ref{tab:riesgos} lista los riesgos identificados durante la planificación del sprint SQA.
+
+\begin{longtable}{lcccp{4cm}}
+\caption{Matriz de riesgos SQA}
+\label{tab:riesgos}\\
+\toprule
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Severidad} & \textbf{Plan de Mitigación}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Severidad} & \textbf{Plan de Mitigación}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Disponibilidad de API NVIDIA NIM & Media & Alto & Alto & Clave de respaldo; scripts desconectados\\
+
+Inestabilidad del frontend local & Media & Medio & Medio & Múltiples formas de probar; registro de fallos\\
+
+Tiempo insuficiente para automatización & Alta & Medio & Alto & Priorizar pruebas críticas; manual como default\\
+
+Problemas de compatibilidad de dependencias & Media & Alto & Alto & Docker para entornos replicables\\
+
+Falta de documentación de API & Baja & Alto & Medio & Pruebas exploratorias; consulta al desarrollador\\
+
+Disponibilidad de micrófono en PC & Alta & Bajo & Bajo & Pruebas diferenciadas con/sin micrófono\\
+
+\end{longtable}
+
+\section{Resultados de Mitigación}
+\label{sec:resultados-mitigacion}
+
+\begin{itemize}
+    \item \textbf{NVIDIA NIM:} Se utilizó la clave de API proporcionada. Se ejecutaron las pruebas de formateo y chat sin problemas.
+    \item \textbf{Inestabilidad frontend:} Se documentó BUG-002 (referencia de React no encontrada).
+    \item \textbf{Tiempo de automatización:} Se priorizaron las pruebas pt.~\#7 y pt.~\#8 como automatizaciones adicionales.
+    \item \textbf{Micrófono:} CP-03 (sin dispositivo) se ejecutó sin incidencias.
+    \item \textbf{Bugs conocidos:} Se reportaron 8 bugs en Jira.
+\end{itemize}

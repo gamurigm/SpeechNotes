@@ -1,0 +1,86 @@
+\chapter{Gestión}
+\label{sec:gestion}
+
+Este capítulo describe los elementos organizacionales que influyen en la calidad del software de SpeechNotes.
+
+\section{Organización}
+\label{sec:organizacion}
+
+El equipo SQA está compuesto por 4 personas con roles definidos, manteniendo independencia funcional respecto al equipo de desarrollo. La estructura organizacional se muestra en la Figura~\ref{fig:organigrama}.
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering
+\textbf{Project Manager}\\
+$\downarrow$\\[-0.2cm]
+\textbf{Consultora de Calidad (Externa)}\\
+$\swarrow$ \quad $\downarrow$ \quad $\searrow$\\[-0.2cm]
+\begin{tabular}{ccc}
+\textbf{Pers. A} & \textbf{Pers. B} & \textbf{Pers. C}\\
+QA Lead & QA Backend & QA Frontend\\
+& + CI/CD & \\
+\end{tabular}\\
+$\downarrow$\\[-0.2cm]
+\textbf{Pers. D}\\
+QA Manual
+}}
+\caption{Organigrama del equipo SQA}
+\label{fig:organigrama}
+\end{figure}
+
+\section{Responsabilidades}
+\label{sec:responsabilidades}
+
+La tabla~\ref{tab:responsabilidades} detalla las responsabilidades asignadas a cada miembro del equipo.
+
+\begin{longtable}{cp{5cm}p{7cm}}
+\caption{Matriz de responsabilidades SQA}
+\label{tab:responsabilidades}\\
+\toprule
+\textbf{Rol} & \textbf{Responsable} & \textbf{Tareas Clave}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Rol} & \textbf{Responsable} & \textbf{Tareas Clave}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+QA Lead & Persona A & Configuración de Jira, redacción del SQAP (Sección A), informe de cierre (Sección C), conclusiones (Sección D), ensamblaje del PDF final.\\
+
+QA Backend & Persona B & Pipeline SonarCloud + GitHub Actions, pruebas automatizadas pytest, refactorización de code smells, reporte de análisis estático antes/después.\\
+
+QA Frontend & Persona C & Configuración de Cypress/Jest, automatización de flujos clave (grabación, transcripción), corrección de bugs frontend reportados.\\
+
+QA Manual & Persona D & Diseño de matriz de rastreabilidad, casos de prueba manuales (14 CP), ejecución manual, reporte de bugs en Jira, re-testing, video demo.\\
+
+\end{longtable}
+
+\section{Recursos}
+\label{sec:recursos}
+
+\subsection{Equipo y ambiente de prueba}
+\label{subsec:ambiente}
+
+\begin{itemize}
+    \item \textbf{Sistema Operativo:} Windows 11.
+    \item \textbf{Navegador:} Google Chrome / Chromium.
+    \item \textbf{Frontend:} \url{http://localhost:3006}
+    \item \textbf{Backend:} \url{http://localhost:9443}
+    \item \textbf{Base de datos:} SQLite (dev.db) + MongoDB (Docker).
+    \item \textbf{Repositorio:} GitHub, rama \texttt{planning-SQA}.
+\end{itemize}
+
+\subsection{Herramientas}
+\label{subsec:herramientas}
+
+\begin{itemize}
+    \item \textbf{Gestión de incidencias:} Jira Software (Cloud).
+    \item \textbf{Análisis estático:} SonarCloud.
+    \item \textbf{CI/CD:} GitHub Actions.
+    \item \textbf{Pruebas backend:} pytest.
+    \item \textbf{Pruebas frontend:} Cypress + Jest.
+    \item \textbf{Consola API:} curl / Postman.
+    \item \textbf{Evidencias:} Capturas de pantalla, logs de backend, consola del navegador.
+\end{itemize}

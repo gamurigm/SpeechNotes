@@ -1,0 +1,99 @@
+\chapter{Tareas SQA}
+\label{sec:tareas}
+
+Este capítulo describe las tareas de aseguramiento de la calidad ejecutadas durante el sprint.
+
+\section{Revisión de Productos de Software}
+\label{sec:revision-productos}
+
+SQA revisó los siguientes productos de software:
+
+\begin{itemize}
+    \item Código fuente del backend (Python/FastAPI) y frontend (TypeScript/Next.js).
+    \item Documentación técnica (README, guías de despliegue, documentación de arquitectura).
+    \item Transcripciones generadas (formato Markdown con metadatos YAML).
+    \item Configuración de infraestructura (Docker, GitHub Actions, SonarCloud).
+\end{itemize}
+
+\section{Evaluación de Herramientas}
+\label{sec:evaluacion-herramientas}
+
+Se evaluaron las siguientes herramientas utilizadas en el proyecto:
+
+\begin{longtable}{lcp{7cm}}
+\caption{Evaluación de herramientas SQA}
+\label{tab:herramientas-evaluadas}\\
+\toprule
+\textbf{Herramienta} & \textbf{Propósito} & \textbf{Resultado}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Herramienta} & \textbf{Propósito} & \textbf{Resultado}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Jira Cloud & Gestión de incidencias y bugs & Configurado con flujo To Do $\rightarrow$ In Progress $\rightarrow$ In Testing $\rightarrow$ Done.\\
+
+SonarCloud & Análisis estático de código & Pipeline GitHub Actions configurado. Reporte inicial generado.\\
+
+pytest & Pruebas unitarias e integración backend & Suite configurada en \texttt{backend/tests/}.\\
+
+Cypress & Pruebas E2E frontend & Suite configurada en \texttt{web/tests/e2e/}.\\
+
+Jest & Pruebas unitarias frontend & Suite configurada en \texttt{web/tests/unit/}.\\
+
+\end{longtable}
+
+\section{Verificación de Procesos}
+\label{sec:verificacion-procesos}
+
+SQA verificó los siguientes procesos mediante auditorías basadas en checklist:
+
+\begin{enumerate}
+    \item \textbf{Planificación y seguimiento:} Cumplimiento del sprint planificado (18-21 Julio).
+    \item \textbf{Gestión de requisitos:} Trazabilidad entre requisitos funcionales y casos de prueba.
+    \item \textbf{Diseño e implementación:} Calidad del código y aplicación de patrones de diseño.
+    \item \textbf{Pruebas:} Cobertura de casos de prueba y reporte de defectos.
+\end{enumerate}
+
+\section{Auditorías de Configuración}
+\label{sec:auditorias-configuracion}
+
+Se verificó el control de configuración mediante:
+
+\begin{itemize}
+    \item Repositorio Git con rama dedicada \texttt{planning-SQA}.
+    \item Flujo de trabajo basado en feature branches + pull requests.
+    \item Pipeline de CI/CD en GitHub Actions para pruebas y análisis estático.
+\end{itemize}
+
+\section{Cronograma}
+\label{sec:cronograma}
+
+El sprint de calidad se ejecutó en 4 días según el siguiente cronograma:
+
+\begin{longtable}{lcp{6cm}}
+\caption{Cronograma del sprint SQA}
+\label{tab:cronograma}\\
+\toprule
+\textbf{Día} & \textbf{Fecha} & \textbf{Actividades}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Día} & \textbf{Fecha} & \textbf{Actividades}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+1 & 18 Jul & Planificación, configuración de Jira, análisis estático inicial (SonarCloud), diseño de casos de prueba y matriz de rastreabilidad.\\
+
+2 & 19 Jul & Ejecución manual de pruebas, reporte de bugs, pruebas automatizadas backend (pytest) y frontend (Cypress/Jest).\\
+
+3 & 20 Jul & Re-testing de bugs corregidos, análisis estático final (SonarCloud después), extracción de evidencias.\\
+
+4 & 21 Jul & Consolidación del PDF final, grabación del video demo, cierre del informe.\\
+
+\end{longtable}

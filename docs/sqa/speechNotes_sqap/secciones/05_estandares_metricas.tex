@@ -1,0 +1,62 @@
+\chapter{Estándares, Prácticas, Convenciones y Métricas}
+\label{sec:estandares}
+
+\section{Estándares de Código}
+\label{sec:estandares-codigo}
+
+El proyecto SpeechNotes sigue los siguientes estándares y convenciones:
+
+\begin{longtable}{lp{4cm}p{6cm}}
+\caption{Estándares de código aplicados}
+\label{tab:estandares-codigo}\\
+\toprule
+\textbf{Lenguaje} & \textbf{Estándar} & \textbf{Herramienta de verificación}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Lenguaje} & \textbf{Estándar} & \textbf{Herramienta de verificación}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Python & PEP 8 & Ruff / SonarCloud\\
+
+TypeScript & ESLint + Prettier & SonarCloud\\
+
+Arquitectura & Patrones GoF (Singleton, Factory, Adapter, Facade, Strategy, State, Observer) & Revisiones de código\\
+
+Base de datos & Prisma ORM + MongoDB & Linting de esquema\\
+
+\end{longtable}
+
+\section{Métricas SQA}
+\label{sec:metricas}
+
+Las siguientes métricas fueron recolectadas para evaluar la calidad del producto y del proceso de pruebas:
+
+\subsection{Porcentaje de casos pasados vs.\ fallados}
+\label{subsec:porcentaje-casos}
+
+\[
+\%\text{Pasados} = \frac{\text{Casos pasados}}{\text{Total casos}} \times 100
+\]
+
+\subsection{Densidad de defectos}
+\label{subsec:densidad-defectos}
+
+\[
+\text{Densidad de defectos} = \frac{\text{Número de defectos encontrados}}{\text{Número de casos de prueba ejecutados}}
+\]
+
+\subsection{Cobertura de requisitos}
+\label{subsec:cobertura-rf}
+
+\[
+\%\text{Cobertura RF} = \frac{\text{Requisitos con al menos un caso asociado}}{\text{Total requisitos funcionales}} \times 100
+\]
+
+\subsection{Periodicidad de reporte}
+\label{subsec:periodicidad}
+
+Las métricas fueron reportadas al finalizar el sprint de calidad (21 de julio de 2026), consolidadas en el Apéndice~E (Informe de Cierre).

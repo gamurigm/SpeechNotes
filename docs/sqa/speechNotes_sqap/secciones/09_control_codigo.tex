@@ -1,0 +1,46 @@
+\chapter{Control de Código Fuente}
+\label{sec:control-codigo}
+
+\section{Repositorio y Ramas}
+\label{sec:repositorio}
+
+El código fuente de SpeechNotes se gestiona en GitHub bajo el repositorio \url{https://github.com/anomalyco/SpeechNotes}.
+
+\subsection{Estructura de ramas}
+\label{subsec:ramas}
+
+\begin{longtable}{lll}
+\caption{Estructura de ramas del repositorio}
+\label{tab:ramas}\\
+\toprule
+\textbf{Rama} & \textbf{Propósito} & \textbf{Protección}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Rama} & \textbf{Propósito} & \textbf{Protección}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\texttt{main} & Rama principal de producción & Protegida (requiere PR)\\
+
+\texttt{planning-SQA} & Rama de trabajo SQA & Protegida (requiere PR)\\
+
+\texttt{feat/*} & Ramas de funcionalidad & Sin protección\\
+
+\texttt{fix/*} & Ramas de corrección & Sin protección\\
+
+\end{longtable}
+
+\section{Procedimiento de Cambios}
+\label{sec:procedimiento-cambios}
+
+\begin{enumerate}
+    \item Crear rama \texttt{feat/xxx} o \texttt{fix/xxx} desde \texttt{main}.
+    \item Implementar cambios y commits atómicos.
+    \item Abrir Pull Request hacia \texttt{main}.
+    \item Ejecutar pipeline CI/CD (pytest, Cypress, SonarCloud).
+    \item Revisión de código por al menos 1 miembro del equipo.
+    \item Merge del PR tras aprobación y verificación CI.
+\end{enumerate}

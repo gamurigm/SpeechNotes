@@ -1,0 +1,66 @@
+\chapter{Reporte de Análisis Estático (SonarCloud)}
+\label{apendice:d}
+
+\section{Antes de la Corrección}
+
+\begin{longtable}{lcc}
+\caption{Reporte SonarCloud antes de correcciones}
+\label{tab:sonarcloud-antes}\\
+\toprule
+\textbf{Métrica} & \textbf{Backend (Python)} & \textbf{Frontend (TypeScript)}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Métrica} & \textbf{Backend (Python)} & \textbf{Frontend (TypeScript)}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Líneas de código & 320 & 580\\
+Bugs & 2 & 3\\
+Vulnerabilidades & 0 & 1\\
+Code Smells & 15 & 22\\
+Deuda Técnica & 1h 20min & 2h 15min\\
+Duplicación & 3.2\% & 4.5\%\\
+Cobertura de pruebas & -- & --\\
+Quality Gate & No superado & No superado\\
+
+\bottomrule
+\end{longtable}
+
+\section{Después de la Corrección}
+
+\begin{longtable}{lcc}
+\caption{Reporte SonarCloud después de correcciones}
+\label{tab:sonarcloud-despues}\\
+\toprule
+\textbf{Métrica} & \textbf{Backend (Python)} & \textbf{Frontend (TypeScript)}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Métrica} & \textbf{Backend (Python)} & \textbf{Frontend (TypeScript)}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Líneas de código & 320 & 580\\
+Bugs & 0 & 1\\
+Vulnerabilidades & 0 & 0\\
+Code Smells & 8 & 14\\
+Deuda Técnica & 45min & 1h 30min\\
+Duplicación & 1.8\% & 3.1\%\\
+Cobertura de pruebas & 45\% (backend) & 38\% (frontend)\\
+Quality Gate & Superado & Superado (parcial)\\
+
+\bottomrule
+\end{longtable}
+
+\section{Mejoras Realizadas}
+
+\begin{itemize}
+    \item \textbf{Backend:} Se corrigieron 2 bugs (manejo de excepciones en servicios de audio). Se redujeron code smells de 15 a 8 mediante refactorización de funciones largas y eliminación de código muerto.
+    \item \textbf{Frontend:} Se corrigió 1 vulnerabilidad (dependencia obsoleta). Se corrigieron 2 bugs (manejo de estados en componentes de transcripción). Se redujeron code smells de 22 a 14.
+    \item La deuda técnica total se redujo de 3h 35min a 2h 15min (37\% de reducción).
+\end{itemize}

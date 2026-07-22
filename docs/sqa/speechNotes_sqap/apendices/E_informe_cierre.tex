@@ -1,0 +1,90 @@
+\chapter{Informe de Cierre}
+\label{apendice:e}
+
+\section{Datos Generales}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{Proyecto} & SpeechNotes\\
+\textbf{Sprint SQA} & 18 -- 21 Julio 2026\\
+\textbf{Equipo} & Consultora de Calidad Externa (4 personas)\\
+\textbf{Estándar} & IEEE 730-1998\\
+\textbf{Repositorio} & \url{https://github.com/anomalyco/SpeechNotes}\\
+\textbf{Rama SQA} & \texttt{planning-SQA}\\
+
+\bottomrule
+\end{longtable}
+
+\section{Métricas Consolidadas}
+
+\begin{longtable}{lr}
+\caption{Métricas consolidadas del sprint SQA}
+\label{tab:metricas-consolidadas}\\
+\toprule
+\textbf{Métrica} & \textbf{Valor}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Métrica} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Requisitos funcionales totales & 10\\
+Requisitos cubiertos & 10 (100\%)\\
+Casos de prueba diseñados & 14\\
+Casos de prueba ejecutados & 14 (100\%)\\
+Casos pasados & 13 (92.86\%)\\
+Casos fallados & 1 (7.14\%)\\
+Defectos encontrados & 8\\
+Defectos corregidos & 3 (37.5\%)\\
+Defectos críticos corregidos & 1 (100\%)\\
+Defectos mayores corregidos & 1 de 2 (50\%)\\
+Defectos menores corregidos & 1 de 5 (20\%)\\
+Densidad de defectos & 0.57 defectos/caso\\
+Reducción de deuda técnica (backend) & 1h 20min $\rightarrow$ 45min (44\%)\\
+Reducción de deuda técnica (frontend) & 2h 15min $\rightarrow$ 1h 30min (33\%)\\
+
+\bottomrule
+\end{longtable}
+
+\section{Resumen de Actividades}
+
+\begin{enumerate}
+    \item \textbf{Planificación (18 Jul):} Configuración de Jira, redacción de SQAP, diseño de 14 casos de prueba, elaboración de matriz de rastreabilidad.
+    \item \textbf{Ejecución (19 Jul):} Ejecución manual de 14 casos de prueba, reporte de 8 bugs en Jira, pipeline CI/CD configurado, suites de pytest y Cypress operativas.
+    \item \textbf{Re-testing (20 Jul):} Verificación de 3 bugs corregidos, análisis estático final con SonarCloud, extracción de evidencias (capturas, logs).
+    \item \textbf{Cierre (21 Jul):} Consolidación del PDF final del SQAP, grabación del video demo, entrega del informe de cierre.
+\end{enumerate}
+
+\section{Estado de los Defectos}
+
+\begin{itemize}
+    \item \textbf{Corregidos:} BUG-003 (Critical), BUG-004 (Major), BUG-007 (Minor)
+    \item \textbf{Pendientes:} BUG-002 (Minor), BUG-005 (Major), BUG-006 (Minor), BUG-008 (Minor), BUG-009 (Minor)
+    \item \textbf{Recomendación:} Atender BUG-005 (Major) en el siguiente sprint de desarrollo.
+\end{itemize}
+
+\section{Conclusiones Finales}
+
+El sprint de calidad de SpeechNotes se completó exitosamente, alcanzando una cobertura del 100\% de los requisitos funcionales y una tasa de aprobación del 92.86\%. Se identificaron y corrigieron 3 defectos (incluyendo 1 crítico), y se redujo la deuda técnica en un 37\% mediante refactorización asistida por SonarCloud.
+
+Las suites de pruebas automatizadas (pytest, Cypress, Jest) quedan operativas para sprints futuros, proporcionando una base sólida para regression testing. Se recomienda continuar con la integración de herramientas de calidad en el pipeline CI/CD y ampliar la cobertura de pruebas automatizadas.
+
+\section{Vistas del Sistema}
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\small
+\textbf{Nota:} Las capturas de pantalla del sistema en funcionamiento (pantalla de login, grabación activa, transcripción en vivo, editor, formateo IA, chat contextual) y del tablero de Jira con los bugs registrados se adjuntan como material complementario al video demo.
+}}
+\caption{Evidencias visuales del sprint SQA}
+\label{fig:evidencias}
+\end{figure}

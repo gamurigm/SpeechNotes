@@ -1,0 +1,32 @@
+\chapter{Control de Medios y Suministros}
+\label{sec:control-medios}
+
+\section{Gestión de Artefactos}
+\label{sec:artefactos}
+
+Los artefactos generados durante el sprint SQA se almacenan en el repositorio de GitHub, rama \texttt{planning-SQA}. La estructura de directorios es la siguiente:
+
+\begin{verbatim}
+docs/
+  sqa/
+    sqa-planning.md              -- Planificación SQA
+    speechNotes_sqap/            -- Documento SQAP (LaTeX)
+      speechnotes_sqap.tex       -- Archivo principal
+      secciones/                 -- Secciones del SQAP
+      apendices/                 -- Apéndices del SQAP
+      build.ps1                  -- Script de compilación
+    parteD/
+      persona-d-manual-testing.md    -- Casos de prueba manuales
+      matriz_rastreabilidad.md       -- Matriz de rastreabilidad
+      reporte_defectos.md            -- Reporte de defectos
+      informe_cierre.md              -- Informe de cierre
+\end{verbatim}
+
+\section{Control de Versiones}
+\label{sec:versiones}
+
+\begin{itemize}
+    \item Los archivos LaTeX se versionan en Git junto con el código fuente.
+    \item Cada versión del SQAP se identifica por el tag del commit en Git.
+    \item El PDF generado se etiqueta con el número de versión y fecha.
+\end{itemize}

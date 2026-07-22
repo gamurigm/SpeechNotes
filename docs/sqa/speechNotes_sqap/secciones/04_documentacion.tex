@@ -1,0 +1,69 @@
+\chapter{Documentación}
+\label{sec:documentacion}
+
+Este capítulo identifica los productos documentales generados y mantenidos durante el sprint SQA.
+
+\section{Productos Entregables}
+\label{sec:entregables}
+
+La tabla~\ref{tab:entregables} lista los productos documentales entregables del proyecto.
+
+\begin{longtable}{lp{4cm}p{4cm}p{3cm}}
+\caption{Productos entregables}
+\label{tab:entregables}\\
+\toprule
+\textbf{Documento} & \textbf{Estándar} & \textbf{Formato} & \textbf{Ubicación}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Documento} & \textbf{Estándar} & \textbf{Formato} & \textbf{Ubicación}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+SQAP (este documento) & IEEE 730-1998 & PDF & \texttt{docs/sqa/speechNotes\_sqap/}\\
+
+Matriz de Rastreabilidad & -- & Markdown + PDF & \texttt{docs/sqa/parteD/}\\
+
+Casos de Prueba Manuales & -- & Markdown + PDF & \texttt{docs/sqa/parteD/}\\
+
+Reporte de Defectos & -- & Markdown + PDF & \texttt{docs/sqa/parteD/}\\
+
+Informe de Cierre & -- & Markdown + PDF & \texttt{docs/sqa/parteD/}\\
+
+\end{longtable}
+
+\section{Productos No Entregables}
+\label{sec:no-entregables}
+
+\begin{longtable}{lp{6cm}p{4cm}}
+\caption{Productos no entregables}
+\label{tab:no-entregables}\\
+\toprule
+\textbf{Documento} & \textbf{Propósito} & \textbf{Formato}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Documento} & \textbf{Propósito} & \textbf{Formato}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Scripts de prueba pytest & Automatización de pruebas backend & Python\\
+
+Scripts de prueba Cypress & Automatización de pruebas E2E frontend & TypeScript\\
+
+Capturas de pantalla & Evidencia visual de la ejecución & PNG\\
+
+Logs de backend & Diagnóstico de errores & Texto\\
+
+Reportes de SonarCloud & Análisis estático antes/después & HTML/PDF\\
+
+\end{longtable}
+
+\section{Proceso de Revisión}
+\label{sec:revision-docs}
+
+Todos los documentos fueron sometidos a revisión por pares dentro del equipo SQA. Las revisiones se documentaron en Jira como subtareas de la épica de documentación. Los defectos encontrados en la documentación se registraron siguiendo el mismo flujo que los defectos de software.

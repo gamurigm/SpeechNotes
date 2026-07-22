@@ -1,0 +1,87 @@
+\chapter{Propósito}
+\label{sec:proposito}
+
+El presente Plan de Aseguramiento de la Calidad de Software (SQAP) establece la organización, las tareas, las responsabilidades y los lineamientos para las actividades de aseguramiento de la calidad del proyecto \textbf{SpeechNotes}. Este documento sigue los lineamientos de los estándares IEEE 730-1998 e IEEE 730.1-1995, adaptados al contexto académico del proyecto final de SQA.
+
+\section{Alcance}
+\label{sec:alcance}
+
+Este plan cubre las actividades de SQA realizadas durante el sprint de calidad comprendido entre el 18 y el 21 de julio de 2026.
+
+\subsection{Módulos incluidos}
+\label{subsec:modulos-incluidos}
+
+\begin{itemize}
+    \item \textbf{RF-01 --- Auth:} Inicio de sesión con usuario demo y credenciales inválidas.
+    \item \textbf{RF-02 --- Audio / Frontend:} Prueba de micrófono con y sin dispositivo.
+    \item \textbf{RF-03 --- Audio / Backend:} Inicio y detención de grabación con VAD.
+    \item \textbf{RF-04 --- Realtime ASR:} Transcripción en vivo durante la grabación.
+    \item \textbf{RF-05 --- Upload / Backend:} Carga de archivos de audio para transcribir.
+    \item \textbf{RF-06 --- Transcripciones:} Consulta de transcripciones guardadas.
+    \item \textbf{RF-07 --- Editor:} Edición y guardado de transcripciones.
+    \item \textbf{RF-08 --- Búsqueda:} Búsqueda textual dentro de transcripciones.
+    \item \textbf{RF-09 --- IA / Formatter:} Formateo de transcripciones con IA.
+    \item \textbf{RF-10 --- Chat / RAG:} Chat contextual sobre una transcripción.
+\end{itemize}
+
+\subsection{Módulos excluidos}
+\label{subsec:modulos-excluidos}
+
+Quedan fuera del alcance de este plan:
+
+\begin{itemize}
+    \item Pruebas formales de carga con duración superior a 2 horas (identificadas como riesgo).
+    \item Automatización completa de pruebas (se documentan los scripts creados pero no se exige cobertura).
+    \item Corrección de código o refactorización (responsabilidad del equipo de desarrollo).
+    \item Configuración inicial de SonarCloud (se toma el reporte existente como línea base).
+\end{itemize}
+
+\section{Identificación del Sistema}
+\label{sec:identificacion}
+
+\begin{itemize}
+    \item \textbf{Nombre:} SpeechNotes
+    \item \textbf{Versión:} 1.0
+    \item \textbf{Repositorio:} \url{https://github.com/anomalyco/SpeechNotes}
+    \item \textbf{Rama SQA:} \texttt{planning-SQA}
+\end{itemize}
+
+\section{Resumen del Sistema}
+\label{sec:resumen}
+
+SpeechNotes es un sistema de transcripción inteligente que convierte audio en notas estructuradas mediante un pipeline de cinco modelos especializados de NVIDIA NIM. La arquitectura sigue un patrón de tres capas:
+
+\begin{itemize}
+    \item \textbf{Frontend:} Next.js 16 con HeroUI, Socket.IO Client y soporte para aplicaciones de escritorio (Tauri/Electron).
+    \item \textbf{Backend:} FastAPI con Socket.IO, servicios modulares de audio (ASR, BNR, VAD) y agentes de IA para formateo y chat contextual.
+    \item \textbf{Datos y Modelos:} MongoDB (primario), SQLite/Prisma (auth), ChromaDB (búsqueda vectorial) y NVIDIA NIM (modelos de IA).
+\end{itemize}
+
+\section{Resumen del Documento}
+\label{sec:resumen-doc}
+
+Este SQAP se estructura en 15 secciones y 5 apéndices, mapeando los requisitos del estándar académico (Secciones A, B, C, D) de la siguiente manera:
+
+\begin{itemize}
+    \item \textbf{Sección A (Plan SQAP):} Capítulos 1 al 5 y 14.
+    \item \textbf{Sección B (Ejecución y Evidencias):} Capítulos 6 y 7, Apéndices A al D.
+    \item \textbf{Sección C (Informe de Cierre):} Apéndice E.
+    \item \textbf{Sección D (Conclusiones):} Capítulo 15.
+\end{itemize}
+
+\section{Relación con Otros Planes}
+\label{sec:relacion}
+
+Este SQAP se complementa con el Plan de Desarrollo de Software (SDP) y el Plan de Gestión de Configuración (SCMP) del proyecto SpeechNotes. Las actividades de SQA definidas aquí son consistentes con dichos planes.
+
+\section{Documentos de Referencia}
+\label{sec:referencias}
+
+\begin{enumerate}
+    \item IEEE Std 730-1998 --- IEEE Standard for Software Quality Assurance Plans.
+    \item IEEE Std 730.1-1995 --- IEEE Guide for Software Quality Assurance Planning.
+    \item IEEE/EIA Std 12207 --- Standard for Information Technology -- Software Life Cycle Processes.
+    \item Guía del Proyecto Final --- Plan de Aseguramiento de la Calidad SQA (Proyecto Final Parcial 3).
+    \item SpeechNotes --- SQA Sprint Plan (Julio 2026).
+    \item Persona D --- Casos de Prueba Manuales y Matriz de Rastreabilidad.
+\end{enumerate}

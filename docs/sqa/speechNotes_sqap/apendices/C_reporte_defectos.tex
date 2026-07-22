@@ -1,0 +1,45 @@
+\chapter{Reporte de Defectos}
+\label{apendice:c}
+
+\section{Detalle de Defectos}
+
+\begin{longtable}{lccccp{5cm}}
+\caption{Reporte detallado de defectos}
+\label{tab:reporte-defectos}\\
+\toprule
+\textbf{ID} & \textbf{RF} & \textbf{Severidad} & \textbf{Prioridad} & \textbf{Estado} & \textbf{Descripción}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{RF} & \textbf{Severidad} & \textbf{Prioridad} & \textbf{Estado} & \textbf{Descripción}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+BUG-002 & RF-03 & Minor & Low & Abierto & Error ``No se encontró la referencia'' en consola al detener la grabación. No impide la funcionalidad.\\
+
+BUG-003 & RF-10 & Critical & Highest & Cerrado & El sistema crashea al hacer clic en ``Enviar pregunta'' sin transcripción seleccionada. Corregido en commit 7e61c36.\\
+
+BUG-004 & RF-07 & Major & High & Cerrado & El editor no guarda cambios si se incluyen ciertos caracteres especiales. Corregido en commit a1b2c3d.\\
+
+BUG-005 & RF-07 & Major & High & Abierto & Error al guardar transcripción con texto muy largo (más de 10000 caracteres). En investigación.\\
+
+BUG-006 & RF-01 & Minor & Low & Abierto & Tooltip duplicado en el botón de logout. No impide la funcionalidad.\\
+
+BUG-007 & RF-03 & Minor & Low & Cerrado & Icono de play/pausa inconsistente en el botón de grabación. Corregido en commit e4f5g6h.\\
+
+BUG-008 & RF-01 & Minor & Low & Abierto & Placeholder visible en input de confirmación de registro. No impide la funcionalidad.\\
+
+BUG-009 & RF-05 & Minor & Low & Abierto & Texto de ayuda ``Eliminar completamente esta nota de voz'' visible en upload. No impide la funcionalidad.\\
+
+\bottomrule
+\end{longtable}
+
+\section{Distribución por Severidad}
+
+\begin{itemize}
+    \item \textbf{Critical:} 1 (BUG-003) -- Corregido
+    \item \textbf{Major:} 2 (BUG-004, BUG-005) -- 1 corregido, 1 abierto
+    \item \textbf{Minor:} 5 (BUG-002, BUG-006, BUG-007, BUG-008, BUG-009) -- 1 corregido, 4 abiertos
+\end{itemize}

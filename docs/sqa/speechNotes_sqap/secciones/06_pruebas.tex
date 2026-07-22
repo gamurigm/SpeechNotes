@@ -1,0 +1,69 @@
+\chapter{Estrategia y Tipos de Prueba}
+\label{sec:pruebas}
+
+\section{Tipos de Prueba Seleccionados}
+\label{sec:tipos-prueba}
+
+\begin{longtable}{llp{5cm}}
+\caption{Tipos de prueba ejecutados}
+\label{tab:tipos-prueba}\\
+\toprule
+\textbf{Tipo} & \textbf{Herramienta} & \textbf{Alcance}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Tipo} & \textbf{Herramienta} & \textbf{Alcance}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Unitarias (Backend) & pytest & Servicios individuales de audio, VAD, auth\\
+
+Integración (Backend) & pytest + httpx & Endpoints REST: transcriptions, auth, health\\
+
+Funcionales Manuales & Navegador + curl & 14 casos de prueba (Apéndice~B)\\
+
+Estáticas & SonarCloud & Análisis de código, code smells, vulnerabilidades\\
+
+E2E (Frontend) & Cypress & Flujo de grabación y transcripción\\
+
+Unitarias (Frontend) & Jest & Componentes RecordingPanel, LiveTranscription\\
+
+\end{longtable}
+
+\section{Criterios de Aceptación y Rechazo}
+\label{sec:criterios}
+
+\subsection{Criterios de entrada (Entry Criteria)}
+\label{subsec:entry}
+
+\begin{itemize}
+    \item Frontend operativo en \url{http://localhost:3006}.
+    \item Backend operativo en \url{http://localhost:9443}.
+    \item Base de datos SQLite disponible (\texttt{web/dev.db}).
+    \item Usuario demo existente (\texttt{demo@speechnotes.app} / \texttt{demo123}).
+    \item Microfono conectado (para pruebas de audio).
+    \item Credenciales de API de NVIDIA NIM configuradas (para formateo IA y chat).
+\end{itemize}
+
+\subsection{Criterios de salida (Exit Criteria)}
+\label{subsec:exit}
+
+\begin{itemize}
+    \item Los 14 casos de prueba han sido ejecutados.
+    \item Todos los defectos de severidad \texttt{Critical} están cerrados.
+    \item El informe de cierre ha sido generado con métricas consolidadas.
+    \item El PDF del SQAP ha sido ensamblado y revisado.
+\end{itemize}
+
+\section{Matriz de Pruebas vs.\ Requisitos}
+\label{sec:matriz-pruebas}
+
+La matriz de rastreabilidad completa se presenta en el Apéndice~A. En resumen:
+
+\begin{itemize}
+    \item \textbf{10 requisitos funcionales} cubiertos al 100\%.
+    \item \textbf{14 casos de prueba} distribuidos en 10 happy path, 3 error, 1 límite.
+    \item \textbf{13 casos pasados} (92.86\%) y \textbf{1 caso fallado} (7.14\%).
+\end{itemize}
