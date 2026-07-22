@@ -50,12 +50,6 @@ type StopConfirmationModalProps = Readonly<{
     onConfirm: () => void;
 }>;
 
-const LANGUAGE_CYCLE: Language[] = ['auto', 'en', 'es'];
-const LANGUAGE_LABELS: Record<Language, string> = {
-    auto: 'AUTO',
-    en: 'EN',
-    es: 'ES',
-};
 const LANGUAGE_TITLES: Record<Language, string> = {
     auto: 'Auto-detectar idioma',
     en: 'Forzar ingles',
@@ -136,23 +130,21 @@ function RecordingStatus({ isRecording, duration }: Readonly<{ isRecording: bool
 }
 
 function LanguageToggle({ isLight, isRecording, language, setLanguage }: LanguageToggleProps) {
-    const handleClick = () => {
-        if (isRecording) return;
-        const index = LANGUAGE_CYCLE.indexOf(language);
-        setLanguage(LANGUAGE_CYCLE[(index + 1) % LANGUAGE_CYCLE.length]);
-    };
-
     return (
-        <button type="button"
-            onClick={handleClick}
+        <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value as Language)}
             disabled={isRecording}
+            aria-label="Idioma de transcripcion"
             title={isRecording ? 'Deten la grabacion para cambiar idioma' : LANGUAGE_TITLES[language]}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all duration-200
                 ${isRecording ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
                 ${getLanguageStyle(language, isLight)}`}
         >
-            <span>{LANGUAGE_LABELS[language]}</span>
-        </button>
+            <option value="auto">AUTO — Detectar idioma</option>
+            <option value="es">ES — Español</option>
+            <option value="en">EN — Inglés</option>
+        </select>
     );
 }
 

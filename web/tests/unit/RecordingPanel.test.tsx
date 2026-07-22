@@ -131,12 +131,12 @@ describe('RecordingPanel', () => {
         mockedUseRecording.mockReturnValue(state as ReturnType<typeof useRecording>);
         const view = render(<RecordingPanel />);
 
-        await userEvent.click(screen.getByRole('button', { name: 'ES' }));
+        await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Idioma de transcripcion' }), 'auto');
         expect(state.setLanguage).toHaveBeenCalledWith('auto');
 
         const recordingStateValue = recordingState({ isRecording: true, language: 'es' });
         mockedUseRecording.mockReturnValue(recordingStateValue as ReturnType<typeof useRecording>);
         view.rerender(<RecordingPanel />);
-        expect(screen.getByRole('button', { name: 'ES' })).toBeDisabled();
+        expect(screen.getByRole('combobox', { name: 'Idioma de transcripcion' })).toBeDisabled();
     });
 });
