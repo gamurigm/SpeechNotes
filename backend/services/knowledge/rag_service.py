@@ -21,7 +21,7 @@ class RagService:
             self.agent = RagAgent()
             logger.info("RagAgent initialized successfully.")
         except Exception as e:
-            logger.error(f"Failed to initialize RagAgent: {e}")
+            logger.error("Failed to initialize RagAgent: %s", e)  # NOSONAR - service initialization falls back to disabled mode
             self.agent = None
 
     def chat(self, query: str) -> Dict[str, Any]:

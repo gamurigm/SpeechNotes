@@ -100,7 +100,7 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
                 confidence=1.0,
             )
         except Exception as exc:
-            logger.error(
+            logger.error(  # NOSONAR - preserve the provider error message without duplicating traceback
                 "[Riva:ASR] Transcription error: %s — %s",
                 type(exc).__name__,
                 exc,

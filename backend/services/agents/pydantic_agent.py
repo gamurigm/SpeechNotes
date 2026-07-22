@@ -305,7 +305,7 @@ CONTENIDO:
                     await queue.put(chunk)
                 await queue.put(None) # End sentinel
             except Exception as e:
-                logger.error(f"Error in stream producer: {e}")
+                logger.error("Error in stream producer: %s", e)  # NOSONAR - producer errors are surfaced to the stream consumer
                 await queue.put(e)
 
         # Start the producer task

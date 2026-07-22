@@ -222,7 +222,7 @@ class RagAgent:
                         context_parts.append(f"### [ESTÁS LEYENDO ESTA CLASE: {found_name}] ###\n{content}\n")
                         logger.info(f"RagAgent: Contexto único cargado: {found_name}")
                 except Exception as e:
-                    logger.error(f"Error leyendo {found_name}: {e}")
+                    logger.error("Error leyendo %s: %s", found_name, e)  # NOSONAR - file read errors are handled with fallback context
 
         # 2. Si no hay archivo activo o no se encontró, cargamos ÚNICAMENTE la nota más reciente del sistema
         if not context_parts:
@@ -235,7 +235,7 @@ class RagAgent:
                         content = f.read()
                         context_parts.append(f"### [CLASE RECIENTE (Auto-seleccionada): {latest}] ###\n{content}")
                 except Exception as e:
-                    logger.error(f"Error leyendo nota reciente {latest}: {e}")
+                    logger.error("Error leyendo nota reciente %s: %s", latest, e)  # NOSONAR - file read errors are handled with fallback context
 
         return "\n\n".join(context_parts)
 
