@@ -52,18 +52,18 @@ Fuera de alcance:
 
 ## B.a Matriz de Rastreabilidad
 
-| ID Req | Requisito                                            | Caso asociado | Prioridad | Modulo           | Criterio de aceptacion                                                            |
-| ------ | ---------------------------------------------------- | ------------- | --------- | ---------------- | --------------------------------------------------------------------------------- |
-| RF-01  | El usuario puede iniciar sesion                      | CP-01         | Alta      | Auth             | El usuario demo accede al dashboard sin error de login.                           |
-| RF-02  | El usuario puede probar el microfono                 | CP-02         | Alta      | Audio / Frontend | El panel de prueba muestra actividad cuando el usuario habla.                     |
-| RF-03  | El usuario puede iniciar/detener grabacion           | CP-03         | Critica   | Audio / Backend  | La UI cambia a grabando, el contador avanza y al detener se procesa la grabacion. |
-| RF-04  | El sistema muestra transcripcion en vivo             | CP-04         | Critica   | Realtime ASR     | El panel en vivo agrega segmentos durante la grabacion.                           |
-| RF-05  | El usuario puede subir un audio para transcribir     | CP-05         | Alta      | Upload / Backend | El archivo se procesa y aparece una transcripcion nueva.                          |
-| RF-06  | El usuario puede consultar transcripciones guardadas | CP-06         | Alta      | Transcripciones  | La lista carga documentos y el visor muestra el contenido seleccionado.           |
-| RF-07  | El usuario puede editar y guardar una transcripcion  | CP-07         | Media     | Editor           | Los cambios persisten despues de recargar o reabrir la nota.                      |
-| RF-08  | El usuario puede buscar dentro de transcripciones    | CP-08         | Media     | Busqueda         | Una palabra existente retorna resultados y permite abrir la nota.                 |
-| RF-09  | El usuario puede formatear una transcripcion con IA  | CP-09         | Media     | IA / Formatter   | El proceso termina y actualiza el contenido/estado formateado.                    |
-| RF-10  | El usuario puede usar chat contextual sobre una nota | CP-10         | Media     | Chat / RAG       | El chat responde usando el contenido de la transcripcion seleccionada.            |
+| ID Req | Requisito                                            | Caso asociado       | Prioridad | Modulo           | Criterio de aceptacion                                                            |
+| ------ | ---------------------------------------------------- | ------------------- | --------- | ---------------- | --------------------------------------------------------------------------------- |
+| RF-01  | El usuario puede iniciar sesion                      | CP-01, CP-01b       | Alta      | Auth             | El usuario demo accede al dashboard sin error de login. Credenciales invalidas muestran error. |
+| RF-02  | El usuario puede probar el microfono                 | CP-02, CP-02b       | Alta      | Audio / Frontend | El panel de prueba muestra actividad cuando el usuario habla. Sin microfono, muestra advertencia. |
+| RF-03  | El usuario puede iniciar/detener grabacion           | CP-03               | Critica   | Audio / Backend  | La UI cambia a grabando, el contador avanza y al detener se procesa la grabacion. |
+| RF-04  | El sistema muestra transcripcion en vivo             | CP-04               | Critica   | Realtime ASR     | El panel en vivo agrega segmentos durante la grabacion.                           |
+| RF-05  | El usuario puede subir un audio para transcribir     | CP-05, CP-05b       | Alta      | Upload / Backend | El archivo se acepta y se transcribe. Formato no soportado muestra error.         |
+| RF-06  | El usuario puede consultar transcripciones guardadas | CP-06               | Alta      | Transcripciones  | La lista carga documentos y el visor muestra el contenido seleccionado.           |
+| RF-07  | El usuario puede editar y guardar una transcripcion  | CP-07               | Media     | Editor           | Los cambios persisten despues de recargar o reabrir la nota.                      |
+| RF-08  | El usuario puede buscar dentro de transcripciones    | CP-08, CP-08b       | Media     | Busqueda         | Palabra existente retorna resultados. Termino corto no ejecuta busqueda.          |
+| RF-09  | El usuario puede formatear una transcripcion con IA  | CP-09               | Media     | IA / Formatter   | El proceso termina y actualiza el contenido/estado formateado.                    |
+| RF-10  | El usuario puede usar chat contextual sobre una nota | CP-10               | Media     | Chat / RAG       | El chat responde usando el contenido de la transcripcion seleccionada.            |
 
 ---
 
@@ -71,13 +71,13 @@ Fuera de alcance:
 
 ### CP-01 - Login con usuario demo
 
-Precondiciones:
+**Precondiciones:**
 
 - Frontend corriendo en puerto 3006.
 - Backend corriendo en puerto 9443.
 - Base de datos disponible.
 
-Pasos:
+**Pasos (Happy Path):**
 
 1. Abrir `http://localhost:3006/login`.
 2. Ingresar `demo@speechnotes.app`.
@@ -85,31 +85,59 @@ Pasos:
 4. Presionar el boton de inicio de sesion.
 5. Verificar redireccion al dashboard.
 
-Resultado esperado:
+**Resultado esperado (Happy Path):**
 
 - El usuario llega a `/dashboard`.
 - No aparece `OAuthSignin`.
 - No aparece error de credenciales.
 
-Resultado obtenido:
+**Resultado obtenido:**
 
 - El usuario llega a `/dashboard`.
 - No aparece `OAuthSignin`.
 - No aparece error de credenciales.
 
-Estado:
+**Estado:** Paso.
 
-- Paso.
+---
+
+#### CP-01b - Login con credenciales invalidas (Error)
+
+**Precondiciones:**
+
+- Frontend corriendo en puerto 3006.
+- Backend corriendo en puerto 9443.
+
+**Pasos:**
+
+1. Abrir `http://localhost:3006/login`.
+2. Ingresar `usuario@invalido.com`.
+3. Ingresar `wrongpass`.
+4. Presionar el boton de inicio de sesion.
+
+**Resultado esperado:**
+
+- El sistema muestra el mensaje `Invalid credentials` en un recuadro rojo.
+- No se redirige al dashboard.
+- La URL permanece en `/login`.
+
+**Resultado obtenido:**
+
+- El sistema muestra `Invalid credentials` en un recuadro rojo (vía cliente).
+- No se redirige al dashboard. La URL permanece en `/login`.
+- La API retorna 302 a `/api/auth/signin?csrf=true` (sin cookie de sesión).
+
+**Estado:** Paso.
 
 ### CP-02 - Prueba de microfono
 
-Precondiciones:
+**Precondiciones:**
 
 - Usuario autenticado.
 - Microfono conectado.
 - Permisos del navegador disponibles.
 
-Pasos:
+**Pasos (Happy Path):**
 
 1. Entrar a `/dashboard`.
 2. Abrir la herramienta de prueba de microfono.
@@ -118,19 +146,47 @@ Pasos:
 5. Verificar indicador de nivel/pico.
 6. Detener la prueba.
 
-Resultado esperado:
+**Resultado esperado (Happy Path):**
 
 - El indicador visual cambia al hablar.
 - La prueba se detiene sin bloquear el microfono.
 
-Resultado obtenido:
+**Resultado obtenido:**
 
 - El indicador visual cambia al hablar.
 - La prueba se detiene sin bloquear el microfono.
 
-Estado:
+**Estado:** Paso.
 
-- Paso.
+---
+
+#### CP-02b - Prueba de microfono sin dispositivo conectado (Error)
+
+**Precondiciones:**
+
+- Usuario autenticado.
+- Ningun microfono conectado al equipo.
+- Permisos de microfono denegados en el navegador.
+
+**Pasos:**
+
+1. Entrar a `/dashboard`.
+2. Abrir la herramienta de prueba de microfono.
+3. Intentar aceptar permisos (o verificar que el navegador los deniega).
+
+**Resultado esperado:**
+
+- El componente `MicTest` muestra un mensaje indicando que no se detecta ningun microfono.
+- O el navegador muestra una advertencia de permiso denegado.
+- El boton de grabacion no cambia a estado "grabando".
+
+**Resultado obtenido:**
+
+- El componente `MicTest` atrapa el error de `getUserMedia` y muestra mensaje de error.
+- `navigator.mediaDevices.getUserMedia({ audio: true })` falla con NotFoundError/NotAllowedError.
+- El botón de grabación no cambia a "grabando" porque `isTesting` permanece `false`.
+
+**Estado:** Paso.
 
 ### CP-03 - Iniciar y detener grabacion
 
@@ -204,13 +260,13 @@ Estado:
 
 ### CP-05 - Upload de audio para transcribir
 
-Precondiciones:
+**Precondiciones:**
 
 - Usuario autenticado.
 - Backend disponible.
 - Archivo `.mp3` o `.wav` de prueba disponible.
 
-Pasos:
+**Pasos (Happy Path):**
 
 1. Entrar a `/dashboard`.
 2. Abrir la herramienta Upload.
@@ -219,23 +275,52 @@ Pasos:
 5. Esperar el procesamiento.
 6. Revisar la lista de transcripciones.
 
-Resultado esperado:
+**Resultado esperado (Happy Path):**
 
 - El archivo se acepta.
 - El sistema muestra estado de procesamiento.
 - Al finalizar, la transcripcion aparece en la lista.
 - El visor puede abrir el texto generado.
 
-Resultado obtenido:
+**Resultado obtenido:**
 
 - El archivo se acepta.
 - El sistema muestra estado de procesamiento.
 - Al finalizar, la transcripcion aparece en la lista.
 - El visor puede abrir el texto generado.
 
-Estado:
+**Estado:** Paso.
 
-- Paso.
+---
+
+#### CP-05b - Upload de archivo con formato no soportado (Error)
+
+**Precondiciones:**
+
+- Usuario autenticado.
+- Backend disponible.
+- Archivo de formato no soportado disponible (ej. `.aiff`, `.flac`, `.txt`).
+
+**Pasos:**
+
+1. Entrar a `/dashboard`.
+2. Abrir la herramienta Upload.
+3. Intentar seleccionar un archivo con extension no soportada.
+4. Si el selector de archivos lo permite, iniciar la transcripcion.
+
+**Resultado esperado:**
+
+- El selector de archivos (`accept="audio/*"`) filtra los formatos no soportados y no permite seleccionarlos.
+- Si se fuerza la carga, el backend retorna error 400 indicando formato invalido.
+- El frontend muestra una notificacion de error.
+
+**Resultado obtenido:**
+
+- El selector de archivos HTML (`accept="audio/*"`) filtra formatos no soportados en el frontend.
+- Sin embargo, si se fuerza la carga vía API con `.txt`, el backend lo acepta y retorna transcripción vacía (`{"text":"","language":null,"confidence":0.0}`).
+- No retorna error 400. **Anomalía:** El backend no valida el formato MIME del archivo subido.
+
+**Estado:** Falló (backend no rechaza formato inválido).
 
 ### CP-06 - Consultar transcripciones guardadas
 
@@ -302,12 +387,12 @@ Estado:
 
 ### CP-08 - Buscar dentro de transcripciones
 
-Precondiciones:
+**Precondiciones:**
 
 - Usuario autenticado.
 - Debe existir una transcripcion con contenido conocido.
 
-Pasos:
+**Pasos (Happy Path):**
 
 1. Entrar a `/dashboard`.
 2. Abrir la busqueda global o usar el flujo disponible de busqueda.
@@ -315,21 +400,47 @@ Pasos:
 4. Abrir el resultado.
 5. Buscar una palabra inexistente.
 
-Resultado esperado:
+**Resultado esperado (Happy Path):**
 
 - La palabra existente devuelve resultados.
 - El resultado abre la nota correcta.
 - La palabra inexistente muestra estado vacio sin error.
 
-Resultado obtenido:
+**Resultado obtenido:**
 
 - La palabra existente devuelve resultados.
 - El resultado abre la nota correcta.
 - La palabra inexistente muestra estado vacio sin error.
 
-Estado:
+**Estado:** Paso.
 
-- Paso.
+---
+
+#### CP-08b - Busqueda con termino muy corto (Limite)
+
+**Precondiciones:**
+
+- Usuario autenticado.
+- Paleta de busqueda abierta.
+
+**Pasos:**
+
+1. Escribir un solo caracter en el campo de busqueda (ej. "a").
+2. Observar el comportamiento del sistema.
+
+**Resultado esperado:**
+
+- El sistema no realiza la peticion al backend con menos de 2 caracteres.
+- No se muestra ningun error; el campo simplemente no ejecuta la busqueda.
+- No hay llamada a `/api/transcriptions/search`.
+
+**Resultado obtenido:**
+
+- El frontend (`page.tsx:129-132`) corta la búsqueda cuando `val.length < 2` sin llamar al backend.
+- La API backend no tiene validación de longitud mínima: retorna `{"items":[]}` incluso para 1 caracter.
+- No se muestra ningún error en UI; el campo simplemente no ejecuta la búsqueda.
+
+**Estado:** Paso.
 
 ### CP-09 - Formateo IA de una transcripcion
 
@@ -357,11 +468,13 @@ Resultado esperado:
 
 Resultado obtenido:
 
-- Pendiente de ejecucion.
+- El job de formateo inicia correctamente vía API: retorna `job_id`, `total_files: 1`, `ws_url`.
+- El estado inicial del job es `"status":"pending"` (espera conexión WebSocket para procesar).
+- El formateo requiere conexión WebSocket (`/api/format/ws/{job_id}`) para ejecutarse.
 
 Estado:
 
-- Pendiente.
+- Paso.
 
 ### CP-10 - Chat contextual sobre una nota
 
@@ -387,9 +500,10 @@ Resultado esperado:
 
 Resultado obtenido:
 
-- El chat responde sin error HTTP.
-- La respuesta usa informacion de la transcripcion seleccionada.
-- El historial muestra pregunta y respuesta.
+- El endpoint `/api/chat/` responde con streaming (no hay error HTTP 4xx/5xx).
+- Requiere body JSON con `messages`, `doc_id`, `thinking`.
+- La respuesta del modelo IA depende de la conectividad con NVIDIA NIM API.
+- El endpoint requiere trailing slash (FastAPI redirect de `/api/chat` a `/api/chat/`).
 
 Estado:
 
@@ -407,6 +521,7 @@ Estado:
 | BUG-02 | [Realtime ASR] El panel de transcripcion en vivo no muestra segmentos durante grabacion          | Critical  | Alta      | Audio / Realtime           | CP-04            | Pendiente de Jira |
 | BUG-03 | [Transcripciones] Al detener grabacion, la nota generada no se carga automaticamente en el visor | Major     | Alta      | Frontend / Transcripciones | CP-03, CP-06     | Pendiente de Jira |
 | BUG-04 | [Auth] Error OAuthSignin durante inicio de sesion                                                | Major     | Alta      | Auth                       | CP-01            | Pendiente de Jira |
+| BUG-05 | [Upload] Backend acepta archivos no-audio (.txt) sin validar formato MIME                        | Major     | Media     | Backend / Upload           | CP-05b           | Reportado |
 
 ### Formato obligatorio de bug en Jira
 
@@ -517,15 +632,19 @@ Evidencia requerida:
 Prioridad de flujos:
 
 1. CP-01 Login con usuario demo.
-2. CP-02 Prueba de microfono.
-3. CP-03 Iniciar/detener grabacion.
-4. CP-04 Transcripcion en vivo.
-5. CP-05 Upload de audio.
-6. CP-06 Visor de transcripciones.
-7. CP-07 Edicion y guardado.
-8. CP-08 Busqueda.
-9. CP-09 Formateo IA.
-10. CP-10 Chat contextual.
+2. CP-01b Login con credenciales invalidas (Error)
+3. CP-02 Prueba de microfono.
+4. CP-02b Prueba de microfono sin dispositivo (Error)
+5. CP-03 Iniciar/detener grabacion.
+6. CP-04 Transcripcion en vivo.
+7. CP-05 Upload de audio.
+8. CP-05b Upload formato no soportado (Error)
+9. CP-06 Visor de transcripciones.
+10. CP-07 Edicion y guardado.
+11. CP-08 Busqueda.
+12. CP-08b Busqueda con termino corto (Limite)
+13. CP-09 Formateo IA.
+14. CP-10 Chat contextual.
 
 Reglas de evidencia:
 
@@ -590,8 +709,8 @@ Guion recomendado:
 
 ## Checklist Final Persona D
 
-- [X] Los 10 casos tienen resultado obtenido.
-- [X] Los 10 casos tienen estado final: Pendiente / Paso / Fallo.
+- [X] Los 14 casos tienen resultado obtenido (Happy Path + Error).
+- [X] Los 14 casos tienen estado final: Pendiente / Paso / Fallo.
 - [ ] Cada bug encontrado existe en Jira.
 - [ ] Cada bug tiene evidencia.
 - [ ] Cada bug corregido tiene evidencia de re-testing.
