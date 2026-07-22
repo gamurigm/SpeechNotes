@@ -1,4 +1,4 @@
-name: SonarCloud Analysis
+name: SpeechNotes - DevSecOps Pipeline
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  sonar:
-    name: SonarCloud Scan
+  backend-tests:
+    name: Backend Tests (pytest)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -20,36 +20,202 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Run backend tests with coverage
-        if: hashFiles('backend/tests/**/*.py') != ''
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install pytest pytest-cov pytest-asyncio httpx fastapi requests coverage uvicorn
-          
+          pip install -r requirements-test.txt
+
           # Iniciar backend con coverage desde su propio directorio
           cd backend
           coverage run --source=. -m uvicorn main:socket_app --port 9443 &
           SERVER_PID=$!
           sleep 5
           cd ..
-          
-          # Ejecutar pruebas contra el backend vivo
-          pytest backend/tests/ || true
-          
+
+          # Ejecutar pruebas contra el backend vivo (sin || true: debe fallar si hay tests rotos)
+          pytest backend/tests/ -v --tb=short --junitxml=test-results.xml
+
           # Detener el servidor de forma segura para guardar .coverage
           kill -INT $SERVER_PID || true
           sleep 3
-          
+
           # Exportar XML y ajustar rutas para SonarCloud
           cd backend
           coverage xml -o ../coverage.xml
-          cd ..
-          sed -i 's/filename="/filename="backend\//g' coverage.xml
+          sed -i 's/filename="/filename="backend\//g' ../coverage.xml
 
-      - name: SonarCloud Scan
+      - name: Upload backend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.xml
+
+      - name: Upload backend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: test-results.xml
+
+      - name: Notify Discord - Backend Tests Failed
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "🧪 Fallaron los tests del backend"
+          description: "La suite de pytest reportó fallas. Revisa el artefacto `backend-test-results` y los logs del job para aplicar el fix."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
+          username: SpeechNotes QA Bot
+
+  frontend-unit:
+    name: Frontend Unit Tests (Jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "store-dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store-dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Jest unit tests
+        run: pnpm test:unit
+
+      - name: Upload frontend coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: web/coverage/
+
+      - name: Notify Discord - Frontend Unit Tests Failed
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "🎨 Tests unitarios del frontend fallaron"
+          description: "Jest reportó fallas en los tests del frontend. Revisa el artefacto `frontend-coverage` y los logs del job."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xff0000
+          username: SpeechNotes QA Bot
+
+  frontend-e2e:
+    name: Frontend E2E Tests (Cypress)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "store-dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store-dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Cypress E2E tests
+        env:
+          NEXTAUTH_SECRET: e2e-test-secret
+        run: pnpm test:e2e
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: web/cypress/videos/
+
+      - name: Upload Cypress screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+        path: web/cypress/screenshots/
+
+      - name: Notify Discord - E2E Tests Failed
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "🌐 Tests E2E de Cypress fallaron"
+          description: "Las pruebas end-to-end con Cypress fallaron. Revisa los videos y screenshots subidos como artefactos para diagnosticar."
+          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          color: 0xffa500
+          username: SpeechNotes QA Bot
+
+  sonarcloud:
+    name: SonarCloud Scan + Quality Gate
+    needs: backend-tests
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: .
+
+      - name: SonarCloud Scan (with retry on transient errors)
         uses: sonarsource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -57,9 +223,25 @@ jobs:
         with:
           args: -Dsonar.scanner.dumpToFile=./sonar-logs.txt
 
+      - name: Wait for SonarCloud Quality Gate result
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Upload Sonar logs on failure
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sonar-logs
           path: ./sonar-logs.txt
+
+      - name: Notify Discord - Quality Gate Failed
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "🛡️ SonarCloud Quality Gate falló"
+          description: "El código pasó los tests pero NO cumple el Quality Gate de SonarCloud (cobertura, code smells, vulnerabilidades, duplicación, etc.). Revisa el dashboard para aplicar el fix."
+          url: "https://sonarcloud.io/project/overview?id=speech-notes"
+          color: 0xff0000
+          username: SpeechNotes QA Bot
