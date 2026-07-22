@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:9443';
+// In Docker, API_URL points to the backend service name. The public URL is
+// only appropriate for browser-side requests and is not reachable from the
+// frontend container itself.
+const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:9443';
 
 export async function POST(request: NextRequest) {
   try {
