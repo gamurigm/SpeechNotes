@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict
+from typing import Annotated, Dict
 import os
 
 try:
@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.delete("/clear_transcriptions")
-async def clear_transcriptions(api_ok: bool = Depends(require_api_key)) -> Dict[str, int]:
+async def clear_transcriptions(api_ok: Annotated[bool, Depends(require_api_key)]) -> Dict[str, int]:
     """Delete all documents in the `transcriptions` collection.
 
     Protected by API key. Use with caution.

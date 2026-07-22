@@ -12,7 +12,7 @@ Refactoring:
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from backend.services.audio.transcription_service import TranscriptionService
 from backend.repositories.transcription_repository import TranscriptionRepository
@@ -46,7 +46,7 @@ class TranscriptionUpdate(BaseModel):
 # ──────────────────────────────────────────────
 
 @router.get("/latest")
-async def get_latest_transcription(service: TranscriptionService = Depends(get_service)):
+async def get_latest_transcription(service: Annotated[TranscriptionService, Depends(get_service)]):
     """Get the latest processed transcription (delegates to Service)."""
     try:
         return service.get_latest()
@@ -58,8 +58,8 @@ async def get_latest_transcription(service: TranscriptionService = Depends(get_s
 
 @router.get("")
 async def list_transcriptions(
+    service: Annotated[TranscriptionService, Depends(get_service)],
     limit: int = 50,
-    service: TranscriptionService = Depends(get_service)
 ):
     """List recent processed transcriptions (metadata only)."""
     try:
@@ -71,8 +71,8 @@ async def list_transcriptions(
 
 @router.get("/search")
 async def search_transcriptions(
+    service: Annotated[TranscriptionService, Depends(get_service)],
     q: str,
-    service: TranscriptionService = Depends(get_service)
 ):
     """Global search using Service Layer logic."""
     try:
@@ -84,8 +84,8 @@ async def search_transcriptions(
 
 @router.get("/{transcription_id}")
 async def get_transcription_by_id(
+    service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
-    service: TranscriptionService = Depends(get_service)
 ):
     """Get a specific processed transcription by id."""
     try:
@@ -101,9 +101,9 @@ async def get_transcription_by_id(
 
 @router.put("/{transcription_id}")
 async def update_transcription(
+    service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
     update: TranscriptionUpdate,
-    service: TranscriptionService = Depends(get_service)
 ):
     """Update transcription content."""
     if service.update_content(transcription_id, update.content):
@@ -113,8 +113,8 @@ async def update_transcription(
 
 @router.delete("/{transcription_id}")
 async def delete_transcription(
+    service: Annotated[TranscriptionService, Depends(get_service)],
     transcription_id: str,
-    service: TranscriptionService = Depends(get_service)
 ):
     """Logically delete a transcription."""
     if service.delete(transcription_id):
