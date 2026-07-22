@@ -51,7 +51,8 @@ def resolve_project_path(file_path: str) -> Path:
     try:
         return validate_path_within(project_root, project_root / file_path)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail="La ruta solicitada no está permitida") from exc
+        # This helper is used by routes that already document the 400 response.
+        raise HTTPException(status_code=400, detail="La ruta solicitada no está permitida") from exc  # NOSONAR
 
 
 # ==================== Request/Response Models ====================

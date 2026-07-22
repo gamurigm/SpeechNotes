@@ -52,7 +52,7 @@ async def validate_settings(_: Annotated[object, Depends(require_auth)]):
     }
 
 
-@router.get("/{key}")
+@router.get("/{key}", responses={404: {"description": "Setting not found"}})
 async def get_setting(key: str, _: Annotated[object, Depends(require_auth)]):
     """Get a single setting (masked if secret)."""
     cfg = ConfigService()
