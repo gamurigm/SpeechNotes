@@ -15,7 +15,7 @@ class VadConfig(BaseModel):
     voice_threshold: int
     silence_threshold: int
 
-@router.get("/", response_model=VadConfig)
+@router.get("/", response_model=VadConfig, responses={500: {"description": "Error al leer configuración VAD"}})
 def get_vad_config():
     if not os.path.exists(CONFIG_PATH):
         # Return default values if file doesn't exist
@@ -41,7 +41,7 @@ def get_vad_config():
             silence_threshold=200
         )
 
-@router.post("/", response_model=VadConfig)
+@router.post("/", response_model=VadConfig, responses={500: {"description": "Error al guardar configuración VAD"}})
 def save_vad_config(config: VadConfig):
     try:
         # Ensure directory exists

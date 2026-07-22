@@ -34,7 +34,7 @@ class DocumentMetadata(BaseModel):
     has_content: bool
 
 
-@router.get("/{doc_id}/content", response_model=DocumentContent)
+@router.get("/{doc_id}/content", response_model=DocumentContent, responses={400: {"description": "ID inválido"}, 404: {"description": "Documento no encontrado"}, 500: {"description": "Error al obtener documento"}})
 async def get_document_content(doc_id: str):
     """
     Get the plain text content of a document by its ID.
@@ -108,7 +108,7 @@ async def get_document_content(doc_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/", response_model=list[DocumentMetadata])
+@router.get("/", response_model=list[DocumentMetadata], responses={500: {"description": "Error al listar documentos"}})
 async def list_documents(limit: int = 50):
     """
     List available documents with metadata.

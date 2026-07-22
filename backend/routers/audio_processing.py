@@ -34,6 +34,7 @@ EMPTY_UPLOAD_MESSAGE = "Uploaded file is empty"
     "/transcribe",
     summary="Transcribe audio using Parakeet TDT 0.6B v2",
     tags=["audio"],
+    responses={400: {"description": "El archivo subido está vacío"}},
 )
 @logfire.instrument("router.audio.transcribe")
 async def transcribe_audio(
@@ -76,6 +77,7 @@ async def transcribe_audio(
     summary="Remove background noise using NVIDIA BNR NIM (gRPC)",
     tags=["audio"],
     response_class=Response,
+    responses={400: {"description": "El archivo subido está vacío"}},
 )
 @logfire.instrument("router.audio.denoise")
 async def denoise_audio(
@@ -114,6 +116,7 @@ async def denoise_audio(
     "/pipeline",
     summary="Full audio pipeline: BNR → ASR → Translation",
     tags=["audio"],
+    responses={400: {"description": "El archivo subido está vacío o la variante no es válida"}},
 )
 @logfire.instrument("router.audio.pipeline")
 async def run_pipeline(
