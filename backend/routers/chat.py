@@ -61,7 +61,7 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
             doc = db.transcriptions.find_one({"filename": doc_id})
         
         if not doc:
-            logger.warning(f"Document not found: {doc_id}")
+            logger.warning("Requested document was not found")
             return None
         
         # Determine best content source
@@ -106,7 +106,7 @@ def load_document_context(doc_id: str) -> Optional[DocumentContext]:
         )
         
     except Exception as e:
-        logger.exception(f"Error loading document context for {doc_id}")
+        logger.exception("Error loading requested document context")
         return None
 
 
@@ -125,13 +125,13 @@ def load_document_by_filename(filename: str) -> Optional[DocumentContext]:
             })
         
         if not doc:
-            logger.warning(f"Document not found by filename: {filename}")
+            logger.warning("Requested document filename was not found")
             return None
             
         return load_document_context(str(doc["_id"]))
         
     except Exception as e:
-        logger.exception(f"Error loading document by filename: {filename}")
+        logger.exception("Error loading requested document by filename")
         return None
 
 
@@ -174,10 +174,10 @@ async def chat_stream(request: ChatRequest):
                 content_type="frontend"
             )
         elif request.doc_id:
-            logger.info(f"Loading document by doc_id: {request.doc_id}")
+            logger.info("Loading document by identifier")
             document = load_document_context(request.doc_id)
         elif request.active_file:
-            logger.info(f"Loading document by filename (deprecated): {request.active_file}")
+            logger.info("Loading document by deprecated filename lookup")
             document = load_document_by_filename(request.active_file)
         
         if not document:
@@ -208,7 +208,7 @@ async def chat_stream(request: ChatRequest):
                 content_type="empty"
             )
         
-        logger.info(f"Chat request: query='{query[:50]}...', doc={document.filename}, type={document.content_type}")
+        logger.info("Chat request prepared; content_type=%s", document.content_type)
         
         async def generate():
             try:

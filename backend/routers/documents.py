@@ -91,7 +91,7 @@ async def get_document_content(doc_id: str):
             if heading_match:
                 title = heading_match.group(1).strip()
         
-        logger.info(f"Document {doc_id} content retrieved, type: {content_type}, length: {len(content)}")
+        logger.info("Document content retrieved; type=%s length=%d", content_type, len(content))
         
         return DocumentContent(
             id=str(doc["_id"]),
@@ -104,7 +104,7 @@ async def get_document_content(doc_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"Error fetching document {doc_id}")
+        logger.exception("Error fetching requested document")
         raise HTTPException(status_code=500, detail=str(e))
 
 

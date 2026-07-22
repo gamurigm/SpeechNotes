@@ -109,21 +109,6 @@ async def full_transcription_pipeline(file_path: Path, output_name: str, temp_di
         print(f"[Worker] Starting transcription for {output_name}...")
         generated_path = service.transcribe_audio_file(temp_processed, output_file=output_name)
         md_path = validate_path_within(NOTES_DIR, generated_path)
-        
-        # 2.5. Add header to markdown file indicating it's from uploaded file
-        if md_path.exists() and original_filename:
-            content = md_path.read_text(encoding='utf-8')
-            header = f"""---
-**📁 Transcripción de Archivo Subido**  
-📄 Archivo Original: `{original_filename}`  
-📅 Fecha de Procesamiento: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
-🤖 Motor: NVIDIA Riva + FFmpeg
-
----
-
-"""
-            md_path.write_text(header + content, encoding='utf-8')
-            print(f"[Worker] ✅ Added upload metadata header to {md_path.name}")
 
         # 3. Batch Post-processing with source metadata
         await run_post_processing(md_path, source_type="uploaded_file", source_filename=original_filename)

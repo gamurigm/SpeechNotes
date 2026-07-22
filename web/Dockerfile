@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Stage 2: Builder
 FROM node:20-slim AS builder
@@ -19,8 +19,10 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma artifacts with the version locked in package-lock.json.
+# The SQLite schema is prepared at build time so runtime never downloads code.
+RUN DATABASE_URL=file:/app/prisma/dev.db ./node_modules/.bin/prisma generate \
+    && DATABASE_URL=file:/app/prisma/dev.db ./node_modules/.bin/prisma db push --skip-generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -70,5 +72,5 @@ EXPOSE 3006
 HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3006/ || exit 1
 
-# Run prisma migration and start standalone server
-CMD npx prisma@5 db push --skip-generate && node server.js
+# Start the standalone server without installing packages at runtime.
+CMD ["node", "server.js"]

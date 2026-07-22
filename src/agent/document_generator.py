@@ -6,13 +6,13 @@ Generates professional markdown documents from structured MongoDB data.
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
+import tempfile
 import logfire
 
 import os
 from openai import OpenAI
 from src.database import MongoManager
 from src.database.config_service import ConfigService
-from src.core.path_security import path_within, sanitize_filename
 
 
 class DocumentGenerator:
@@ -103,17 +103,17 @@ class DocumentGenerator:
         self._save_document(transcription, md)
 
     def _save_document(self, transcription: Dict, content: str):
-        """Helper to save the generated markdown file."""
-        source_filename = sanitize_filename(transcription.get("filename"), "transcription.md")
-        filename = source_filename.replace("transcripcion_", "processed_", 1)
-        if not filename.startswith("processed_"):
-            filename = f"processed_{filename}"
-
-        if not filename.lower().endswith(".md"):
-            filename = f"{filename}.md"
-
-        output_path = path_within(self.output_dir, filename)
-        output_path.write_text(content, encoding='utf-8')
+        """Save under a server-generated name, never a client-supplied path."""
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=self.output_dir,
+            prefix="processed_",
+            suffix=".md",
+            delete=False,
+        ) as output_file:
+            output_file.write(content)
+            output_path = Path(output_file.name)
         print(f"[INFO] Generated document: {output_path}")
 
     def _generate_no_audio_markdown(self, metadata: Dict) -> str:

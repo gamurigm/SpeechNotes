@@ -20,7 +20,7 @@ WORKDIR /app
 COPY backend/requirements.txt /app/backend/requirements.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r backend/requirements.txt
 
 # Copy the rest of the application
 COPY backend/ /app/backend/
