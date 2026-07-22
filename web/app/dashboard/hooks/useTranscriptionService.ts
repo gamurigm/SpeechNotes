@@ -97,7 +97,12 @@ export function useTranscriptionService() {
 
     // Socket listeners for background updates
     useEffect(() => {
-        const socket = getSocket();
+        const socket = getSocket() as typeof getSocket extends () => infer R ? R & { __transcriptionServiceListenersInstalled?: boolean } : never;
+
+        if (socket.__transcriptionServiceListenersInstalled) {
+            return;
+        }
+        socket.__transcriptionServiceListenersInstalled = true;
 
         const handleRecordingStopped = () => {
             const jobFakeId = `temp-${Date.now()}`;
@@ -133,13 +138,8 @@ export function useTranscriptionService() {
         socket.on('processing_complete', handleProcessingComplete);
         socket.on('warning', handleRecordingIssue);
         socket.on('error', handleRecordingIssue);
-
-        return () => {
-            socket.off('recording_stopped', handleRecordingStopped);
-            socket.off('processing_complete', handleProcessingComplete);
-            socket.off('warning', handleRecordingIssue);
-            socket.off('error', handleRecordingIssue);
-        };
+        // El socket es un singleton a nivel de módulo; se registra una sola vez
+        // para evitar duplicados provocados por el doble mount de Strict Mode.
     }, [loadTranscriptionsList]);
 
     // Initial load
