@@ -27,6 +27,20 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/login.png}
+\caption{CP-01: Pantalla de inicio de sesión con credenciales demo}
+\label{fig:cp01_login}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/dashboard.png}
+\caption{CP-01: Dashboard principal tras inicio de sesión exitoso}
+\label{fig:cp01_dashboard}
+\end{figure}
+
 \subsection{CP-02: Inicio de sesión con credenciales inválidas}
 \label{cp:02}
 
@@ -50,6 +64,13 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/invalid-creds.png}
+\caption{CP-02: Mensaje de error con credenciales inválidas}
+\label{fig:cp02}
+\end{figure}
 
 \subsection{CP-03: Prueba de micrófono sin dispositivo}
 \label{cp:03}
@@ -75,6 +96,13 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/detecta-mic.png}
+\caption{CP-03: Mensaje ``No se detecta micrófono''}
+\label{fig:cp03}
+\end{figure}
+
 \subsection{CP-04: Inicio y detención de grabación con VAD}
 \label{cp:04}
 
@@ -98,6 +126,27 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/grabar.png}
+\caption{CP-04: Grabación en curso con micrófono activo}
+\label{fig:cp04_grabar}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/stop.png}
+\caption{CP-04: Detención de grabación}
+\label{fig:cp04_stop}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/mic-10s.png}
+\caption{CP-04: Grabación de 10 segundos con VAD}
+\label{fig:cp04_vad}
+\end{figure}
 
 \subsection{CP-05: Transcripción en vivo}
 \label{cp:05}
@@ -123,6 +172,13 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/trancritp-vivo.png}
+\caption{CP-05: Transcripción apareciendo en tiempo real durante la grabación}
+\label{fig:cp05}
+\end{figure}
+
 \subsection{CP-06: Upload de archivo de audio}
 \label{cp:06}
 
@@ -146,6 +202,13 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/carga-archivos.png}
+\caption{CP-06: Diálogo de carga de archivos de audio}
+\label{fig:cp06}
+\end{figure}
 
 \subsection{CP-07: Consulta de transcripciones guardadas}
 \label{cp:07}
@@ -171,6 +234,20 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/nota-en-visor.png}
+\caption{CP-07: Visor de una transcripción guardada}
+\label{fig:cp07_visor}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/trans.png}
+\caption{CP-07: Lista de transcripciones guardadas}
+\label{fig:cp07_lista}
+\end{figure}
+
 \subsection{CP-08: Edición de transcripción}
 \label{cp:08}
 
@@ -194,6 +271,20 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Major\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/prueb-edicion.png}
+\caption{CP-08: Editor de transcripción con texto modificado}
+\label{fig:cp08_editor}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/guardad-edicion.png}
+\caption{CP-08: Confirmación de guardado exitoso}
+\label{fig:cp08_guardado}
+\end{figure}
 
 \subsection{CP-09: Búsqueda textual en transcripciones}
 \label{cp:09}
@@ -219,6 +310,20 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/buscar-trans.png}
+\caption{CP-09: Barra de búsqueda en la lista de transcripciones}
+\label{fig:cp09_buscar}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/buscar-palabra.png}
+\caption{CP-09: Resultados filtrados por la palabra ``prueba''}
+\label{fig:cp09_resultados}
+\end{figure}
+
 \subsection{CP-10: Formateo de transcripción con IA}
 \label{cp:10}
 
@@ -242,6 +347,20 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/iniciar-formateo.png}
+\caption{CP-10: Botón ``Formatear con IA'' en el visor de transcripción}
+\label{fig:cp10_iniciar}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/transcript-visor.png}
+\caption{CP-10: Transcripción formateada por IA con estructura mejorada}
+\label{fig:cp10_formateado}
+\end{figure}
 
 \subsection{CP-11: Chat contextual sobre una transcripción}
 \label{cp:11}
@@ -267,6 +386,20 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/chat-contextual.png}
+\caption{CP-11: Panel de chat contextual abierto sobre una transcripción}
+\label{fig:cp11_chat}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/respuesta-chat.png}
+\caption{CP-11: Respuesta del asistente IA en el chat contextual}
+\label{fig:cp11_respuesta}
+\end{figure}
+
 \subsection{CP-12: Transcripción larga (límite de caracteres)}
 \label{cp:12}
 
@@ -290,6 +423,13 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/formato-incorrect.png}
+\caption{CP-12: Manejo de transcripción larga en formateo IA}
+\label{fig:cp12}
+\end{figure}
 
 \subsection{CP-13: Upload de archivo WAV}
 \label{cp:13}
@@ -315,6 +455,20 @@
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/archivo-select.png}
+\caption{CP-13: Selección de archivo WAV para subir}
+\label{fig:cp13_select}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/archivo-prosesando.png}
+\caption{CP-13: Archivo WAV en proceso de transcripción}
+\label{fig:cp13_procesando}
+\end{figure}
+
 \subsection{CP-14: Chat IA con datos vacíos}
 \label{cp:14}
 
@@ -338,3 +492,10 @@
 \textbf{Estado} & \textcolor{PasoColor}{Pasado} (corregido)\\
 \bottomrule
 \end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/brkn-accs-cntrl.png}
+\caption{CP-14: Chat contextual sin transcripción seleccionada (BUG-003 corregido)}
+\label{fig:cp14}
+\end{figure}
