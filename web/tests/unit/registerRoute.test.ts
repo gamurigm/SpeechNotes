@@ -2,6 +2,15 @@ import { POST } from '../../app/api/register/route';
 import { prisma } from '../../lib/prisma';
 import { hashPassword } from '../../lib/password';
 
+jest.mock('next/server', () => ({
+    NextResponse: {
+        json: (body: unknown, init?: { status?: number }) => ({
+            status: init?.status ?? 200,
+            json: async () => body,
+        }),
+    },
+}));
+
 jest.mock('../../lib/prisma', () => ({
     prisma: {
         user: {
@@ -21,15 +30,21 @@ const prismaUser = prisma.user as unknown as {
 };
 const hashPasswordMock = hashPassword as jest.MockedFunction<typeof hashPassword>;
 
-function createRequest(body: unknown, origin = 'http://localhost:3006') {
-    return new Request('http://localhost:3006/api/register', {
-        method: 'POST',
+function createRequest(body: unknown, origin = 'http://localhost:3006'): Request {
+    const headers = new Map<string, string>([
+        ['content-type', 'application/json'],
+        ['origin', origin],
+    ]);
+
+    return {
+        url: 'http://localhost:3006/api/register',
         headers: {
-            'content-type': 'application/json',
-            origin,
+            get(name: string) {
+                return headers.get(name.toLowerCase()) ?? null;
+            },
         },
-        body: JSON.stringify(body),
-    });
+        json: async () => body,
+    } as unknown as Request;
 }
 
 function validRegistration(overrides: Record<string, string> = {}) {
