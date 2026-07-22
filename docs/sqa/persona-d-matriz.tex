@@ -1,0 +1,711 @@
+\documentclass[12pt, a4paper]{article}
+
+% ── Encoding & Language ──────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
+% ── Geometry & Layout ────────────────────────────────────────────────────────
+\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{pdflscape}
+
+% ── Typography ───────────────────────────────────────────────────────────────
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Color ────────────────────────────────────────────────────────────────────
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{espe-blue}{RGB}{0, 51, 102}
+\definecolor{espe-gold}{RGB}{204, 153, 0}
+\definecolor{header-bg}{RGB}{0, 51, 102}
+\definecolor{row-alt}{RGB}{230, 240, 255}
+\definecolor{critica}{RGB}{220, 53, 69}
+\definecolor{alta}{RGB}{255, 140, 0}
+\definecolor{media}{RGB}{40, 167, 69}
+\definecolor{paso-green}{RGB}{40, 167, 69}
+\definecolor{pendiente-orange}{RGB}{255, 140, 0}
+
+% ── Tables ───────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{amssymb}
+
+% ── Graphics & Boxes ─────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage[most,breakable]{tcolorbox}
+\usepackage{tikz}
+
+% ── Lists ────────────────────────────────────────────────────────────────────
+\usepackage{enumitem}
+
+% ── Header & Footer ──────────────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{espe-blue}{\textbf{SpeechNotes -- SQA}}}
+\fancyhead[R]{\small\textcolor{espe-blue}{Persona D -- QA Manual}}
+\fancyfoot[C]{\small\thepage}
+\fancyfoot[R]{\small\textcolor{gray}{Sprint 18--21 Jul 2026}}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{espe-blue}\leaders\hrule height \headrulewidth\hfill}}
+
+% ── Hyperlinks ───────────────────────────────────────────────────────────────
+\usepackage[colorlinks=true, linkcolor=espe-blue, urlcolor=espe-blue,
+            pdftitle={SQA - Matriz de Rastreabilidad - SpeechNotes},
+            pdfauthor={Persona D - QA Manual}]{hyperref}
+
+% ── Helpers ──────────────────────────────────────────────────────────────────
+\newcommand{\prioChip}[2]{%
+  \colorbox{#1}{\textcolor{white}{\footnotesize\textbf{#2}}}%
+}
+\newcommand{\statusChip}[2]{%
+  \colorbox{#1}{\textcolor{white}{\footnotesize\textbf{#2}}}%
+}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% =============================================================================
+\begin{document}
+\thispagestyle{empty}
+
+% ── PORTADA ──────────────────────────────────────────────────────────────────
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[espe-blue] (current page.north west) rectangle ([yshift=-6cm]current page.north east);
+  \fill[espe-gold]  ([yshift=-6cm]current page.north west) rectangle ([yshift=-6.4cm]current page.north east);
+\end{tikzpicture}
+
+\vspace*{1.8cm}
+\begin{center}
+  {\color{white}\fontsize{22}{26}\selectfont\textbf{PLAN DE ASEGURAMIENTO DE CALIDAD}}\\[0.3cm]
+  {\color{white}\fontsize{16}{20}\selectfont\textit{SpeechNotes -- Sprint 18 al 21 de Julio 2026}}\\[0.5cm]
+  {\color{espe-gold}\fontsize{18}{22}\selectfont\textbf{Persona D: QA Manual \& Dise\~no de Pruebas}}\\[1.5cm]
+  {\color{white}\large Matriz de Rastreabilidad de Requisitos}\\
+  {\color{white}\large y Casos de Prueba Manuales}\\[2cm]
+\end{center}
+
+\begin{tcolorbox}[
+  enhanced,
+  colback=white, colframe=espe-gold, boxrule=1.5pt, arc=6pt,
+  width=12cm, center, fontupper=\small
+]
+  \begin{tabular}{ll}
+    \textbf{Proyecto:}    & SpeechNotes \\
+    \textbf{Documento:}   & Secci\'on B.a -- B.b \\
+    \textbf{Responsable:} & Persona D -- QA Manual \\
+    \textbf{Fecha:}       & 18 de julio de 2026 \\
+    \textbf{Rama:}        & \texttt{planning-SQA} \\
+    \textbf{Frontend:}    & \texttt{http://localhost:3006} \\
+    \textbf{Backend:}     & \texttt{http://localhost:9443} \\
+    \textbf{Entrega:}     & 20 de julio de 2026 \\
+  \end{tabular}
+\end{tcolorbox}
+
+\newpage
+
+% ── TOC ──────────────────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ── 1. ALCANCE ───────────────────────────────────────────────────────────────
+\section{Alcance del QA Manual}
+
+\begin{tcolorbox}[enhanced, breakable, colback=row-alt, colframe=espe-blue,
+  boxrule=1pt, arc=4pt,
+  title={\textbf{Flujos incluidos en la cobertura manual}}, fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=espe-blue}]
+\begin{itemize}[noitemsep]
+  \item Login con usuario demo (\texttt{demo@speechnotes.app})
+  \item Prueba de micr\'ofono
+  \item Grabaci\'on en vivo e inicio/detenci\'on
+  \item Transcripci\'on en vivo (Realtime ASR)
+  \item Upload de archivo de audio (.mp3 / .wav)
+  \item Consulta de transcripciones guardadas
+  \item Edici\'on y guardado de transcripciones
+  \item B\'usqueda dentro de transcripciones
+  \item Formateo con Inteligencia Artificial
+  \item Chat contextual sobre una nota
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[enhanced, colback=white, colframe=critica,
+  boxrule=1pt, arc=4pt,
+  title={\textbf{Fuera de alcance}}, fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=critica}]
+\begin{itemize}[noitemsep]
+  \item Implementar automatizaci\'on (responsabilidad de Personas B y C)
+  \item Corregir c\'odigo fuente
+  \item Configurar SonarCloud o CI/CD
+  \item Pruebas formales de carga (riesgo documentado)
+\end{itemize}
+\end{tcolorbox}
+
+\newpage
+
+% ── 2. MATRIZ DE RASTREABILIDAD ──────────────────────────────────────────────
+\section{B.a Matriz de Rastreabilidad de Requisitos}
+
+La siguiente tabla traza cada Requisito Funcional (RF) al Caso de Prueba (CP) que lo
+valida, indicando prioridad, m\'odulo afectado y criterio de aceptaci\'on definido.
+
+\vspace{0.4cm}
+
+\begin{landscape}
+\begin{longtable}{C{1.4cm} L{4.8cm} C{1.5cm} C{2.2cm} C{2.8cm} L{6.5cm}}
+\toprule
+\rowcolor{header-bg}
+\textcolor{white}{\textbf{ID Req}} &
+\textcolor{white}{\textbf{Requisito Funcional}} &
+\textcolor{white}{\textbf{Caso}} &
+\textcolor{white}{\textbf{Prioridad}} &
+\textcolor{white}{\textbf{M\'odulo}} &
+\textcolor{white}{\textbf{Criterio de Aceptaci\'on}} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{header-bg}
+\textcolor{white}{\textbf{ID Req}} &
+\textcolor{white}{\textbf{Requisito Funcional}} &
+\textcolor{white}{\textbf{Caso}} &
+\textcolor{white}{\textbf{Prioridad}} &
+\textcolor{white}{\textbf{M\'odulo}} &
+\textcolor{white}{\textbf{Criterio de Aceptaci\'on}} \\
+\midrule
+\endhead
+\midrule\multicolumn{6}{r}{\small\textit{Contin\'ua\ldots}}\\\endfoot
+\bottomrule\endlastfoot
+
+RF-01 & El usuario puede iniciar sesi\'on & CP-01 & \prioChip{alta}{Alta} & Auth &
+  El usuario demo accede al dashboard sin error de login. \\[4pt]
+
+\rowcolor{row-alt}
+RF-02 & El usuario puede probar el micr\'ofono & CP-02 & \prioChip{alta}{Alta} & Audio / Frontend &
+  El panel de prueba muestra actividad cuando el usuario habla. \\[4pt]
+
+RF-03 & El usuario puede iniciar/detener grabaci\'on & CP-03 & \prioChip{critica}{Cr\'itica} & Audio / Backend &
+  La UI cambia a \textit{grabando}, el contador avanza y al detener se procesa la grabaci\'on. \\[4pt]
+
+\rowcolor{row-alt}
+RF-04 & El sistema muestra transcripci\'on en vivo & CP-04 & \prioChip{critica}{Cr\'itica} & Realtime ASR &
+  El panel en vivo agrega segmentos durante la grabaci\'on sin bucles incoherentes. \\[4pt]
+
+RF-05 & El usuario puede subir un audio para transcribir & CP-05 & \prioChip{alta}{Alta} & Upload / Backend &
+  El archivo se procesa y aparece una transcripci\'on nueva en la lista. \\[4pt]
+
+\rowcolor{row-alt}
+RF-06 & El usuario puede consultar transcripciones guardadas & CP-06 & \prioChip{alta}{Alta} & Transcripciones &
+  La lista carga documentos y el visor muestra el contenido seleccionado sin timeout. \\[4pt]
+
+RF-07 & El usuario puede editar y guardar una transcripci\'on & CP-07 & \prioChip{media}{Media} & Editor &
+  Los cambios persisten despu\'es de recargar; el Markdown no se corrompe. \\[4pt]
+
+\rowcolor{row-alt}
+RF-08 & El usuario puede buscar dentro de transcripciones & CP-08 & \prioChip{media}{Media} & B\'usqueda &
+  Una palabra existente retorna resultados; una inexistente muestra estado vac\'io sin error. \\[4pt]
+
+RF-09 & El usuario puede formatear una transcripci\'on con IA & CP-09 & \prioChip{media}{Media} & IA / Formatter &
+  El job inicia, la UI muestra estado y al completar el contenido queda formateado. \\[4pt]
+
+\rowcolor{row-alt}
+RF-10 & El usuario puede usar chat contextual sobre una nota & CP-10 & \prioChip{media}{Media} & Chat / RAG &
+  El chat responde sin error HTTP usando informaci\'on de la transcripci\'on; el historial es visible. \\[4pt]
+
+\end{longtable}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=row-alt, colframe=espe-blue, boxrule=0.8pt, arc=3pt]
+\footnotesize
+\textbf{Leyenda:}\quad
+\prioChip{critica}{Cr\'itica} = flujo bloqueante\quad
+\prioChip{alta}{Alta} = funcionalidad central\quad
+\prioChip{media}{Media} = valor a\~nadido
+\end{tcolorbox}
+\end{landscape}
+
+\newpage
+
+% ── 3. CASOS DE PRUEBA ───────────────────────────────────────────────────────
+\section{B.b Casos de Prueba Manuales}
+
+Cada caso incluye: precondiciones, pasos de ejecuci\'on, resultado esperado, resultado
+obtenido y estado final.
+
+% ── CP-01 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-01} \enspace Login con usuario demo \hfill \prioChip{alta}{Alta} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Frontend corriendo en puerto 3006.
+  \item Backend corriendo en puerto 9443.
+  \item Base de datos disponible.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Abrir \texttt{http://localhost:3006/login}.
+  \item Ingresar \texttt{demo@speechnotes.app}.
+  \item Ingresar \texttt{demo123}.
+  \item Presionar el bot\'on de inicio de sesi\'on.
+  \item Verificar redirecci\'on al dashboard.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El usuario llega a \texttt{/dashboard}.
+  \item No aparece \texttt{OAuthSignin}.
+  \item No aparece error de credenciales.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] El usuario llega a \texttt{/dashboard}.
+  \item[$\checkmark$] Sin \texttt{OAuthSignin}.
+  \item[$\checkmark$] Sin error de credenciales.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-02 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-02} \enspace Prueba de micr\'ofono \hfill \prioChip{alta}{Alta} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Micr\'ofono conectado.
+  \item Permisos del navegador disponibles.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Abrir la herramienta de prueba de micr\'ofono.
+  \item Aceptar permisos del navegador.
+  \item Hablar durante 5 a 10 segundos.
+  \item Verificar indicador de nivel/pico.
+  \item Detener la prueba.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El indicador visual cambia al hablar.
+  \item La prueba se detiene sin bloquear el micr\'ofono.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] El indicador visual cambia al hablar.
+  \item[$\checkmark$] Sin bloqueo del micr\'ofono.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-03 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=critica,
+  boxrule=1.5pt, arc=5pt,
+  title={\textbf{CP-03} \enspace Iniciar y detener grabaci\'on \hfill \prioChip{critica}{Cr\'itica} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=critica,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Backend corriendo en puerto 9443.
+  \item Frontend corriendo en puerto 3006.
+  \item Usuario autenticado.
+  \item Micr\'ofono disponible.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Presionar el bot\'on de micr\'ofono.
+  \item Aceptar permisos del navegador.
+  \item Hablar durante 10 segundos.
+  \item Presionar detener.
+  \item Confirmar la detenci\'on.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El estado cambia a \textit{grabando}.
+  \item El contador aumenta.
+  \item Al detener, aparece estado de procesamiento.
+  \item La grabaci\'on se agrega a la lista de transcripciones.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Estado \textit{grabando} visible.
+  \item[$\checkmark$] Contador aumenta.
+  \item[$\checkmark$] Estado de procesamiento al detener.
+  \item[$\checkmark$] Transcripci\'on agregada a la lista.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\newpage
+
+% ── CP-04 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=critica,
+  boxrule=1.5pt, arc=5pt,
+  title={\textbf{CP-04} \enspace Transcripci\'on en vivo \hfill \prioChip{critica}{Cr\'itica} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=critica,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Backend ASR configurado.
+  \item Socket.IO conectado.
+  \item Micr\'ofono con audio claro.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Iniciar grabaci\'on.
+  \item Hablar frases claras durante 30--60 segundos.
+  \item Observar el panel de transcripci\'on en vivo.
+  \item Confirmar el aumento del contador de segmentos.
+  \item Detener la grabaci\'on.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El panel muestra segmentos sin esperar al final.
+  \item El contador de segmentos aumenta.
+  \item No aparecen repeticiones incoherentes en bucle.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Segmentos visibles progresivamente.
+  \item[$\checkmark$] Contador de segmentos aumenta.
+  \item[$\checkmark$] Sin repeticiones en bucle.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-05 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-05} \enspace Upload de audio para transcribir \hfill \prioChip{alta}{Alta} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Backend disponible.
+  \item Archivo \texttt{.mp3} o \texttt{.wav} de prueba disponible.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Abrir la herramienta Upload.
+  \item Seleccionar un archivo \texttt{.mp3} o \texttt{.wav}.
+  \item Iniciar la transcripci\'on.
+  \item Esperar el procesamiento.
+  \item Revisar la lista de transcripciones.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El archivo se acepta.
+  \item El sistema muestra estado de procesamiento.
+  \item Al finalizar, la transcripci\'on aparece en la lista.
+  \item El visor abre el texto generado.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Archivo aceptado.
+  \item[$\checkmark$] Estado de procesamiento visible.
+  \item[$\checkmark$] Transcripci\'on en lista.
+  \item[$\checkmark$] Visor abre el texto.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-06 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-06} \enspace Consultar transcripciones guardadas \hfill \prioChip{alta}{Alta} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Al menos una transcripci\'on guardada.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Verificar que la lista de transcripciones cargue.
+  \item Seleccionar la transcripci\'on m\'as reciente.
+  \item Navegar a una transcripci\'on anterior.
+  \item Volver a la transcripci\'on m\'as reciente.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item La lista muestra transcripciones existentes.
+  \item El visor cambia seg\'un la nota seleccionada.
+  \item Sin timeout al cargar documentos.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Lista con transcripciones.
+  \item[$\checkmark$] Visor actualiza contenido.
+  \item[$\checkmark$] Sin timeout.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\newpage
+
+% ── CP-07 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-07} \enspace Editar y guardar una transcripci\'on \hfill \prioChip{media}{Media} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Debe existir una transcripci\'on guardada.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Abrir una transcripci\'on en el visor.
+  \item Activar edici\'on si aplica.
+  \item Agregar una l\'inea de prueba al final.
+  \item Guardar cambios.
+  \item Recargar la p\'agina.
+  \item Abrir la misma transcripci\'on.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El cambio se guarda sin error.
+  \item La l\'inea persiste despu\'es de recargar.
+  \item El Markdown no se corrompe.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Cambio guardado sin error.
+  \item[$\checkmark$] L\'inea persiste tras recarga.
+  \item[$\checkmark$] Markdown sin corrupci\'on.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-08 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-08} \enspace Buscar dentro de transcripciones \hfill \prioChip{media}{Media} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Transcripci\'on con contenido conocido.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Entrar a \texttt{/dashboard}.
+  \item Abrir la b\'usqueda global.
+  \item Buscar una palabra existente.
+  \item Abrir el resultado.
+  \item Buscar una palabra inexistente.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item La palabra existente devuelve resultados.
+  \item El resultado abre la nota correcta.
+  \item La inexistente muestra estado vac\'io sin error.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Resultados correctos para palabra existente.
+  \item[$\checkmark$] Nota correcta abierta.
+  \item[$\checkmark$] Estado vac\'io para inexistente.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{0.3cm}
+
+% ── CP-09 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-09} \enspace Formateo IA de una transcripci\'on \hfill \prioChip{media}{Media} \enspace \statusChip{pendiente-orange}{PENDIENTE}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Transcripci\'on seleccionada.
+  \item Credenciales IA configuradas localmente.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Abrir una transcripci\'on.
+  \item Presionar la acci\'on de formateo IA.
+  \item Iniciar el proceso.
+  \item Observar el estado de procesamiento.
+  \item Esperar finalizaci\'on.
+  \item Revisar el contenido actualizado.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El job de formateo inicia.
+  \item La UI muestra estado mientras procesa.
+  \item Al completar, el contenido aparece formateado.
+  \item No se pierde el contenido original.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textit{Pendiente de ejecuci\'on.}
+  \item Requiere credenciales IA locales.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\newpage
+
+% ── CP-10 ────────────────────────────────────────────────────────────────────
+\begin{tcolorbox}[enhanced, breakable, colback=white, colframe=espe-blue,
+  boxrule=1pt, arc=5pt,
+  title={\textbf{CP-10} \enspace Chat contextual sobre una nota \hfill \prioChip{media}{Media} \enspace \statusChip{paso-green}{PASO}},
+  fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue,arc=3pt}]
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Precondiciones:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item Usuario autenticado.
+  \item Transcripci\'on con contenido suficiente.
+  \item Servicio IA disponible.
+\end{itemize}
+\textbf{Pasos de Ejecuci\'on:}
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item Abrir una transcripci\'on.
+  \item Abrir el chat contextual.
+  \item Preguntar algo espec\'ifico sobre la nota.
+  \item Esperar respuesta.
+  \item Hacer una pregunta de seguimiento.
+\end{enumerate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Resultado Esperado:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item El chat responde sin error HTTP.
+  \item La respuesta usa informaci\'on de la nota.
+  \item El historial muestra pregunta y respuesta.
+\end{itemize}
+\vspace{4pt}
+\textbf{Resultado Obtenido:}
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item[$\checkmark$] Responde sin error HTTP.
+  \item[$\checkmark$] Respuesta con info de la nota.
+  \item[$\checkmark$] Historial visible.
+\end{itemize}
+\end{minipage}
+\end{tcolorbox}
+
+\newpage
+
+% ── 4. RESUMEN ───────────────────────────────────────────────────────────────
+\section{Resumen de Ejecuci\'on}
+
+\begin{center}
+\begin{tabular}{L{3.5cm} C{2.2cm} C{2.2cm} C{4cm}}
+\toprule
+\rowcolor{header-bg}
+\textcolor{white}{\textbf{Estado}} &
+\textcolor{white}{\textbf{Cantidad}} &
+\textcolor{white}{\textbf{\% Total}} &
+\textcolor{white}{\textbf{Casos}} \\
+\midrule
+\statusChip{paso-green}{PASO}           & 9 & 90\% & CP-01 al CP-08, CP-10 \\
+\rowcolor{row-alt}
+\statusChip{pendiente-orange}{PENDIENTE} & 1 & 10\% & CP-09 \\
+\statusChip{critica}{FALLO}             & 0 &  0\% & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[colback=row-alt, colframe=espe-blue, boxrule=0.8pt, arc=3pt,
+  title={\textbf{Observaciones}}, fonttitle=\color{white},
+  attach boxed title to top left={yshift=-2mm,xshift=4mm},
+  boxed title style={colback=espe-blue}]
+\begin{itemize}
+  \item Los flujos cr\'iticos \textbf{CP-03} (Grabaci\'on) y \textbf{CP-04} (Transcripci\'on en vivo) pasaron satisfactoriamente.
+  \item \textbf{CP-09} queda pendiente por dependencia de credenciales IA locales; se retomar\'a en el re-testing del D\'ia 3.
+  \item Los defectos preliminares BUG-01 a BUG-04 documentados en la secci\'on B.c ser\'an registrados en Jira con evidencia.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5cm}
+
+% ── 5. REFERENCIAS ───────────────────────────────────────────────────────────
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+
+\begin{itemize}
+  \item \texttt{docs/sqa/sqa-planning.md} -- Plan riguroso SQA Sprint 18--21 Jul 2026.
+  \item \texttt{docs/sqa/persona-d-manual-testing.md} -- Fuente de casos y matriz.
+  \item IEEE 829-2008 -- Standard for Software and System Test Documentation.
+\end{itemize}
+
+\end{document}

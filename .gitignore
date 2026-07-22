@@ -209,7 +209,11 @@ auth.json
 desktop/pyi_rth_paths.py
 pyi_rth_*.py
 
-# QA frontend: suite y evidencias reproducibles de Persona C
-!/web/tests/evidence/screenshots/
-!/web/tests/evidence/screenshots/**/*.png
 
+# LaTeX build files
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

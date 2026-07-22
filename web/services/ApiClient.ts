@@ -58,7 +58,6 @@ export class ApiClient {
                 clearTimeout(timeoutId);
                 console.warn(`[ApiClient] Attempt ${i + 1}/${retries} failed for ${url}:`, error);
                 lastError = error;
-                if (error.name === 'AbortError') throw new Error('Request timeout');
                 // Wait before retrying (exponential backoff: 500ms, 1000ms, 2000ms)
                 if (i < retries - 1) await new Promise(r => setTimeout(r, 500 * Math.pow(2, i)));
             }
