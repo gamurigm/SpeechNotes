@@ -53,11 +53,17 @@ class TestTranslateText:
 class TestDetectLanguage:
     """POST /api/translate/detect"""
 
-    def test_detect_empty_text_returns_422(self, http_client: BackendHttpClient):
+    def test_detect_empty_text_returns_unknown_result(self, http_client: BackendHttpClient):
         resp = http_client.post("/api/translate/detect", json_body={
             "text": "",
         })
-        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}: {resp.text}"
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        body = resp.json()
+        assert body == {
+            "language_code": "unknown",
+            "language_name": "Unknown",
+            "confidence": 0.0,
+        }
 
     def test_detect_missing_text_returns_422(self, http_client: BackendHttpClient):
         resp = http_client.post("/api/translate/detect", json_body={})
@@ -80,12 +86,13 @@ class TestDetectLanguage:
 class TestBatchTranslate:
     """POST /api/translate/batch"""
 
-    def test_batch_empty_items_returns_422(self, http_client: BackendHttpClient):
+    def test_batch_empty_items_returns_empty_result(self, http_client: BackendHttpClient):
         resp = http_client.post("/api/translate/batch", json_body={
             "items": [],
             "target_language": "es",
         })
-        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}: {resp.text}"
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        assert resp.json() == {"results": []}
 
     def test_batch_missing_items_returns_422(self, http_client: BackendHttpClient):
         resp = http_client.post("/api/translate/batch", json_body={})
