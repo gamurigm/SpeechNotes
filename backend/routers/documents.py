@@ -87,7 +87,7 @@ async def get_document_content(doc_id: str):
         if not title and content:
             # Try to extract from first markdown heading
             import re
-            heading_match = re.match(r'^#\s+(.+)$', content, re.MULTILINE)
+            heading_match = re.match(r'^#[ \t]+([^\r\n]+)$', content, re.MULTILINE)
             if heading_match:
                 title = heading_match.group(1).strip()
         

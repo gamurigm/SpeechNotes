@@ -132,7 +132,7 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
     });
 
     // Set data-theme for third-party components (like HeroUI)
-    root.setAttribute('data-theme', type);
+    root.dataset.theme = type;
 
     // Dynamic Glassmorphism Logic - Theme-Aware Tinting
     // Using color-mix to blend the theme's specific background color with transparency

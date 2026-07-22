@@ -10,7 +10,7 @@
  */
 
 export class ApiClient {
-    private static instance: ApiClient | undefined;
+    private static instance: ApiClient | undefined; // NOSONAR - singleton is assigned lazily
     private readonly baseUrl: string = 'http://127.0.0.1:9443/api';
 
     private constructor() { }

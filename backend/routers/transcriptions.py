@@ -41,9 +41,7 @@ class TranscriptionUpdate(BaseModel):
     content: str
 
 
-# ──────────────────────────────────────────────
-#  Endpoints
-# ──────────────────────────────────────────────
+# Endpoint definitions follow.
 
 @router.get("/latest", responses={500: {"description": "Error al obtener última transcripción"}})
 async def get_latest_transcription(service: Annotated[TranscriptionService, Depends(get_service)]):
