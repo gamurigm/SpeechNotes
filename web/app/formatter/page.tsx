@@ -23,6 +23,11 @@ interface FormatterProgress {
   timestamp: string;
 }
 
+function formatSelectionLabel(count: number): string {
+  const suffix = count === 1 ? '' : 'es';
+  return `✨ Formatear ${count} transcripción${suffix}`;
+}
+
 export default function FormatterPage() {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -272,7 +277,7 @@ export default function FormatterPage() {
           >
             {isRunning
               ? '⏳ Procesando...'
-              : `✨ Formatear ${selectedIds.size} transcripción${selectedIds.size !== 1 ? 'es' : ''}`
+              : formatSelectionLabel(selectedIds.size)
             }
           </button>
         </div>

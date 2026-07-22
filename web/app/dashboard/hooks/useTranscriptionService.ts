@@ -118,18 +118,7 @@ export function useTranscriptionService() {
                 pendingRecordingJobIdRef.current = null;
             }
         };
-        const handleRecordingWarning = () => {
-            const pendingId = pendingRecordingJobIdRef.current;
-            if (!pendingId) return;
-            setProcessingIds(prev => {
-                const next = new Set(prev);
-                next.delete(pendingId);
-                return next;
-            });
-            pendingRecordingJobIdRef.current = null;
-        };
-
-        const handleRecordingError = () => {
+        const handleRecordingIssue = () => {
             const pendingId = pendingRecordingJobIdRef.current;
             if (!pendingId) return;
             setProcessingIds(prev => {
@@ -142,8 +131,8 @@ export function useTranscriptionService() {
 
         socket.on('recording_stopped', handleRecordingStopped);
         socket.on('processing_complete', handleProcessingComplete);
-        socket.on('warning', handleRecordingWarning);
-        socket.on('error', handleRecordingError);
+        socket.on('warning', handleRecordingIssue);
+        socket.on('error', handleRecordingIssue);
 
         return () => {
             socket.off('recording_stopped', handleRecordingStopped);

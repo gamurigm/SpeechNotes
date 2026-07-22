@@ -216,7 +216,6 @@ function MicDeviceSelect({
             <div className="flex items-center justify-between gap-2">
                 <label className="label-technical">Entrada de microfono</label>
                 <button type="button"
-                    type="button"
                     onClick={() => void onRefresh()}
                     disabled={disabled}
                     className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[10px] font-bold text-theme-secondary hover:text-theme-primary disabled:opacity-40"

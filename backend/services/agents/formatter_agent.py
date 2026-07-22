@@ -385,7 +385,7 @@ tipo: Profesional
 
                 result = await loop.run_in_executor(
                     None,
-                    lambda: db.transcriptions.update_one(
+                    lambda db=db: db.transcriptions.update_one(
                         {"_id": doc_id},
                         {
                             "$set": {
@@ -402,7 +402,7 @@ tipo: Profesional
                     print(f"[FORMATTER] Updated formatted_content for {doc_id}")
                 else:
                     doc = await loop.run_in_executor(
-                        None, lambda: db.transcriptions.find_one({"_id": doc_id})
+                        None, lambda db=db: db.transcriptions.find_one({"_id": doc_id})
                     )
                     if doc:
                         print(f"[FORMATTER] Document {doc_id} found but content unchanged")
@@ -417,13 +417,13 @@ tipo: Profesional
                             "is_formatted": True
                         }
                         await loop.run_in_executor(
-                            None, lambda: db.transcriptions.insert_one(formatted_doc)
+                            None, lambda db=db, formatted_doc=formatted_doc: db.transcriptions.insert_one(formatted_doc)
                         )
                         print(f"[FORMATTER] Created new formatted document: {doc_id}")
                 
                 return None
                 
-            except Exception as e:
+            except Exception:
                 if attempt < max_retries:
                     await asyncio.sleep(1 * (2 ** attempt))
                     continue
