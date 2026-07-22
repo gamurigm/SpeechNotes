@@ -88,27 +88,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "store-dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm modules
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.store-dir }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Run Jest unit tests
-        run: pnpm test:unit
+        run: npm run test:unit
 
       - name: Upload frontend coverage
         if: always()
@@ -144,29 +131,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "store-dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm modules
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.store-dir }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Run Cypress E2E tests
         env:
           NEXTAUTH_SECRET: e2e-test-secret
-        run: pnpm test:e2e
+        run: npm run test:e2e
 
       - name: Upload Cypress videos
         if: always()
