@@ -1,4 +1,4 @@
-"""
+﻿"""
 test_transcriptions.py - CRUD tests for /api/transcriptions.
 
 Covers (see backend/routers/transcriptions.py):
@@ -162,3 +162,46 @@ class TestSearchTranscriptions:
         body = resp.json()
         ids = [item.get("id") or item.get("_id") for item in body["items"]]
         assert seed_transcription in ids, f"Seeded doc not found in search: {ids}"
+
+
+class TestTranscriptionsEdgeCases:
+    """Edge cases and validation for /api/transcriptions"""
+
+    def test_list_with_zero_limit(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/transcriptions", params={"limit": 0})
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}"
+
+    def test_search_empty_query(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/transcriptions/search", params={"q": ""})
+        assert resp.status_code in (200, 400, 422), f"Expected 200/400/422, got {resp.status_code}"
+
+    def test_search_special_chars(self, http_client: BackendHttpClient):
+        """Search with special regex characters should not crash."""
+        resp = http_client.get("/api/transcriptions/search", params={"q": "test[.*?"})
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        body = resp.json()
+        assert "items" in body
+
+    def test_update_empty_content(self, http_client: BackendHttpClient, seed_transcription: str):
+        resp = http_client.put(
+            f"/api/transcriptions/{seed_transcription}",
+            json_body={"content": ""},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_update_with_extra_fields(self, http_client: BackendHttpClient, seed_transcription: str):
+        """Extra fields in the payload should be ignored, not rejected."""
+        resp = http_client.put(
+            f"/api/transcriptions/{seed_transcription}",
+            json_body={"content": "nuevo", "extra_field": "should_be_ignored"},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_list_with_large_limit(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/transcriptions", params={"limit": 10000})
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_get_by_invalid_id_format(self, http_client: BackendHttpClient):
+        """Invalid ID format should return 404, not 500."""
+        resp = http_client.get("/api/transcriptions/invalid-id-format-!!!")
+        assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"

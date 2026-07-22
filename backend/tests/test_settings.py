@@ -1,4 +1,4 @@
-"""
+﻿"""
 test_settings.py - Tests for /api/settings (settings.py router).
 
 Covers:
@@ -147,6 +147,41 @@ class TestBulkUpdate:
         assert body.get("updated") == 1
 
 
+class TestSettingsEdgeCases:
+    """Edge cases and validation for /api/settings"""
+
+    def test_list_invalid_category_returns_200(self, http_client: BackendHttpClient):
+        """Unknown category should not crash; returns empty or full list."""
+        resp = http_client.get("/api/settings/", params={"category": "nonexistent_category_xyz"})
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_update_without_key_field_returns_422(self, http_client: BackendHttpClient, seed_test_setting):
+        resp = http_client.put(f"/api/settings/{seed_test_setting}", json_body={"value": "no-key"})
+        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}: {resp.text}"
+
+    def test_clear_nonexistent_key_is_idempotent(self, http_client: BackendHttpClient):
+        """Settings API is idempotent: deleting a nonexistent key returns 200."""
+        resp = http_client.delete("/api/settings/qa_test_nonexistent_key_99999")
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_bulk_update_empty_settings_is_noop(self, http_client: BackendHttpClient):
+        """Empty settings list is treated as a no-op, returning 200."""
+        resp = http_client.put("/api/settings/", json_body={"settings": []})
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+    def test_validate_settings_shape(self, http_client: BackendHttpClient):
+        """validate must always return valid bool and missing list."""
+        resp = http_client.get("/api/settings/validate")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert isinstance(body["valid"], bool)
+        assert isinstance(body["missing"], list)
+
+    def test_list_settings_with_large_limit(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/settings/", params={"limit": 9999})
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+
+
 class TestClearSetting:
     """DELETE /api/settings/{key}"""
 
@@ -161,7 +196,7 @@ class TestClearSetting:
         assert body.get("key") == seed_test_setting
 
 
-# ── Local fixtures (file-scoped) ──────────────────────────────────────────────
+# ΓöÇΓöÇ Local fixtures (file-scoped) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 @pytest.fixture
 def seed_test_setting(http_client: BackendHttpClient, unique_id: str) -> str:

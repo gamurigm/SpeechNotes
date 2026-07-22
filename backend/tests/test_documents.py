@@ -1,4 +1,4 @@
-"""
+﻿"""
 test_documents.py - Tests for /api/documents (documents.py router).
 
 Covers:
@@ -84,3 +84,31 @@ class TestGetDocumentContent:
         assert "Documento QA" in body["content"] or "Contenido en bruto" in body["content"], (
             f"Seeded marker not found in content: {body['content'][:200]}"
         )
+
+
+class TestDocumentsEdgeCases:
+    """Edge cases and validation for /api/documents"""
+
+    def test_list_with_negative_limit(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/documents", params={"limit": -1})
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}"
+
+    def test_list_with_zero_limit(self, http_client: BackendHttpClient):
+        resp = http_client.get("/api/documents", params={"limit": 0})
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}"
+
+    def test_get_content_invalid_id_returns_404(self, http_client: BackendHttpClient):
+        """Invalid ID format should return 404, not 500."""
+        resp = http_client.get("/api/documents/invalid-id-!!! /content")
+        assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
+
+    def test_get_content_empty_id_returns_400(self, http_client: BackendHttpClient):
+        """An empty/space ID is treated as a bad request."""
+        resp = http_client.get("/api/documents/ /content")
+        assert resp.status_code == 400, f"Expected 400, got {resp.status_code}"
+
+    def test_list_documents_response_is_list(self, http_client: BackendHttpClient):
+        """Regardless of data, the endpoint must return a JSON list."""
+        resp = http_client.get("/api/documents", params={"limit": 10})
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)

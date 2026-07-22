@@ -1,4 +1,4 @@
-"""
+﻿"""
 test_vad_config.py - Tests for /api/config/vad (VAD voice activity detection).
 
 The VAD router is mounted without auth (main.py:102) and reads/writes a JSON
@@ -86,3 +86,45 @@ class TestPostVadConfig:
         bad = {"voice_threshold": "no-es-numero", "silence_threshold": 100}
         resp = http_client.post("/api/config/vad", json_body=bad)
         assert resp.status_code in (400, 422), f"Expected 400/422, got {resp.status_code}: {resp.text}"
+
+
+class TestVadConfigEdgeCases:
+    """VAD edge cases: boundary values, negative, missing fields."""
+
+    def test_save_negative_threshold_returns_200_or_422(self, http_client: BackendHttpClient):
+        """Negative thresholds may be accepted or rejected depending on validation."""
+        resp = http_client.post("/api/config/vad", json_body={
+            "voice_threshold": -100,
+            "silence_threshold": -50,
+        })
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}: {resp.text}"
+
+    def test_save_zero_threshold_returns_200_or_422(self, http_client: BackendHttpClient):
+        resp = http_client.post("/api/config/vad", json_body={
+            "voice_threshold": 0,
+            "silence_threshold": 0,
+        })
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}: {resp.text}"
+
+    def test_save_missing_voice_threshold_returns_422(self, http_client: BackendHttpClient):
+        resp = http_client.post("/api/config/vad", json_body={"silence_threshold": 200})
+        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}: {resp.text}"
+
+    def test_save_large_values_returns_200_or_422(self, http_client: BackendHttpClient):
+        resp = http_client.post("/api/config/vad", json_body={
+            "voice_threshold": 999999,
+            "silence_threshold": 999999,
+        })
+        assert resp.status_code in (200, 422), f"Expected 200 or 422, got {resp.status_code}: {resp.text}"
+
+    def test_no_auth_required(self, base_url: str, backend_health):
+        """VAD config endpoints are mounted without auth."""
+        import requests
+
+        resp = requests.get(f"{base_url.rstrip('/')}/api/config/vad", timeout=10)
+        assert resp.status_code == 200
+
+        resp = requests.post(f"{base_url.rstrip('/')}/api/config/vad",
+                             json={"voice_threshold": 500, "silence_threshold": 200},
+                             timeout=10)
+        assert resp.status_code == 200

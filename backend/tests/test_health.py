@@ -1,4 +1,4 @@
-"""
+﻿"""
 test_health.py - Smoke tests for the root and health endpoints.
 
 These are the fastest tests in the suite and confirm that the backend
@@ -64,3 +64,19 @@ class TestHealth:
         # 3s is generous: /health should respond in < 50ms on a healthy
         # backend, but cold CI runners and shared hosts can add latency.
         assert elapsed < 3.0, f"/health tardo {elapsed:.2f}s, esperado < 3s"
+
+    def test_health_response_keys(self, http_client: BackendHttpClient):
+        resp = http_client.get("/health")
+        body = resp.json()
+        # At minimum, must contain status
+        assert "status" in body, f"Missing 'status' in {body}"
+
+    def test_root_no_auth_required(self, base_url: str, backend_health):
+        """Root and health endpoints must be accessible without API key."""
+        import requests
+
+        resp = requests.get(f"{base_url.rstrip('/')}/", timeout=10)
+        assert resp.status_code == 200
+
+        resp = requests.get(f"{base_url.rstrip('/')}/health", timeout=10)
+        assert resp.status_code == 200
