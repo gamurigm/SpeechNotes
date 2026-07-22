@@ -1,46 +1,111 @@
+% ============================================================================
+%  14_gestion_riesgos.tex — IEEE 730 §14: Gestión de Riesgos (Sección A.d)
+% ============================================================================
+
 \chapter{Gestión de Riesgos}
-\label{sec:riesgos}
+\label{ch:riesgos}
 
-\section{Identificación de Riesgos}
-\label{sec:identificacion-riesgos}
+La gestión de riesgos identifica, evalúa y planifica la respuesta a eventos inciertos que podrían
+afectar la calidad del producto o el éxito del proyecto de pruebas. Se distinguen dos categorías:
+\textbf{riesgos del producto} (relacionados con el software bajo prueba) y \textbf{riesgos del proyecto
+de pruebas} (relacionados con la ejecución del sprint SQA).
 
-La tabla~\ref{tab:riesgos} lista los riesgos identificados durante la planificación del sprint SQA.
+La escala de evaluación utilizada es:
+\begin{itemize}
+    \item \textbf{Probabilidad:} Baja (< 30\%), Media (30--60\%), Alta (> 60\%).
+    \item \textbf{Impacto:} Bajo (no bloquea pruebas), Medio (retrasa pruebas), Alto (bloquea pruebas o entregable).
+    \item \textbf{Severidad = Probabilidad $\times$ Impacto:} Baja, Media, Alta.
+\end{itemize}
 
-\begin{longtable}{lcccp{4cm}}
-\caption{Matriz de riesgos SQA}
-\label{tab:riesgos}\\
+% ---------------------------------------------------------------------------
+\section{Riesgos del Producto}
+\label{sec:riesgos-producto}
+
+Los riesgos del producto son aquellos asociados a defectos o comportamientos inesperados en el
+software SpeechNotes que podrían impactar la experiencia del usuario o la confiabilidad del sistema.
+
+\begin{longtable}{p{4cm}ccp{1.5cm}p{5cm}}
+\caption{Riesgos del producto SpeechNotes}
+\label{tab:riesgos-producto}\\
 \toprule
-\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Severidad} & \textbf{Plan de Mitigación}\\
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Sev.} & \textbf{Plan de Mitigación}\\
 \midrule
 \endfirsthead
 \toprule
-\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Severidad} & \textbf{Plan de Mitigación}\\
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Sev.} & \textbf{Plan de Mitigación}\\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 
-Disponibilidad de API NVIDIA NIM & Media & Alto & Alto & Clave de respaldo; scripts desconectados\\
+Fallo en la transcripción ASR (NVIDIA NIM inaccesible o clave expirada) & Media & Alto & \textbf{Alta} & Mantener clave de respaldo en \texttt{.env}. Ejecutar scripts de validación de API antes de cada sesión de pruebas. Documentar prueba como ``bloqueada'' si la API no responde.\\
 
-Inestabilidad del frontend local & Media & Medio & Medio & Múltiples formas de probar; registro de fallos\\
+Error 500 en el formateo IA con textos grandes (> 10\,000 chars) & Alta & Medio & \textbf{Alta} & Implementar chunking en el \texttt{FormatterAgent} (ya aplicado en el sprint, Bug-03). Priorizar textos de tamaño moderado en los casos de prueba.\\
 
-Tiempo insuficiente para automatización & Alta & Medio & Alto & Priorizar pruebas críticas; manual como default\\
+Pérdida de datos en el editor (guardado fallido) & Media & Alto & \textbf{Alta} & CP-08 y CP-09 verifican explícitamente el guardado. BUG-004 (corregido) y BUG-005 (abierto) documentados en Jira.\\
 
-Problemas de compatibilidad de dependencias & Media & Alto & Alto & Docker para entornos replicables\\
+Transcripción en tiempo real no funcional (WebSocket caído) & Media & Alto & \textbf{Alta} & CP-05 verifica el flujo en vivo. Si falla, se ejecutan las pruebas de upload (RF-05) como alternativa de grabación.\\
 
-Falta de documentación de API & Baja & Alto & Medio & Pruebas exploratorias; consulta al desarrollador\\
+Crash de la aplicación al interactuar con chat sin contexto & Baja & Alto & \textbf{Media} & BUG-003 (Critical) fue detectado y corregido durante el sprint. CP-14 ejecuta el re-test.\\
 
-Disponibilidad de micrófono en PC & Alta & Bajo & Bajo & Pruebas diferenciadas con/sin micrófono\\
+Búsqueda sin resultados por falta de datos de prueba & Media & Bajo & \textbf{Baja} & El precondicionamiento de CP-09 exige tener transcripciones previas con la palabra clave ``prueba''.\\
 
+\bottomrule
 \end{longtable}
 
-\section{Resultados de Mitigación}
+% ---------------------------------------------------------------------------
+\section{Riesgos del Proyecto de Pruebas}
+\label{sec:riesgos-proyecto}
+
+Los riesgos del proyecto de pruebas son aquellos que pueden comprometer la ejecución completa o la
+calidad del sprint SQA, independientemente del estado del software.
+
+\begin{longtable}{p{4cm}ccp{1.5cm}p{5cm}}
+\caption{Riesgos del proyecto de pruebas SQA}
+\label{tab:riesgos-proyecto}\\
+\toprule
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Sev.} & \textbf{Plan de Mitigación}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Riesgo} & \textbf{Prob.} & \textbf{Impacto} & \textbf{Sev.} & \textbf{Plan de Mitigación}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+Tiempo insuficiente para ejecutar todos los casos de prueba en 4 días & Alta & Alto & \textbf{Alta} & Priorizar los 14 casos de prueba funcionales (obligatorios) sobre las pruebas automatizadas E2E (opcionales). Asignar 2 personas al testing manual en paralelo.\\
+
+Disponibilidad de micrófono en el entorno de pruebas & Alta & Medio & \textbf{Alta} & CP-03 (sin micrófono) y CP-04/05 (con micrófono) son diseñados para ejecutarse en entornos distintos. Se documenta el resultado según disponibilidad del hardware.\\
+
+Inestabilidad del entorno local (dependencias, versiones de Node) & Media & Alto & \textbf{Alta} & Usar Docker Compose (\texttt{docker-compose up}) para levantar el entorno de forma reproducible. El backend y MongoDB corren en contenedores aislados.\\
+
+Automatización incompleta de la suite pytest & Alta & Medio & \textbf{Media} & Se priorizan los tests de los módulos de mayor riesgo (Auth, Health, VAD). Los módulos de menor riesgo se prueban manualmente.\\
+
+Falta de acceso al repositorio o a Jira por un miembro del equipo & Baja & Medio & \textbf{Baja} & El QA Lead mantiene acceso de administrador. Se documentan credenciales de emergencia en un canal privado del equipo.\\
+
+Dependencias de prueba rotas (pytest, Cypress desactualizados) & Media & Bajo & \textbf{Baja} & El archivo \texttt{requirements-test.txt} fija las versiones de las dependencias de prueba. Se ejecuta \texttt{pip install -r requirements-test.txt} al inicio del sprint.\\
+
+\bottomrule
+\end{longtable}
+
+% ---------------------------------------------------------------------------
+\section{Resultados de la Mitigación al Cierre del Sprint}
 \label{sec:resultados-mitigacion}
 
+Al finalizar el sprint SQA (21 de julio de 2026), el estado de los riesgos identificados fue el siguiente:
+
 \begin{itemize}
-    \item \textbf{NVIDIA NIM:} Se utilizó la clave de API proporcionada. Se ejecutaron las pruebas de formateo y chat sin problemas.
-    \item \textbf{Inestabilidad frontend:} Se documentó BUG-002 (referencia de React no encontrada).
-    \item \textbf{Tiempo de automatización:} Se priorizaron las pruebas pt.~\#7 y pt.~\#8 como automatizaciones adicionales.
-    \item \textbf{Micrófono:} CP-03 (sin dispositivo) se ejecutó sin incidencias.
-    \item \textbf{Bugs conocidos:} Se reportaron 8 bugs en Jira.
+    \item \textbf{Error 500 en formatter IA:} \textit{Mitigado}. Se implementó chunking de 12\,000 caracteres
+          en \texttt{FormatterAgent}. Verificado con textos de hasta 51\,000 caracteres (5 chunks).
+    \item \textbf{Crash del chat sin contexto (BUG-003):} \textit{Resuelto}. Corregido por el equipo de
+          desarrollo. Re-test exitoso en CP-14.
+    \item \textbf{Tiempo de automatización:} \textit{Parcialmente mitigado}. Se completaron los 6 archivos
+          de test pytest. La suite E2E Cypress quedó como deuda técnica documentada.
+    \item \textbf{Disponibilidad de micrófono:} \textit{Mitigado}. CP-03 ejecutado sin micrófono (OK);
+          CP-04 y CP-05 ejecutados con micrófono disponible (OK con bug menor).
+    \item \textbf{Disponibilidad de API NVIDIA NIM:} \textit{Sin incidencias}. Las claves de API
+          permanecieron válidas durante todo el sprint.
+    \item \textbf{Pérdida de datos en editor:} \textit{Parcialmente mitigado}. BUG-004 corregido;
+          BUG-005 (texto muy largo) documentado como \textit{abierto} para el siguiente sprint.
 \end{itemize}
