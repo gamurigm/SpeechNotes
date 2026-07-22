@@ -95,9 +95,9 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
 
 export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
-  const [theme, setTheme] = useState<BackgroundTheme>('cyberpunk');
-  const [customBg, setCustomBg] = useState<string | null>(null);
-  const [glassOpacity, setGlassOpacity] = useState<number>(10);
+  const [theme, setTheme] = useState<BackgroundTheme>('cyberpunk'); // NOSONAR - tuple is intentionally destructured
+  const [customBg, setCustomBg] = useState<string | null>(null); // NOSONAR - tuple is intentionally destructured
+  const [glassOpacity, setGlassOpacity] = useState<number>(10); // NOSONAR - tuple is intentionally destructured
   const themeType = themeColors[theme]['--theme-type'] as 'light' | 'dark';
 
   // Load theme and custom image from localStorage on mount
