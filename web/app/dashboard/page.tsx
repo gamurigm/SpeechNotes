@@ -40,6 +40,17 @@ function getToolbarClass(isActive: boolean, isLight: boolean): string {
     return 'text-slate-200 hover:text-white shadow-sm hover:shadow-md';
 }
 
+function getProcessingLabel(id: string): string {
+    if (id.startsWith('upload-')) return 'Sincronizando Audio...';
+    if (id.startsWith('temp-')) return 'Finalizando grabación...';
+    return 'Formateo Inteligente...';
+}
+
+function getChatPanelClass(showChat: boolean, expanded: boolean): string {
+    if (!showChat) return 'w-0 opacity-0 pointer-events-none';
+    return expanded ? 'w-[850px] opacity-100' : 'w-[480px] opacity-100';
+}
+
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const { themeType } = useBackground();
@@ -661,7 +672,7 @@ function DashboardContent() {
                                                                 <div className="flex items-center gap-2 overflow-hidden">
                                                                     <Loader2 size={10} className="text-indigo-400 animate-spin flex-shrink-0" />
                                                                     <span className="text-[10px] font-bold truncate opacity-80">
-                                                                        {id.startsWith('upload-') ? 'Sincronizando Audio...' : id.startsWith('temp-') ? 'Finalizando grabación...' : 'Formateo Inteligente...'}
+                                                                        {getProcessingLabel(id)}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -715,7 +726,7 @@ function DashboardContent() {
                 </div>
 
                 {/* Sidebar Chat */}
-                <div className={`h-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex-shrink-0 relative ${showChat ? (isChatExpanded ? 'w-[850px] opacity-100' : 'w-[480px] opacity-100') : 'w-0 opacity-0 pointer-events-none'}`}>
+                <div className={`h-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex-shrink-0 relative ${getChatPanelClass(showChat, isChatExpanded)}`}>
                     <ChatSidebar
                         activeDocId={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.id || undefined}
                         activeDocName={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.filename || undefined}
