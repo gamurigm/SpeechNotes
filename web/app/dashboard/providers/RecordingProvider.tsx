@@ -7,7 +7,7 @@ type RecordingContextType = ReturnType<typeof useRecordingHook>;
 
 const RecordingContext = createContext<RecordingContextType | undefined>(undefined);
 
-export function RecordingProvider({ children }: { children: ReactNode }) {
+export function RecordingProvider({ children }: Readonly<{ children: ReactNode }>) {
     const recording = useRecordingHook();
 
     return (

@@ -93,7 +93,7 @@ const themeColors: Record<BackgroundTheme, Record<string, string>> = {
   }
 };
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
   const [theme, setThemeState] = useState<BackgroundTheme>('cyberpunk');
   const [customBg, setCustomBgState] = useState<string | null>(null);

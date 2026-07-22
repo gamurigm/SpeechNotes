@@ -6,12 +6,12 @@ import { useBackground } from '../../providers';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
-interface ToastProps {
+type ToastProps = Readonly<{
     message: string;
     type: ToastType;
     onClose: () => void;
     duration?: number;
-}
+}>;
 
 export function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
     const { themeType } = useBackground();

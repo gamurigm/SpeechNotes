@@ -3,11 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { useBackground } from '../../providers';
 
-interface AudioVisualizerProps {
+type AudioVisualizerProps = Readonly<{
     analyser: AnalyserNode | null;
     isRecording: boolean;
     threshold?: number; // 0-255
-}
+}>;
 
 export function AudioVisualizer({ analyser, isRecording, threshold = 0 }: AudioVisualizerProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);

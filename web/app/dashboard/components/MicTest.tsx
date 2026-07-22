@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Mic, AlertCircle, CheckCircle, Volume2, Radio, X } from 'lucide-react';
 import { Button } from "@heroui/react";
 
-export function MicTest({ onClose }: { onClose?: () => void }) {
+export function MicTest({ onClose }: Readonly<{ onClose?: () => void }>) {
     const [isTesting, setIsTesting] = useState(false);
     const [rmsLevel, setRmsLevel] = useState(0);
     const [status, setStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
