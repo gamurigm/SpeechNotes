@@ -9,6 +9,7 @@ export async function proxy(req: NextRequest) {
   // 1. Permitir siempre rutas de autenticación y estáticos
   if (
     pathname.startsWith("/api/auth") ||
+    pathname === "/api/register" ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
@@ -39,10 +40,11 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/auth (API routes for auth)
+     * - api/register (public local user registration)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api/auth|api/register|_next/static|_next/image|favicon.ico).*)",
   ],
 };
