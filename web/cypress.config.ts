@@ -9,16 +9,17 @@ export default defineConfig({
         baseUrl: 'http://127.0.0.1:3006',
         specPattern: 'tests/e2e/**/*.cy.{js,jsx,ts,tsx}',
         supportFile: 'tests/setup/cypress.ts',
-        setupNodeEvents(on) {
-            on('before:run', async () => {
-                mockBackend = await startMockBackend();
-            });
+        async setupNodeEvents(on, config) {
+            mockBackend ??= await startMockBackend();
 
-            on('after:run', async () => {
-                await mockBackend?.close();
-                mockBackend = undefined;
-            });
+            if (!config.isInteractive) {
+                on('after:run', async () => {
+                    await mockBackend?.close();
+                    mockBackend = undefined;
+                });
+            }
 
+            return config;
         },
     },
     screenshotsFolder: 'tests/evidence/screenshots',

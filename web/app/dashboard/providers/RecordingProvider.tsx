@@ -1,14 +1,30 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useRecording as useRecordingHook } from '@/hooks/useRecording';
 
 type RecordingContextType = ReturnType<typeof useRecordingHook>;
 
 const RecordingContext = createContext<RecordingContextType | undefined>(undefined);
 
+declare global {
+    interface Window {
+        __speechNotesTest?: {
+            startRecording: () => Promise<void>;
+            stopRecording: () => void;
+        };
+    }
+}
+
 export function RecordingProvider({ children }: Readonly<{ children: ReactNode }>) {
     const recording = useRecordingHook();
+
+    useEffect(() => {
+        window.__speechNotesTest = {
+            startRecording: recording.startRecording,
+            stopRecording: recording.stopRecording,
+        };
+    }, [recording.startRecording, recording.stopRecording]);
 
     return (
         <RecordingContext.Provider value={recording}>

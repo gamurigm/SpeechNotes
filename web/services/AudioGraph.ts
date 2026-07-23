@@ -77,13 +77,25 @@ export class AudioGraph {
         this.analyser = this.context.createAnalyser();
         this.analyser.fftSize = config.fftSize;
 
-        this.scriptProcessor = this.context.createScriptProcessor(4096, 1, 1); // NOSONAR - compatibility fallback
-        this.scriptProcessor.onaudioprocess = this.handleAudioProcess.bind(this); // NOSONAR - compatibility fallback
+        // createScriptProcessor is deprecated and has been removed from
+        // Chromium-based runtimes (Electron >= 136 / Chrome >= 136). We isolate
+        // the script-processor wiring so the rest of the graph (analyser,
+        // gain, visualizer) keeps working even when it is unavailable; the
+        // PCM chunk emission can later be migrated to AudioWorklet.
+        try {
+            this.scriptProcessor = this.context.createScriptProcessor(4096, 1, 1);
+            this.scriptProcessor.onaudioprocess = this.handleAudioProcess.bind(this);
 
-        source.connect(this.gainNode);
-        this.gainNode.connect(this.analyser);
-        this.analyser.connect(this.scriptProcessor);
-        this.scriptProcessor.connect(this.context.destination);
+            source.connect(this.gainNode);
+            this.gainNode.connect(this.analyser);
+            this.analyser.connect(this.scriptProcessor);
+            this.scriptProcessor.connect(this.context.destination);
+        } catch (error) {
+            this.scriptProcessor = null;
+            console.warn('[AudioGraph] ScriptProcessor no disponible, se omite el procesamiento local de PCM:', error);
+            source.connect(this.gainNode);
+            this.gainNode.connect(this.analyser);
+        }
 
         if (this.context.state === 'suspended') {
             void this.context.resume();
