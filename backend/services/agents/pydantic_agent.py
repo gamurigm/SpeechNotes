@@ -249,6 +249,28 @@ async def chat_stream_direct(
         api_key=current_key,
         timeout=120.0 
     )
+
+    # NVIDIA's hosted catalog can list a model whose backing NVCF function is
+    # temporarily unavailable for an account. Keep the configured model first,
+    # then try known hosted alternatives before surfacing an error to the UI.
+    fallback_models = (
+        (
+            "z-ai/glm-5.2",
+            "minimaxai/minimax-m3",
+            "nvidia/nemotron-3-nano-30b-a3b",
+            "mistralai/mistral-large-3-675b-instruct-2512",
+            "nvidia/nvidia-nemotron-nano-9b-v2",
+        )
+        if thinking
+        else (
+            "nvidia/nvidia-nemotron-nano-9b-v2",
+            "nvidia/nemotron-3-nano-30b-a3b",
+            "z-ai/glm-5.2",
+            "minimaxai/minimax-m3",
+            "mistralai/mistral-large-3-675b-instruct-2512",
+        )
+    )
+    model_candidates = list(dict.fromkeys((current_model, *fallback_models)))
     
     # Build the prompt with document context
     system_msg = SYSTEM_PROMPT + f"""
@@ -288,26 +310,45 @@ CONTENIDO:
         queue = asyncio.Queue()
         
         async def stream_producer():
-            try:
-                # Execute chat stream
-                stream = await client.chat.completions.create(
-                    model=current_model,
-                    messages=[
-                        {"role": "system", "content": final_system_content},
-                        {"role": "user", "content": query}
-                    ],
-                    temperature=temp,
-                    top_p=top_p,
-                    max_tokens=max_tokens,
-                    stream=True,
-                    **completion_kwargs
-                )
-                async for chunk in stream:
-                    await queue.put(chunk)
-                await queue.put(None) # End sentinel
-            except Exception as e:
-                logger.error("Error in stream producer: %s", e)  # NOSONAR - producer errors are surfaced to the stream consumer
-                await queue.put(e)
+            last_error: Exception | None = None
+            for model in model_candidates:
+                pending_chunks = []
+                has_content = False
+                try:
+                    logger.info("Trying chat model: %s", model)
+                    stream = await client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": final_system_content},
+                            {"role": "user", "content": query}
+                        ],
+                        temperature=temp,
+                        top_p=top_p,
+                        max_tokens=max_tokens,
+                        stream=True,
+                        **completion_kwargs
+                    )
+                    async for chunk in stream:
+                        pending_chunks.append(chunk)
+                        if chunk.choices:
+                            content = getattr(chunk.choices[0].delta, "content", None)
+                            has_content = has_content or bool(content)
+
+                    if not has_content:
+                        raise RuntimeError(f"El modelo {model} no devolvió contenido")
+
+                    for chunk in pending_chunks:
+                        await queue.put(chunk)
+                    await queue.put(None)
+                    logger.info("Chat model selected: %s", model)
+                    return
+                except Exception as exc:
+                    last_error = exc
+                    logger.warning("Chat model %s failed; trying fallback: %s", model, exc)
+
+            if last_error:
+                logger.error("All chat model fallbacks failed: %s", last_error)
+                await queue.put(last_error)
 
         # Start the producer task
         producer_task = asyncio.create_task(stream_producer())
