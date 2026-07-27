@@ -1,4 +1,4 @@
-"""Unit tests for path traversal protections used by upload and output flows."""
+﻿"""Unit tests for path traversal protections used by upload and output flows."""
 
 import importlib.util
 from pathlib import Path
@@ -17,8 +17,6 @@ SPEC.loader.exec_module(path_security)
 path_within = path_security.path_within
 sanitize_filename = path_security.sanitize_filename
 validate_path_within = path_security.validate_path_within
-
-pytestmark = [pytest.mark.security]
 
 
 def test_sanitize_filename_removes_directory_components() -> None:

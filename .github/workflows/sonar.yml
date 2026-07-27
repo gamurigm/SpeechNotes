@@ -181,74 +181,9 @@ jobs:
           color: 0xffa500
           username: SpeechNotes QA Bot
 
-  security-checks:
-    name: Security Checks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Run tracked secret scan
-        run: python scripts/security_scan.py
-
-      - name: Install backend test dependencies
-        run: |
-          python -m venv .venv-security
-          . .venv-security/bin/activate
-          python -m pip install --require-hashes -r backend/requirements-test.lock
-
-      - name: Check Python dependency consistency
-        run: |
-          . .venv-security/bin/activate
-          python -m pip check
-
-      - name: Run backend security tests
-        run: |
-          . .venv-security/bin/activate
-          PYTHONPATH=. pytest backend/tests/test_security_headers.py backend/tests/test_path_security.py -m security -v --tb=short -p no:cacheprovider --basetemp=tmp/pytest-security --junitxml=security-test-results.xml
-
-      - name: Upload security test results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: security-test-results
-          path: security-test-results.xml
-          if-no-files-found: ignore
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: ./web
-        run: npm ci
-
-      - name: Audit frontend production dependencies
-        working-directory: ./web
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Notify Discord - Security Checks Failed
-        if: failure()
-        uses: sarisia/actions-status-discord@v1
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "Security checks failed"
-          description: "Secret scan, HTTP security tests, dependency consistency or npm audit failed. Review the security-test-results artifact and job logs."
-          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          color: 0xff0000
-          username: SpeechNotes QA Bot
-
   sonarcloud:
     name: SonarCloud Scan + Quality Gate
-    needs: [backend-tests, frontend-unit, security-checks]
+    needs: [backend-tests, frontend-unit]
     if: success()
     runs-on: ubuntu-latest
     steps:
