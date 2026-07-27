@@ -6,7 +6,7 @@
 
 Los riesgos asociados a la calidad de SpeechNotes se clasifican en dos categorías principales: \textbf{Riesgos del Producto} (asociados a la arquitectura, dependencias y comportamiento del software en producción) y \textbf{Riesgos del Proyecto de Pruebas} (asociados a la planificación, recursos y ejecución del sprint SQA).
 
-\subsection{Riesgos del Producto (Software & Arquitectura)}
+\subsection{Riesgos del Producto (Software y Arquitectura)}
 \label{subsec:riesgos-producto}
 
 \begin{itemize}
@@ -18,7 +18,7 @@ Los riesgos asociados a la calidad de SpeechNotes se clasifican en dos categorí
     \item \textbf{RP-02: Ausencia o falla en el dispositivo físico de entrada de audio (Micrófono).}
     \begin{itemize}
         \item \textit{Probabilidad:} Alta \quad \textit{Impacto:} Bajo \quad \textit{Severidad:} Media
-        \item \textit{Plan de Mitigación:} Diseñar casos de prueba diferenciados (\texttt{CP-03}) que validen el manejo de errores por falta de permisos o hardware, complementando con simuladores de stream de audio en backend.
+        \item \textit{Plan de Mitigación:} Diseñar casos de prueba diferenciados (\texttt{CP-02}, \texttt{CP-15}) que validen la detección de entrada de audio y el manejo de errores por falta de permisos o hardware, complementando con simuladores de stream de audio en backend.
     \end{itemize}
     \item \textbf{RP-03: Inestabilidad o crasheos no controlados en la UI del frontend (React/Next.js).}
     \begin{itemize}
@@ -27,14 +27,14 @@ Los riesgos asociados a la calidad de SpeechNotes se clasifican en dos categorí
     \end{itemize}
 \end{itemize}
 
-\subsection{Riesgos del Proyecto de Pruebas (Gestión & SQA)}
+\subsection{Riesgos del Proyecto de Pruebas (Gestión y SQA)}
 \label{subsec:riesgos-proyecto}
 
 \begin{itemize}
     \item \textbf{RPJ-01: Tiempo insuficiente para completar automatización E2E al 100\%.}
     \begin{itemize}
         \item \textit{Probabilidad:} Alta \quad \textit{Impacto:} Medio \quad \textit{Severidad:} Alta
-        \item \textit{Plan de Mitigación:} Adoptar una estrategia híbrida: priorizar la ejecución manual estructurada de los 14 casos de prueba críticos y automatizar únicamente los endpoints backend estables.
+        \item \textit{Plan de Mitigación:} Adoptar una estrategia híbrida: priorizar la ejecución manual estructurada de los 17 casos de prueba críticos y automatizar únicamente los endpoints backend estables.
     \end{itemize}
     \item \textbf{RPJ-02: Discrepancias o problemas de compatibilidad en entornos locales de desarrollo.}
     \begin{itemize}
@@ -64,7 +64,7 @@ Los riesgos asociados a la calidad de SpeechNotes se clasifican en dos categorí
 
 RP-01 & Producto & Media / Alto & Alta & Claves API respaldo y mocks en pytest\\
 
-RP-02 & Producto & Alta / Bajo & Media & Casos de prueba sin micrófono (CP-03)\\
+RP-02 & Producto & Alta / Bajo & Media & Casos de prueba de micrófono y permisos (CP-02, CP-15)\\
 
 RP-03 & Producto & Media / Medio & Media & Captura de logs en Cypress e inspección\\
 
@@ -80,9 +80,9 @@ RPJ-03 & Proyecto & Baja / Alto & Media & Pruebas exploratorias sobre OpenAPI do
 \label{sec:resultados-mitigacion}
 
 \begin{itemize}
-    \item \textbf{NVIDIA NIM (RP-01):} Se utilizó la clave de API activa de respaldo. Se completaron exitosamente las pruebas de formateo (\texttt{CP-10}) y chat contextual (\texttt{CP-11}).
+    \item \textbf{NVIDIA NIM (RP-01):} Se utilizó la clave de API activa de respaldo. Se completaron exitosamente las pruebas de formateo (\texttt{CP-09}), chat contextual (\texttt{CP-10}) y traducción (\texttt{CP-11}).
     \item \textbf{Inestabilidad frontend (RP-03):} Se identificó y aisló el defecto crítico \texttt{BUG-003} (crasheo del chat sin transcripción seleccionada), logrando su corrección antes del cierre del sprint.
-    \item \textbf{Tiempo de automatización (RPJ-01):} Se garantizó el 100\% de ejecución manual de los 14 casos de prueba con soporte de scripts en \texttt{pytest}.
-    \item \textbf{Micrófono (RP-02):} Se ejecutó \texttt{CP-03} (sin dispositivo) registrando el manejo correcto de alertas en la interfaz.
+    \item \textbf{Tiempo de automatización (RPJ-01):} Se garantizó el 100\% de ejecución manual de los 17 casos de prueba con soporte de scripts en \texttt{pytest}.
+    \item \textbf{Micrófono (RP-02):} Se ejecutaron \texttt{CP-02} y \texttt{CP-15}, registrando detección de entrada de audio y manejo correcto de permisos denegados en la interfaz.
     \item \textbf{Manejo Global de Defectos:} Se registraron 8 defectos en Jira Software, logrando resolver el 100\% de los bloqueantes.
 \end{itemize}

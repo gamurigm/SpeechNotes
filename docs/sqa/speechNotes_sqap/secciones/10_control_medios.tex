@@ -4,29 +4,24 @@
 \section{Gestión de Artefactos}
 \label{sec:artefactos}
 
-Los artefactos generados durante el sprint SQA se almacenan en el repositorio de GitHub, rama \texttt{planning-SQA}. La estructura de directorios es la siguiente:
+Los artefactos evaluables del sprint SQA quedan consolidados en el presente informe. Para la entrega en GitHub se considera como artefacto documental final el SQAP generado desde el archivo principal de LaTeX; la matriz de rastreabilidad, los casos de prueba, el reporte de defectos, el análisis estático y el informe de cierre se integran como secciones y apéndices del mismo documento.
 
 \begin{verbatim}
 docs/
   sqa/
-    sqa-planning.md              -- Planificación SQA
-    speechNotes_sqap/            -- Documento SQAP (LaTeX)
+    speechNotes_sqap/            -- Informe SQAP final
       speechnotes_sqap.tex       -- Archivo principal
-      secciones/                 -- Secciones del SQAP
-      apendices/                 -- Apéndices del SQAP
+      secciones/                 -- Cuerpo del informe
+      apendices/                 -- Matriz, casos, defectos y cierre
+      imgs/                      -- Evidencias visuales usadas en el informe
       build.ps1                  -- Script de compilación
-    parteD/
-      persona-d-manual-testing.md    -- Casos de prueba manuales
-      matriz_rastreabilidad.md       -- Matriz de rastreabilidad
-      reporte_defectos.md            -- Reporte de defectos
-      informe_cierre.md              -- Informe de cierre
 \end{verbatim}
 
 \section{Control de Versiones}
 \label{sec:versiones}
 
 \begin{itemize}
-    \item Los archivos LaTeX se versionan en Git junto con el código fuente.
+    \item Los archivos LaTeX del informe se versionan en Git junto con el código fuente.
     \item Cada versión del SQAP se identifica por el tag del commit en Git.
-    \item El PDF generado se etiqueta con el número de versión y fecha.
+    \item El PDF final del SQAP se etiqueta con el número de versión y fecha.
 \end{itemize}

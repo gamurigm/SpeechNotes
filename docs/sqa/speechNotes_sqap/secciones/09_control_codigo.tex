@@ -40,7 +40,39 @@ El código fuente de SpeechNotes se gestiona en GitHub bajo el repositorio \url{
     \item Crear rama \texttt{feat/xxx} o \texttt{fix/xxx} desde \texttt{main}.
     \item Implementar cambios y commits atómicos.
     \item Abrir Pull Request hacia \texttt{main}.
-    \item Ejecutar pipeline CI/CD (pytest, Cypress, SonarCloud).
+    \item Ejecutar el pipeline CI/CD (pytest, Jest, Cypress y SonarCloud).
     \item Revisión de código por al menos 1 miembro del equipo.
     \item Merge del PR tras aprobación y verificación CI.
 \end{enumerate}
+
+\section{Pipeline CI/CD y DevSecOps}
+\label{sec:pipeline-cicd}
+
+El repositorio utiliza el workflow \texttt{SpeechNotes - DevSecOps Pipeline} de GitHub Actions como control automatizado de integración y entrega. Se activa ante cada \textit{push} a \texttt{main}, cada \textit{Pull Request} cuyo destino es \texttt{main} y también de forma manual mediante \texttt{workflow\_dispatch}. Su objetivo es detectar regresiones antes de integrar cambios, medir la cobertura, conservar evidencias y aplicar el \textit{Quality Gate} de SonarCloud.
+
+\begin{landscape}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\linewidth]{imgs/pipeline-cicd-mermaid.png}
+\caption{Diagrama Mermaid de alto nivel del pipeline CI/CD y DevSecOps de SpeechNotes}
+\label{fig:pipeline-cicd}
+\end{figure}
+\end{landscape}
+
+La Figura~\ref{fig:pipeline-cicd} presenta la arquitectura de alto nivel mediante un diagrama generado con Mermaid. Las pruebas de backend, las pruebas unitarias del frontend y las pruebas E2E se ejecutan como trabajos independientes. SonarCloud comienza únicamente cuando pytest y Jest concluyen correctamente, porque utiliza sus reportes de cobertura. Cypress se mantiene como un control paralelo de los flujos funcionales de la interfaz. El resultado conjunto de estos trabajos determina si el cambio puede continuar a revisión y mezcla.
+
+\subsection{Etapas y evidencias}
+\label{subsec:etapas-cicd}
+
+\begingroup
+\small
+\begin{enumerate}
+    \item \textbf{Pruebas de backend:} instala dependencias verificadas desde \texttt{requirements-test.lock}, inicia FastAPI en el puerto 9443, comprueba el endpoint \texttt{/health} y ejecuta pytest. Publica \texttt{coverage.xml} y el reporte JUnit \texttt{test-results.xml} como artefactos.
+    \item \textbf{Pruebas unitarias del frontend:} instala dependencias reproducibles con \texttt{npm ci}, ejecuta Jest con cobertura y publica el directorio de evidencias generado.
+    \item \textbf{Pruebas E2E:} ejecuta Cypress sobre la aplicación web y conserva videos y capturas, incluso cuando el trabajo falla, para facilitar el diagnóstico.
+    \item \textbf{Análisis estático y seguridad:} descarga las coberturas de backend y frontend, ejecuta el escaneo de SonarCloud y espera hasta cinco minutos por la decisión del \textit{Quality Gate}. Esta etapa solo se ejecuta si pytest y Jest fueron exitosos.
+    \item \textbf{Notificación y decisión:} cualquier fallo deja el check en rojo y envía una notificación a Discord con un enlace a la ejecución o al panel de SonarCloud. Con todos los checks aprobados, la protección de \texttt{main} permite continuar con la revisión y el merge del PR.
+\end{enumerate}
+
+El workflow implementa integración continua y una entrega controlada hasta la rama principal. Actualmente no contiene un trabajo de despliegue automático a producción; por tanto, la fase de despliegue permanece fuera de este pipeline y debe ejecutarse mediante el procedimiento operativo definido para el entorno de destino.
+\endgroup

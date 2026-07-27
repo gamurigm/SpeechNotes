@@ -3,7 +3,16 @@
 
 \section{Casos de Prueba Manuales}
 
-\subsection{CP-01: Inicio de sesión exitoso}
+Los 17 casos de prueba definidos para el sprint fueron registrados y organizados en Zephyr Advanced. La Figura~\ref{fig:zephyr-casos-prueba} muestra el catálogo completo utilizado como base para la ejecución manual y la trazabilidad con los requisitos funcionales.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../../informe/images/zephyr-test-cases.png}
+\caption{Catálogo de 17 casos de prueba registrado en Zephyr Advanced}
+\label{fig:zephyr-casos-prueba}
+\end{figure}
+
+\subsection{CP-01: Login con usuario demo}
 \label{cp:01}
 
 \begin{longtable}{lp{10cm}}
@@ -15,33 +24,31 @@
 \endfoot
 
 \textbf{ID} & CP-01\\
-\textbf{RF} & RF-01 (Auth)\\
-\textbf{Título} & Inicio de sesión exitoso con credenciales demo\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Frontend corriendo, base de datos SQLite con usuario demo\\
-\textbf{Datos} & \texttt{demo@speechnotes.app} / \texttt{demo123}\\
-\textbf{Pasos} & 1) Acceder a la URL del frontend. 2) Ingresar correo y contraseña. 3) Hacer clic en ``Iniciar Sesión''.\\
-\textbf{Resultado Esperado} & El usuario es redirigido a la pantalla principal de la aplicación. Se muestra el nombre del usuario.\\
-\textbf{Resultado Obtenido} & OK (BUG-006: tooltip duplicado en botón de logout -- Minor)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\textbf{Objetivo} & Validar acceso de usuario de pruebas\\
+\textbf{Título} & Login con usuario demo\\
+\textbf{Precondiciones} & Frontend en 3006 y Backend en 9443\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar correo demo@speechnotes.app y password demo123. 3) Presionar el botón de inicio de sesión.\\
+\textbf{Resultado Esperado} & 1) Se muestra la pantalla de inicio de sesión. 2) Los campos se llenan correctamente. 3) El usuario es redirigido a /dashboard exitosamente.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.55\textwidth]{imgs/login.png}
-\caption{CP-01: Pantalla de inicio de sesión con credenciales demo}
+\caption{CP-01: Login con usuario demo - login.png}
 \label{fig:cp01_login}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.55\textwidth]{imgs/dashboard.png}
-\caption{CP-01: Dashboard principal tras inicio de sesión exitoso}
+\caption{CP-01: Login con usuario demo - dashboard.png}
 \label{fig:cp01_dashboard}
 \end{figure}
 
-\subsection{CP-02: Inicio de sesión con credenciales inválidas}
+\subsection{CP-02: Prueba de micrófono}
 \label{cp:02}
 
 \begin{longtable}{lp{10cm}}
@@ -53,26 +60,24 @@
 \endfoot
 
 \textbf{ID} & CP-02\\
-\textbf{RF} & RF-01 (Auth)\\
-\textbf{Título} & Inicio de sesión con credenciales inválidas\\
-\textbf{Tipo} & Error\\
-\textbf{Precondiciones} & Frontend corriendo\\
-\textbf{Datos} & \texttt{test@test.com} / \texttt{wrongpass}\\
-\textbf{Pasos} & 1) Acceder a la URL del frontend. 2) Ingresar credenciales inválidas. 3) Hacer clic en ``Iniciar Sesión''.\\
-\textbf{Resultado Esperado} & Se muestra un mensaje de error ``Credenciales inválidas''. El usuario permanece en la pantalla de login.\\
-\textbf{Resultado Obtenido} & OK (BUG-008: placeholder visible en input de confirmación de registro -- Minor)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\textbf{Objetivo} & Asegurar que el sistema detecta entrada de audio\\
+\textbf{Título} & Prueba de micrófono\\
+\textbf{Precondiciones} & Micrófono conectado\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Navegar a la opción de Prueba de Micrófono. 4) Otorgar permisos de micrófono en el prompt del navegador. 5) Hablar al micrófono de forma continua por 5 a 10 segundos.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Se muestra la interfaz de prueba de audio. 4) Se habilita el acceso al dispositivo de entrada. 5) El indicador visual responde y muestra actividad.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/invalid-creds.png}
-\caption{CP-02: Mensaje de error con credenciales inválidas}
-\label{fig:cp02}
+\includegraphics[width=0.55\textwidth]{imgs/prueba-mic.png}
+\caption{CP-02: Prueba de micrófono - prueba-mic.png}
+\label{fig:cp02_prueba-mic}
 \end{figure}
 
-\subsection{CP-03: Prueba de micrófono sin dispositivo}
+\subsection{CP-03: Iniciar y detener grabación}
 \label{cp:03}
 
 \begin{longtable}{lp{10cm}}
@@ -84,26 +89,31 @@
 \endfoot
 
 \textbf{ID} & CP-03\\
-\textbf{RF} & RF-02 (Audio / Frontend)\\
-\textbf{Título} & Prueba de micrófono --- Sin dispositivo conectado\\
-\textbf{Tipo} & Error\\
-\textbf{Precondiciones} & Frontend corriendo. Sin micrófono conectado a la PC.\\
-\textbf{Datos} & --\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Hacer clic en ``Probar Micrófono''.\\
-\textbf{Resultado Esperado} & Se muestra un mensaje indicando que no se detecta micrófono.\\
-\textbf{Resultado Obtenido} & OK (mensaje: ``No se detecta micrófono'')\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\textbf{Objetivo} & Verificar la captura y envío de audio\\
+\textbf{Título} & Iniciar y detener grabación\\
+\textbf{Precondiciones} & Micrófono configurado\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) En el Dashboard presionar el botón principal de Iniciar grabación. 4) Hablar al micrófono durante al menos 10 segundos. 5) Presionar el botón de Detener y confirmar la detención. 6) Esperar a que termine el procesamiento.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) La interfaz cambia a estado grabando. 4) El audio es capturado correctamente. 5) El sistema muestra estado de procesamiento. 6) Se genera una nueva nota en la lista de transcripciones.\\
+\textbf{Resultado Obtenido} & Falla en consola: No se encontró la referencia (BUG-002)\\
+\textbf{Estado} & \textcolor{FalloColor}{Fallado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/detecta-mic.png}
-\caption{CP-03: Mensaje ``No se detecta micrófono''}
-\label{fig:cp03}
+\includegraphics[width=0.55\textwidth]{imgs/grabar.png}
+\caption{CP-03: Iniciar y detener grabación - grabar.png}
+\label{fig:cp03_grabar}
 \end{figure}
 
-\subsection{CP-04: Inicio y detención de grabación con VAD}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/stop.png}
+\caption{CP-03: Iniciar y detener grabación - stop.png}
+\label{fig:cp03_stop}
+\end{figure}
+
+\subsection{CP-04: Transcripción en vivo}
 \label{cp:04}
 
 \begin{longtable}{lp{10cm}}
@@ -115,40 +125,24 @@
 \endfoot
 
 \textbf{ID} & CP-04\\
-\textbf{RF} & RF-03 (Audio / Backend)\\
-\textbf{Título} & Inicio y detención de grabación con VAD\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Frontend corriendo. Micrófono conectado y funcionando.\\
-\textbf{Datos} & --\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Hacer clic en ``Iniciar Grabación''. 3) Hablar durante unos segundos. 4) Hacer clic en ``Detener Grabación''.\\
-\textbf{Resultado Esperado} & La grabación se inicia (icono rojo, timer). Al detener, se muestra la transcripción generada.\\
-\textbf{Resultado Obtenido} & OK (BUG-002: error en consola ``No se encontró la referencia'' al detener -- Minor; BUG-007: corregido, icono de play/pausa)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\textbf{Objetivo} & Validar recepción de texto mediante WebSockets\\
+\textbf{Título} & Transcripción en vivo\\
+\textbf{Precondiciones} & Servidor ASR activo\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) En el Dashboard iniciar una grabación de audio. 4) Hablar oraciones claras de forma constante durante 30 segundos. 5) Detener la grabación.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El micrófono comienza a capturar datos. 4) Aparecen segmentos de texto en vivo en la pantalla. 5) El texto final se consolida sin duplicarse incorrectamente.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/grabar.png}
-\caption{CP-04: Grabación en curso con micrófono activo}
-\label{fig:cp04_grabar}
+\includegraphics[width=0.55\textwidth]{imgs/trancritp-vivo.png}
+\caption{CP-04: Transcripción en vivo - trancritp-vivo.png}
+\label{fig:cp04_trancritp-vivo}
 \end{figure}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{imgs/stop.png}
-\caption{CP-04: Detención de grabación}
-\label{fig:cp04_stop}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{imgs/mic-10s.png}
-\caption{CP-04: Grabación de 10 segundos con VAD}
-\label{fig:cp04_vad}
-\end{figure}
-
-\subsection{CP-05: Transcripción en vivo}
+\subsection{CP-05: Upload de audio para transcribir}
 \label{cp:05}
 
 \begin{longtable}{lp{10cm}}
@@ -160,26 +154,24 @@
 \endfoot
 
 \textbf{ID} & CP-05\\
-\textbf{RF} & RF-04 (Realtime ASR)\\
-\textbf{Título} & Transcripción en vivo durante la grabación\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Frontend y backend corriendo. Micrófono conectado.\\
-\textbf{Datos} & --\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Iniciar grabación. 3) Hablar ``Hola, esto es una prueba de transcripción''. 4) Observar la transcripción en vivo. 5) Detener grabación.\\
-\textbf{Resultado Esperado} & El texto ``Hola, esto es una prueba de transcripción'' aparece en tiempo real en la transcripción en vivo.\\
-\textbf{Resultado Obtenido} & OK\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\textbf{Objetivo} & Verificar procesamiento asíncrono de audios\\
+\textbf{Título} & Upload de audio para transcribir\\
+\textbf{Precondiciones} & Archivo mp3 local disponible\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Navegar a la herramienta de Subir Audio. 4) Seleccionar un archivo .mp3 válido desde el equipo. 5) Presionar el botón para iniciar la transcripción del archivo. 6) Revisar la lista de transcripciones una vez concluido el proceso.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Se despliega la interfaz de carga de archivos. 4) El archivo queda seleccionado en la interfaz. 5) El sistema indica que el archivo está siendo procesado. 6) La nota generada aparece en el listado y se puede leer.\\
+\textbf{Resultado Obtenido} & El archivo inicia su procesamiento, pero al concluir no se genera ni aparece una transcripción en el listado. La incidencia permanece pendiente de corrección.\\
+\textbf{Estado} & \textcolor{FalloColor}{Fallado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/trancritp-vivo.png}
-\caption{CP-05: Transcripción apareciendo en tiempo real durante la grabación}
-\label{fig:cp05}
+\includegraphics[width=0.55\textwidth]{imgs/carga-archivos.png}
+\caption{CP-05: Upload de audio para transcribir - carga-archivos.png}
+\label{fig:cp05_carga-archivos}
 \end{figure}
 
-\subsection{CP-06: Upload de archivo de audio}
+\subsection{CP-06: Consultar transcripciones guardadas}
 \label{cp:06}
 
 \begin{longtable}{lp{10cm}}
@@ -191,26 +183,31 @@
 \endfoot
 
 \textbf{ID} & CP-06\\
-\textbf{RF} & RF-05 (Upload / Backend)\\
-\textbf{Título} & Carga de archivo MP3 vacío (0 bytes)\\
-\textbf{Tipo} & Error\\
-\textbf{Precondiciones} & Backend corriendo. Sesión activa.\\
-\textbf{Datos} & Archivo MP3 de 0 bytes\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Subir Audio''. 3) Seleccionar archivo MP3 vacío de 0 bytes. 4) Hacer clic en ``Subir''.\\
-\textbf{Resultado Esperado} & El sistema rechaza el archivo con un mensaje de error: ``El archivo está vacío''.\\
-\textbf{Resultado Obtenido} & OK (BUG-009: texto de ayuda ``Eliminar completamente esta nota de voz'' -- Minor)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Minor\\
+\textbf{Objetivo} & Confirmar que se cargan los documentos previos\\
+\textbf{Título} & Consultar transcripciones guardadas\\
+\textbf{Precondiciones} & Tener notas guardadas\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Verificar la carga de la lista lateral o panel de documentos. 4) Hacer clic en una transcripción de la lista. 5) Seleccionar rápidamente una nota diferente.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Aparecen las transcripciones previas con su respectivo título y fecha. 4) El texto de la transcripción se muestra íntegro en el visor principal. 5) El visor se actualiza al instante sin cruzarse los contenidos.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/carga-archivos.png}
-\caption{CP-06: Diálogo de carga de archivos de audio}
-\label{fig:cp06}
+\includegraphics[width=0.55\textwidth]{imgs/nota-en-visor.png}
+\caption{CP-06: Consultar transcripciones guardadas - nota-en-visor.png}
+\label{fig:cp06_nota-en-visor}
 \end{figure}
 
-\subsection{CP-07: Consulta de transcripciones guardadas}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/trans.png}
+\caption{CP-06: Consultar transcripciones guardadas - trans.png}
+\label{fig:cp06_trans}
+\end{figure}
+
+\subsection{CP-07: Editar y guardar una transcripción}
 \label{cp:07}
 
 \begin{longtable}{lp{10cm}}
@@ -222,33 +219,31 @@
 \endfoot
 
 \textbf{ID} & CP-07\\
-\textbf{RF} & RF-06 (Transcripciones)\\
-\textbf{Título} & Consulta de lista de transcripciones guardadas\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Al menos una transcripción guardada en la base de datos.\\
-\textbf{Datos} & Transcripción previamente guardada\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Mis Transcripciones''.\\
-\textbf{Resultado Esperado} & Se muestra una lista con las transcripciones guardadas, incluyendo título y fecha.\\
-\textbf{Resultado Obtenido} & OK\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\textbf{Objetivo} & Validar persistencia de cambios\\
+\textbf{Título} & Editar y guardar una transcripción\\
+\textbf{Precondiciones} & Tener una transcripción existente\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Seleccionar una transcripción de la lista para abrirla en el visor. 4) Habilitar la edición e ingresar una nueva frase al final del texto. 5) Hacer clic en el botón de Guardar. 6) Recargar la página web por completo y volver a abrir la misma nota.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El documento se carga correctamente. 4) El editor acepta la nueva entrada de texto. 5) El sistema no muestra errores. 6) La línea ingresada persiste intacta y el formato markdown se mantiene.\\
+\textbf{Resultado Obtenido} & Error al guardar transcripción con texto muy largo (BUG-005)\\
+\textbf{Estado} & \textcolor{FalloColor}{Fallado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/nota-en-visor.png}
-\caption{CP-07: Visor de una transcripción guardada}
-\label{fig:cp07_visor}
+\includegraphics[width=0.55\textwidth]{imgs/prueb-edicion.png}
+\caption{CP-07: Editar y guardar una transcripción - prueb-edicion.png}
+\label{fig:cp07_prueb-edicion}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/trans.png}
-\caption{CP-07: Lista de transcripciones guardadas}
-\label{fig:cp07_lista}
+\includegraphics[width=0.55\textwidth]{imgs/guardad-edicion.png}
+\caption{CP-07: Editar y guardar una transcripción - guardad-edicion.png}
+\label{fig:cp07_guardad-edicion}
 \end{figure}
 
-\subsection{CP-08: Edición de transcripción}
+\subsection{CP-08: Buscar dentro de transcripciones}
 \label{cp:08}
 
 \begin{longtable}{lp{10cm}}
@@ -260,33 +255,31 @@
 \endfoot
 
 \textbf{ID} & CP-08\\
-\textbf{RF} & RF-07 (Editor)\\
-\textbf{Título} & Editar y guardar transcripción\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Transcripción existente en la base de datos.\\
-\textbf{Datos} & Nuevo texto editado\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción existente. 3) Modificar el texto. 4) Hacer clic en ``Guardar''.\\
-\textbf{Resultado Esperado} & Los cambios se guardan correctamente. Se muestra un mensaje de confirmación.\\
-\textbf{Resultado Obtenido} & OK (BUG-004: mayor, corregido; BUG-005: mayor, abierto -- error al guardar con texto muy largo)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} con bug Major\\
+\textbf{Objetivo} & Comprobar buscador global\\
+\textbf{Título} & Buscar dentro de transcripciones\\
+\textbf{Precondiciones} & Documentos con texto existente\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Ubicar la barra de búsqueda e ingresar una palabra clave existente. 4) Seleccionar un resultado sugerido o listado.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El buscador empieza a filtrar resultados. 4) El visor carga la nota correspondiente resaltando la coincidencia.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/prueb-edicion.png}
-\caption{CP-08: Editor de transcripción con texto modificado}
-\label{fig:cp08_editor}
+\includegraphics[width=0.55\textwidth]{imgs/buscar-trans.png}
+\caption{CP-08: Buscar dentro de transcripciones - buscar-trans.png}
+\label{fig:cp08_buscar-trans}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/guardad-edicion.png}
-\caption{CP-08: Confirmación de guardado exitoso}
-\label{fig:cp08_guardado}
+\includegraphics[width=0.55\textwidth]{imgs/buscar-palabra.png}
+\caption{CP-08: Buscar dentro de transcripciones - buscar-palabra.png}
+\label{fig:cp08_buscar-palabra}
 \end{figure}
 
-\subsection{CP-09: Búsqueda textual en transcripciones}
+\subsection{CP-09: Formateo IA de una transcripción}
 \label{cp:09}
 
 \begin{longtable}{lp{10cm}}
@@ -298,33 +291,31 @@
 \endfoot
 
 \textbf{ID} & CP-09\\
-\textbf{RF} & RF-08 (Búsqueda)\\
-\textbf{Título} & Búsqueda de texto dentro de transcripciones\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Transcripciones existentes con la palabra ``prueba''.\\
-\textbf{Datos} & Término de búsqueda: ``prueba''\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Mis Transcripciones''. 3) Usar la barra de búsqueda con el término ``prueba''.\\
-\textbf{Resultado Esperado} & Se filtran las transcripciones que contienen la palabra ``prueba''.\\
-\textbf{Resultado Obtenido} & OK\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\textbf{Objetivo} & Verificar embellecimiento de texto vía IA\\
+\textbf{Título} & Formateo IA de una transcripción\\
+\textbf{Precondiciones} & Credenciales IA válidas\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Seleccionar una nota para cargarla en el visor. 4) Hacer clic en la opción de Formateo IA. 5) Esperar a que finalice el procesamiento.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) La nota seleccionada está a la vista. 4) Se inicia un job al backend visualizando estado de carga. 5) El contenido del editor es actualizado por una versión mejor redactada.\\
+\textbf{Resultado Obtenido} & En la ejecución inicial el job se creó, pero el editor no recibió el contenido formateado. Después de registrar la incidencia se corrigió el flujo WebSocket, la selección de modelos disponibles y la persistencia del resultado; la re-prueba confirmó la actualización del editor.\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado en re-prueba}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/buscar-trans.png}
-\caption{CP-09: Barra de búsqueda en la lista de transcripciones}
-\label{fig:cp09_buscar}
+\includegraphics[width=0.55\textwidth]{imgs/iniciar-formateo.png}
+\caption{CP-09: Formateo IA de una transcripción - iniciar-formateo.png}
+\label{fig:cp09_iniciar-formateo}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/buscar-palabra.png}
-\caption{CP-09: Resultados filtrados por la palabra ``prueba''}
-\label{fig:cp09_resultados}
+\includegraphics[width=0.55\textwidth]{imgs/transcript-visor.png}
+\caption{CP-09: Formateo IA de una transcripción - transcript-visor.png}
+\label{fig:cp09_transcript-visor}
 \end{figure}
 
-\subsection{CP-10: Formateo de transcripción con IA}
+\subsection{CP-10: Chat contextual sobre una nota}
 \label{cp:10}
 
 \begin{longtable}{lp{10cm}}
@@ -336,13 +327,11 @@
 \endfoot
 
 \textbf{ID} & CP-10\\
-\textbf{RF} & RF-09 (IA / Formatter)\\
-\textbf{Título} & Formateo de una transcripción existente con IA\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Transcripción existente. Conexión a API de NVIDIA NIM.\\
-\textbf{Datos} & Transcripción sin formato\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción. 3) Hacer clic en ``Formatear con IA''.\\
-\textbf{Resultado Esperado} & El texto de la transcripción se transforma a un formato estructurado con párrafos y puntuación adecuada.\\
+\textbf{Objetivo} & Asegurar uso de RAG\\
+\textbf{Título} & Chat contextual sobre una nota\\
+\textbf{Precondiciones} & Nota con texto abundante\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Seleccionar una nota de la lista. 4) Abrir el panel o modal de Chat Contextual. 5) Escribir una pregunta sobre la nota abierta y enviarla. 6) Leer la respuesta retornada por el chat.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El texto se carga. 4) Aparece la interfaz de chat. 5) El sistema procesa la solicitud RAG. 6) El asistente responde basándose puramente en la nota.\\
 \textbf{Resultado Obtenido} & OK\\
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
@@ -350,19 +339,19 @@
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/iniciar-formateo.png}
-\caption{CP-10: Botón ``Formatear con IA'' en el visor de transcripción}
-\label{fig:cp10_iniciar}
+\includegraphics[width=0.55\textwidth]{imgs/chat-contextual.png}
+\caption{CP-10: Chat contextual sobre una nota - chat-contextual.png}
+\label{fig:cp10_chat-contextual}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/transcript-visor.png}
-\caption{CP-10: Transcripción formateada por IA con estructura mejorada}
-\label{fig:cp10_formateado}
+\includegraphics[width=0.55\textwidth]{imgs/respuesta-chat.png}
+\caption{CP-10: Chat contextual sobre una nota - respuesta-chat.png}
+\label{fig:cp10_respuesta-chat}
 \end{figure}
 
-\subsection{CP-11: Chat contextual sobre una transcripción}
+\subsection{CP-11: Traducción de transcripción}
 \label{cp:11}
 
 \begin{longtable}{lp{10cm}}
@@ -374,13 +363,11 @@
 \endfoot
 
 \textbf{ID} & CP-11\\
-\textbf{RF} & RF-10 (Chat / RAG)\\
-\textbf{Título} & Chat contextual con pregunta sobre una transcripción\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Transcripción existente. Conexión a API de NVIDIA NIM.\\
-\textbf{Datos} & Pregunta: ``¿De qué trata esta transcripción?''\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Abrir una transcripción. 3) Hacer clic en ``Chat contextual''. 4) Escribir ``¿De qué trata esta transcripción?'' y presionar Enter.\\
-\textbf{Resultado Esperado} & El sistema responde con un resumen del contenido de la transcripción.\\
+\textbf{Objetivo} & Validar flujo de traducción\\
+\textbf{Título} & Traducción de transcripción\\
+\textbf{Precondiciones} & Nota original disponible\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Seleccionar una transcripción y buscar la opción de Traducir. 4) Seleccionar el idioma destino y ejecutar. 5) Revisar el resultado obtenido.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Se despliegan opciones de idioma. 4) Se envía la petición de traducción. 5) El texto original es traducido correctamente.\\
 \textbf{Resultado Obtenido} & OK\\
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
@@ -388,12 +375,12 @@
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/respuesta-chat.png}
-\caption{CP-11: Respuesta del asistente IA en el chat contextual}
-\label{fig:cp11_respuesta}
+\includegraphics[width=0.55\textwidth]{imgs/transcript-at.png}
+\caption{CP-11: Traducción de transcripción - transcript-at.png}
+\label{fig:cp11_transcript-at}
 \end{figure}
 
-\subsection{CP-12: Transcripción larga (límite de caracteres)}
+\subsection{CP-12: Modificar configuraciones VAD}
 \label{cp:12}
 
 \begin{longtable}{lp{10cm}}
@@ -405,26 +392,24 @@
 \endfoot
 
 \textbf{ID} & CP-12\\
-\textbf{RF} & RF-09 (IA / Formatter), RF-10 (Chat / RAG)\\
-\textbf{Título} & Límite de caracteres en formateo y chat IA\\
-\textbf{Tipo} & Límite\\
-\textbf{Precondiciones} & Conexión a API de NVIDIA NIM.\\
-\textbf{Datos} & Transcripción de más de 4000 caracteres\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Subir o crear una transcripción de más de 4000 caracteres. 3) Intentar formatear con IA. 4) Intentar usar el chat contextual.\\
-\textbf{Resultado Esperado} & El sistema maneja el límite mostrando un mensaje indicando que la transcripción es muy larga o procesando parcialmente.\\
-\textbf{Resultado Obtenido} & El formateo procesó la transcripción completa exitosamente (no se alcanzó el límite real).\\
+\textbf{Objetivo} & Verificar persistencia de configuraciones\\
+\textbf{Título} & Modificar configuraciones VAD\\
+\textbf{Precondiciones} & No aplica\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Navegar a la vista de Ajustes o Settings. 4) Modificar el valor de un parámetro VAD y guardar. 5) Recargar la página y volver a Ajustes.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Aparecen los sliders de umbral VAD. 4) El sistema emite notificación de éxito. 5) El valor numérico modificado sigue intacto.\\
+\textbf{Resultado Obtenido} & OK\\
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/formato-incorrect.png}
-\caption{CP-12: Manejo de transcripción larga en formateo IA}
-\label{fig:cp12}
+\includegraphics[width=0.55\textwidth]{imgs/vad-sliders.png}
+\caption{CP-12: Modificar configuraciones VAD - vad-sliders.png}
+\label{fig:cp12_vad-sliders}
 \end{figure}
 
-\subsection{CP-13: Upload de archivo WAV}
+\subsection{CP-13: Eliminar transcripción}
 \label{cp:13}
 
 \begin{longtable}{lp{10cm}}
@@ -436,13 +421,11 @@
 \endfoot
 
 \textbf{ID} & CP-13\\
-\textbf{RF} & RF-05 (Upload / Backend)\\
-\textbf{Título} & Carga de archivo WAV de 1 segundo\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Backend corriendo. Sesión activa.\\
-\textbf{Datos} & Archivo WAV de 1 segundo\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar a ``Subir Audio''. 3) Seleccionar archivo WAV. 4) Hacer clic en ``Subir''.\\
-\textbf{Resultado Esperado} & El archivo se sube exitosamente y se inicia la transcripción.\\
+\textbf{Objetivo} & Comprobar flujo destructivo CRUD\\
+\textbf{Título} & Eliminar transcripción\\
+\textbf{Precondiciones} & Tener notas prescindibles\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Seleccionar una transcripción específica de la lista lateral. 4) Hacer clic en el icono de Eliminar. 5) Aceptar y confirmar la eliminación en el modal. 6) Revisar la lista lateral tras la eliminación.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) La nota se carga en el visor. 4) Se despliega un modal de confirmación. 5) La nota se borra del sistema. 6) La nota ya no existe ni se puede acceder a ella.\\
 \textbf{Resultado Obtenido} & OK\\
 \textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
@@ -450,19 +433,12 @@
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/archivo-select.png}
-\caption{CP-13: Selección de archivo WAV para subir}
-\label{fig:cp13_select}
+\includegraphics[width=0.55\textwidth]{imgs/eliminar.png}
+\caption{CP-13: Eliminar transcripción - eliminar.png}
+\label{fig:cp13_eliminar}
 \end{figure}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{imgs/archivo-prosesando.png}
-\caption{CP-13: Archivo WAV en proceso de transcripción}
-\label{fig:cp13_procesando}
-\end{figure}
-
-\subsection{CP-14: Chat IA con datos vacíos}
+\subsection{CP-14: Login con credenciales incorrectas}
 \label{cp:14}
 
 \begin{longtable}{lp{10cm}}
@@ -474,21 +450,106 @@
 \endfoot
 
 \textbf{ID} & CP-14\\
-\textbf{RF} & RF-10 (Chat / RAG)\\
-\textbf{Título} & Chat contextual sin transcripción cargada\\
-\textbf{Tipo} & Happy Path\\
-\textbf{Precondiciones} & Frontend corriendo. Sin transcripción seleccionada.\\
-\textbf{Datos} & Pregunta: ``¿Qué dice esta transcripción?''\\
-\textbf{Pasos} & 1) Iniciar sesión. 2) Navegar al chat contextual sin seleccionar ninguna transcripción. 3) Hacer clic en ``Enviar pregunta''.\\
-\textbf{Resultado Esperado} & Chat contextual sin transcripción cargada (BUG-003: Critical, corregido, el sistema crasheaba al hacer clic en el botón de enviar sin seleccionar transcripción).\\
-\textbf{Resultado Obtenido} & \textcolor{FalloColor}{Fallado} (BUG-003 corregido, re-test OK)\\
-\textbf{Estado} & \textcolor{PasoColor}{Pasado} (corregido)\\
+\textbf{Objetivo} & Validar manejo seguro de errores\\
+\textbf{Título} & Login con credenciales incorrectas\\
+\textbf{Precondiciones} & Base de datos activa\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar un correo electrónico inexistente o password erróneo. 3) Hacer clic en el botón de inicio de sesión.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Se digitan los datos en los campos. 3) Aparece un mensaje de error y la aplicación no crashea.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
 \bottomrule
 \end{longtable}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{imgs/chat-contextual.png}
-\caption{CP-14: Chat contextual sin transcripción seleccionada. BUG-003 corregido (ya no crashea)}
-\label{fig:cp14}
+\includegraphics[width=0.55\textwidth]{imgs/invalid-creds.png}
+\caption{CP-14: Login con credenciales incorrectas - invalid-creds.png}
+\label{fig:cp14_invalid-creds}
+\end{figure}
+
+\subsection{CP-15: Denegación de permisos de micrófono}
+\label{cp:15}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-15\\
+\textbf{Objetivo} & Validar feedback al bloquear hardware\\
+\textbf{Título} & Denegación de permisos de micrófono\\
+\textbf{Precondiciones} & No aplica\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Hacer clic en Iniciar grabación o en Prueba de micrófono. 4) Seleccionar Bloquear en el prompt del navegador.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El navegador despliega el prompt nativo pidiendo acceso al micrófono. 4) El sistema detiene el intento y lanza alerta advirtiendo que se requiere el permiso.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/detecta-mic.png}
+\caption{CP-15: Denegación de permisos de micrófono - detecta-mic.png}
+\label{fig:cp15_detecta-mic}
+\end{figure}
+
+\subsection{CP-16: Upload de formato inválido}
+\label{cp:16}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-16\\
+\textbf{Objetivo} & Asegurar filtrado de archivos local\\
+\textbf{Título} & Upload de formato inválido\\
+\textbf{Precondiciones} & Archivo txt disponible\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas y presionar inicio de sesión. 3) Navegar a la vista de Subir Audio. 4) Intentar seleccionar un archivo .txt o .pdf.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) Se muestra el selector de archivos. 4) La UI detiene la acción mostrando error antes de enviarlo al backend.\\
+\textbf{Resultado Obtenido} & La interfaz permitió seleccionar un archivo no admitido en lugar de bloquearlo y mostrar el error antes de enviarlo al backend. La incidencia permanece pendiente de corrección.\\
+\textbf{Estado} & \textcolor{FalloColor}{Fallado}\\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/formato-incorrect.png}
+\caption{CP-16: Upload de formato inválido - formato-incorrect.png}
+\label{fig:cp16_formato-incorrect}
+\end{figure}
+
+\subsection{CP-17: Bloqueo de rutas administrativas}
+\label{cp:17}
+
+\begin{longtable}{lp{10cm}}
+\toprule
+\textbf{Campo} & \textbf{Valor}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+\textbf{ID} & CP-17\\
+\textbf{Objetivo} & Proteger enrutado no autorizado\\
+\textbf{Título} & Bloqueo de rutas administrativas\\
+\textbf{Precondiciones} & Rol normal\\
+\textbf{Pasos} & 1) Abrir http://localhost:3006/login. 2) Ingresar credenciales válidas de una cuenta estándar y presionar inicio de sesión. 3) Modificar manualmente la URL en el navegador hacia una ruta de admin e intentar acceder.\\
+\textbf{Resultado Esperado} & 1) Carga la pantalla de inicio de sesión. 2) Redirección exitosa al Dashboard. 3) El usuario recibe un error 403 o es redirigido al inicio.\\
+\textbf{Resultado Obtenido} & OK\\
+\textbf{Estado} & \textcolor{PasoColor}{Pasado}\\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{imgs/brkn-accs-cntrl.png}
+\caption{CP-17: Bloqueo de rutas administrativas - brkn-accs-cntrl.png}
+\label{fig:cp17_brkn-accs-cntrl}
 \end{figure}

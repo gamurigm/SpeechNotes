@@ -1,46 +1,88 @@
 \chapter{Matriz de Rastreabilidad}
 \label{apendice:a}
 
-\section{Matriz Requisitos vs.\ Casos de Prueba}
+\section{Cobertura de Requisitos vs. Casos de Prueba}
+
+La siguiente matriz consolida la trazabilidad del sprint SQA dentro de este informe. Cada requisito funcional queda asociado con sus casos de prueba ejecutados, el resultado consolidado y los defectos vinculados cuando aplica.
 
 \begin{landscape}
-\begin{longtable}{clccl}
-\caption{Matriz de rastreabilidad requisitos funcionales vs.\ casos de prueba}
+\begin{longtable}{p{1.4cm}p{5.2cm}p{4.6cm}p{3cm}p{4.6cm}}
+\caption{Matriz de rastreabilidad de requisitos funcionales vs. casos de prueba}
 \label{tab:matriz-rastreabilidad}\\
 \toprule
-\textbf{RF} & \textbf{Nombre} & \textbf{Tipo} & \textbf{Caso(s)} & \textbf{Estado}\\
+\textbf{RF} & \textbf{Requisito evaluado} & \textbf{Caso(s) de prueba} & \textbf{Resultado} & \textbf{Defectos asociados}\\
 \midrule
 \endfirsthead
 \toprule
-\textbf{RF} & \textbf{Nombre} & \textbf{Tipo} & \textbf{Caso(s)} & \textbf{Estado}\\
+\textbf{RF} & \textbf{Requisito evaluado} & \textbf{Caso(s) de prueba} & \textbf{Resultado} & \textbf{Defectos asociados}\\
 \midrule
 \endhead
 \bottomrule
 \endfoot
 
-RF-01 & Auth & Funcional & CP-01, CP-02 & OK / Minor\\
-RF-02 & Audio / Frontend & Funcional & CP-03 & OK\\
-RF-03 & Audio / Backend & Funcional & CP-04 & Minor\\
-RF-04 & Realtime ASR & Funcional & CP-05 & OK\\
-RF-05 & Upload / Backend & Funcional & CP-06, CP-07 & OK / Minor\\
-RF-06 & Transcripciones & Funcional & CP-08 & Major\\
-RF-07 & Editor & Funcional & CP-09, CP-10 & OK\\
-RF-08 & Búsqueda & Funcional & CP-11 & OK\\
-RF-09 & IA / Formatter & Funcional & CP-12 & OK\\
-RF-10 & Chat / RAG & Funcional & CP-13, CP-14 & OK / Critical (closed)\\
+RF-01 & Auth (autenticación y sesiones) & CP-01 Login demo; CP-14 credenciales incorrectas; CP-17 bloqueo de rutas administrativas & \textcolor{PasoColor}{Pasado con observaciones} & BUG-006 y BUG-008 abiertos, severidad Minor\\
+RF-02 & Audio / Frontend (captura de dispositivo) & CP-02 prueba de micrófono; CP-15 denegación de permisos & \textcolor{PasoColor}{Pasado} & No aplica\\
+RF-03 & Audio / Backend (procesamiento VAD) & CP-03 iniciar/detener grabación; CP-12 configuración VAD & \textcolor{FalloColor}{Fallado parcial} & BUG-002 abierto y BUG-007 cerrado, severidad Minor\\
+RF-04 & Realtime ASR (transcripción en vivo) & CP-04 transcripción en vivo & \textcolor{PasoColor}{Pasado} & No aplica\\
+RF-05 & Upload / Backend (ingesta de audio) & CP-05 upload de audio; CP-16 formato inválido & \textcolor{FalloColor}{Fallado} & Dos incidencias funcionales abiertas; BUG-009 permanece como observación Minor\\
+RF-06 & Transcripciones (persistencia y consulta) & CP-06 consultar transcripciones; CP-13 eliminar transcripción & \textcolor{PasoColor}{Pasado} & No aplica\\
+RF-07 & Editor (edición de contenido) & CP-07 editar y guardar transcripción & \textcolor{FalloColor}{Fallado} & BUG-004 cerrado y BUG-005 abierto, severidad Major\\
+RF-08 & Búsqueda (búsqueda textual) & CP-08 buscar dentro de transcripciones & \textcolor{PasoColor}{Pasado} & No aplica\\
+RF-09 & IA / Formatter (estructuración con LLM) & CP-09 formateo IA; CP-11 traducción de transcripción & \textcolor{PasoColor}{Pasado en re-prueba} & CP-09 falló inicialmente y fue corregido tras registrar la incidencia\\
+RF-10 & Chat / RAG (asistente contextual) & CP-10 chat contextual sobre una nota & \textcolor{PasoColor}{Pasado con defecto cerrado} & BUG-003 cerrado, severidad Critical\\
 
 \bottomrule
 \end{longtable}
 \end{landscape}
 
-\section{Matriz de Cobertura de Requisitos}
+\section{Detalle de Ejecución por Caso de Prueba}
+
+\begin{longtable}{p{1.6cm}p{1.6cm}p{6.2cm}p{2.4cm}p{4.8cm}}
+\caption{Trazabilidad de casos de prueba, resultados y defectos}
+\label{tab:trazabilidad-casos}\\
+\toprule
+\textbf{CP} & \textbf{RF} & \textbf{Caso de prueba} & \textbf{Estado} & \textbf{Defecto asociado}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{CP} & \textbf{RF} & \textbf{Caso de prueba} & \textbf{Estado} & \textbf{Defecto asociado}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+CP-01 & RF-01 & Login con usuario demo & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-02 & RF-02 & Prueba de micrófono & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-03 & RF-03 & Iniciar y detener grabación & \textcolor{FalloColor}{Fallado} & BUG-002 abierto\\
+CP-04 & RF-04 & Transcripción en vivo & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-05 & RF-05 & Upload de audio para transcribir & \textcolor{FalloColor}{Fallado} & No se genera la transcripción; incidencia abierta\\
+CP-06 & RF-06 & Consultar transcripciones guardadas & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-07 & RF-07 & Editar y guardar una transcripción & \textcolor{FalloColor}{Fallado} & BUG-005 abierto\\
+CP-08 & RF-08 & Buscar dentro de transcripciones & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-09 & RF-09 & Formateo IA de una transcripción & \textcolor{PasoColor}{Pasado en re-prueba} & Incidencia corregida: WebSocket, modelos y persistencia\\
+CP-10 & RF-10 & Chat contextual sobre una nota & \textcolor{PasoColor}{Pasado} & BUG-003 cerrado\\
+CP-11 & RF-09 & Traducción de transcripción & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-12 & RF-03 & Modificar configuraciones VAD & \textcolor{PasoColor}{Pasado} & BUG-007 cerrado como observación histórica\\
+CP-13 & RF-06 & Eliminar transcripción & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-14 & RF-01 & Login con credenciales incorrectas & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-15 & RF-02 & Denegación de permisos de micrófono & \textcolor{PasoColor}{Pasado} & No aplica\\
+CP-16 & RF-05 & Upload de formato inválido & \textcolor{FalloColor}{Fallado} & Validación de formato en UI pendiente\\
+CP-17 & RF-01 & Bloqueo de rutas administrativas & \textcolor{PasoColor}{Pasado} & No aplica\\
+
+\bottomrule
+\end{longtable}
+
+\section{Resumen de Cobertura}
 
 \begin{itemize}
     \item Total de requisitos funcionales: 10
-    \item Requisitos cubiertos: 10 (100\%)
-    \item Total de casos de prueba: 14
-    \item Casos pasados: 13 (92.86\%)
-    \item Casos fallados: 1 (7.14\%)
-    \item Defectos encontrados: 8
+    \item Requisitos cubiertos por al menos un caso de prueba: 10 (100\%)
+    \item Total de casos de prueba ejecutados: 17
+    \item Casos pasados: 13 (76.47\%), incluido CP-09 aprobado en re-prueba
+    \item Casos fallados: 4 (23.53\%)
+    \item Defectos con identificador formal registrados: 8
+    \item Incidencias de flujos críticos evidenciadas: 3 (1 resuelta y 2 pendientes)
     \item Defectos corregidos: 3 (37.5\%)
+    \item Defectos abiertos: 5 (62.5\%)
+    \item Defectos críticos abiertos al cierre: 0
 \end{itemize}

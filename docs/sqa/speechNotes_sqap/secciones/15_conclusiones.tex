@@ -4,28 +4,28 @@
 \section{Desempeño General}
 \label{sec:desempenio-general}
 
-El sprint de calidad de SpeechNotes se ejecutó conforme al plan establecido, con una cobertura del 100\% de los requisitos funcionales y una tasa de aprobación del 92.86\% en los casos de prueba ejecutados. Los resultados indican que el sistema se encuentra en un estado funcionalmente estable, con oportunidades de mejora identificadas en areas de manejo de errores y experiencia de usuario.
+El sprint de calidad de SpeechNotes se ejecutó conforme al plan establecido, con una cobertura del 100\% de los requisitos funcionales y una tasa de aprobación del 76.47\% en los casos de prueba ejecutados. CP-09 quedó aprobado después de la corrección y re-prueba; CP-05 y CP-16 mantienen fallas funcionales evidenciadas que requieren seguimiento.
 
 \section{Hallazgos Clave}
 \label{sec:hallazgos-clave}
 
 \begin{enumerate}
-    \item \textbf{Funcionalidad Core Robusta:} Los requisitos funcionales relacionados con autenticación, transcripción en vivo, upload de archivos, consulta y edición de transcripciones, búsqueda y formateo con IA pasaron todas las pruebas.
+    \item \textbf{Funcionalidad Core Evaluada:} Los requisitos de autenticación, captura, transcripción, consulta, búsqueda, IA, traducción y chat quedaron cubiertos. RF-03, RF-05 y RF-07 mantienen fallas documentadas; el formateo IA de RF-09 se recuperó después de corregir el WebSocket y la selección de modelos disponibles.
 
-    \item \textbf{Problemas de UX Detectados:} Se identificaron 3 bugs de severidad Minor relacionados con la experiencia de usuario (tooltip duplicado, icono de play/pausa inconsistente, placeholder en registro), los cuales no afectan la funcionalidad pero impactan la calidad percibida del producto.
+    \item \textbf{Problemas de UX Detectados:} Se identificaron defectos menores de experiencia de usuario en autenticación, grabación y carga de archivos; los abiertos quedaron registrados para seguimiento sin bloquear los flujos principales.
 
-    \item \textbf{Mejora Significativa en Calidad de Código:} La integración de SonarCloud permitió identificar y corregir code smells. La configuración del pipeline CI/CD asegura que la calidad del código se mantenga en el tiempo.
+    \item \textbf{Mejora Significativa en Calidad de Código:} El análisis final de SonarCloud registró 90.4\% de cobertura, 0 issues abiertos, Security Rating A, 0 issues de seguridad, 0.5\% de duplicación y \textit{Quality Gate} aprobado.
 
     \item \textbf{Automatización como Inversión:} Las suites de pytest y Cypress configuradas proporcionan una base sólida para regression testing en sprints futuros.
 
-    \item \textbf{Bugs Identificados:} Se encontraron 8 bugs (3 corregidos, 5 pendientes). Los bugs críticos y mayores fueron atendidos durante el sprint, mientras que los menores quedaron registrados para atención futura.
+    \item \textbf{Bugs Identificados:} Se encontraron 8 bugs (3 corregidos, 5 pendientes). El bug crítico fue corregido durante el sprint. Quedan 5 defectos pendientes, incluido BUG-005 de severidad Major, registrados para el siguiente ciclo de remediación.
 \end{enumerate}
 
 \section{Recomendaciones}
 \label{sec:recomendaciones}
 
 \begin{enumerate}
-    \item \textbf{Corregir bugs pendientes en el c\'odigo:} Los 5 bugs abiertos (BUG-002, BUG-005, BUG-006, BUG-008, BUG-009) deben ser registrados como tickets en Jira y atendidos en el siguiente sprint de desarrollo.
+    \item \textbf{Corregir bugs pendientes:} Los 5 bugs abiertos deben ser atendidos en el siguiente sprint de desarrollo.
     \item \textbf{Pruebas de carga:} Realizar pruebas de carga formal con k6 o Locust para validar el comportamiento bajo estrés.
     \item \textbf{Documentación de API:} Completar la documentación de los endpoints REST de la API.
     \item \textbf{Pruebas de seguridad:} Integrar OWASP ZAP en el pipeline CI/CD.

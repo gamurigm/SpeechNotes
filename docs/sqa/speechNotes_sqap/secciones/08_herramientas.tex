@@ -48,7 +48,7 @@ La selección del conjunto de herramientas de SQA responde a criterios de compat
     \item \textbf{Jest (Frontend Unit Testing):} \textit{Justificación:} Integrado nativamente dentro del ecosistema Next.js/React. Permite ejecutar pruebas de renderizado de componentes UI (\texttt{RecordingPanel}, \texttt{LiveTranscription}) en un entorno simulado de DOM (\texttt{jsdom}) ultra rápido sin requerir el arranque completo del navegador.
     \item \textbf{Cypress (Frontend E2E Testing):} \textit{Justificación:} Proporciona recarga en tiempo real, captura de video/screenshots de fallos en ejecuciones headless y emulación precisa de eventos del usuario en navegadores Chromium. Garantiza la validación de flujos críticos de extremo a extremo de la interfaz web.
     \item \textbf{SonarCloud (Análisis Estático / SAST):} \textit{Justificación:} Herramienta SaaS que analiza de forma automatizada tanto el repositorio TypeScript (Frontend) como Python (Backend). Evalúa la adherencia a la regla de \textit{Clean Code}, calcula cobertura de código, detecta \textit{security hotspots} y previene la introducción de deuda técnica mediante umbrales de \textit{Quality Gates}.
-    \item \textbf{Jira Software + GitHub Actions (CI/CD y Gestión):} \textit{Justificación:} Permite la trazabilidad bi-direccional entre requisiciones, tareas de SQA, commits de código y registro de bugs (\texttt{BUG-001} a \texttt{BUG-008}). GitHub Actions ejecuta automáticamente las suites de pruebas unitarias y SAST en cada \textit{Pull Request} hacia la rama \texttt{planning-SQA}.
+    \item \textbf{Jira Software + GitHub Actions (CI/CD y Gestión):} \textit{Justificación:} Permite la trazabilidad bi-direccional entre requisiciones, tareas de SQA, commits de código y registro de bugs (\texttt{BUG-002} a \texttt{BUG-009}). GitHub Actions ejecuta automáticamente las suites de pruebas y el análisis SAST en cada \textit{Pull Request} hacia la rama \texttt{main}.
     \item \textbf{Postman + curl (Pruebas Manuales de API):} \textit{Justificación:} Permiten la construcción de colecciones de prueba reutilizables para autenticación por tokens JWT y la simulación rápida de envíos multipart/form-data de archivos de audio sin intervención del cliente web.
 \end{itemize}
 
@@ -57,6 +57,6 @@ La selección del conjunto de herramientas de SQA responde a criterios de compat
 
 \begin{itemize}
     \item \textbf{Jira Dashboard:} Dashboard personalizado con gadgets de burndown, issues por estado, issues por responsable.
-    \item \textbf{Slack:} Notificaciones automáticas de GitHub Actions y Jira.
+    \item \textbf{Discord:} Notificaciones automáticas de fallos de GitHub Actions mediante el bot de QA.
     \item \textbf{Reuniones diarias:} Stand-up de 15 min para sincronización del equipo SQA.
 \end{itemize}

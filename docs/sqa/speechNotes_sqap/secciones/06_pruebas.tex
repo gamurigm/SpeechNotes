@@ -9,7 +9,7 @@ La estrategia de pruebas sigue una pirámide de pruebas adaptada a arquitecturas
 \begin{enumerate}[label=\alph*)]
     \item \textbf{Pruebas Unitarias (Backend y Frontend):} Evalúan la lógica interna de funciones aisladas sin dependencias de red o base de datos. Se utiliza \texttt{pytest} en el backend para validar algoritmos de VAD, utilidades de formateo y servicios de tokenización; y \texttt{Jest} en el frontend para probar componentes aislados como \texttt{RecordingPanel} y \texttt{LiveTranscription}.
     \item \textbf{Pruebas de Integración (Backend):} Verifican la interacción entre módulos del sistema (p.~ej., FastApi con SQLite/Prisma, motor de Socket.IO con el pipeline de audio y clientes HTTP con NVIDIA NIM). Se utiliza \texttt{pytest} con \texttt{httpx} para simular peticiones asíncronas a los endpoints REST.
-    \item \textbf{Pruebas Funcionales / Sistema (Manuales y Exploratorias):} Validan de extremo a extremo los flujos de usuario sobre la interfaz web completa y APIs REST. Se ejecutaron 14 casos de prueba estructurados (Apéndice~\ref{apendice:b}) cubriendo flujos exitosos (\textit{Happy Path}), condiciones de error e insumos en el límite.
+    \item \textbf{Pruebas Funcionales / Sistema (Manuales y Exploratorias):} Validan de extremo a extremo los flujos de usuario sobre la interfaz web completa y APIs REST. Se ejecutaron 17 casos de prueba estructurados (Apéndice~\ref{apendice:b}) cubriendo flujos exitosos (\textit{Happy Path}), condiciones de error y escenarios de seguridad.
     \item \textbf{Pruebas de Análisis Estático (SAST):} Inspección continua del código fuente mediante \texttt{SonarCloud} para identificar vulnerabilidades de seguridad, violaciones de estándares de codificación, duplidado de código y \textit{code smells}.
     \item \textbf{Pruebas E2E / Interfaz (Automatizadas):} Pruebas en navegador con \texttt{Cypress} para simular las interacciones completas del usuario en la interfaz Next.js, incluyendo flujos de autenticación, carga de archivos y manipulación del editor.
 \end{enumerate}
@@ -32,7 +32,7 @@ Unitarias (Backend) & pytest & Servicios individuales de audio, VAD, auth\\
 
 Integración (Backend) & pytest + httpx & Endpoints REST: transcriptions, auth, health\\
 
-Funcionales Manuales & Navegador + curl & 14 casos de prueba (Apéndice~B)\\
+Funcionales Manuales & Navegador + curl & 17 casos de prueba (Apéndice~B)\\
 
 Estáticas & SonarCloud & Análisis de código, code smells, vulnerabilidades\\
 
@@ -68,9 +68,9 @@ Una fase o suite de pruebas sólo podrá iniciarse cuando se cumplan las siguien
 El ciclo de pruebas se considerará completado satisfactoriamente y el sistema estará listo para cierre cuando se alcancen las siguientes condiciones de aceptación:
 
 \begin{itemize}
-    \item El 100\% de los 14 casos de prueba diseñados hayan sido ejecutados y documentados.
-    \item La tasa de éxito de casos de prueba supere el 90\% (alcanzado: 92.86\%).
-    \item El 100\% de los defectos clasificados como severidad \texttt{Critical} y \texttt{High} hayan sido corregidos y verificados.
+    \item El 100\% de los 17 casos de prueba diseñados hayan sido ejecutados y documentados.
+    \item La tasa de éxito de casos de prueba quede documentada junto con los defectos asociados (alcanzado: 76.47\%; 4 fallas registradas).
+    \item El 100\% de los defectos clasificados como severidad \texttt{Critical} haya sido corregido y verificado; los defectos \texttt{Major} abiertos deben quedar registrados con plan de remediación.
     \item Los defectos menores u opcionales pendientes estén formalmente registrados en Jira con su respectivo plan de remediación posterior.
     \item Se haya completado la ejecución del análisis estático en SonarCloud con revisión de \textit{Quality Gate}.
     \item El Informe de Cierre de SQA y la Matriz de Rastreabilidad estén consolidados y anexados al presente documento.
@@ -83,6 +83,6 @@ La matriz de rastreabilidad completa se presenta en el Apéndice~\ref{apendice:a
 
 \begin{itemize}
     \item \textbf{10 requisitos funcionales} cubiertos al 100\%.
-    \item \textbf{14 casos de prueba} distribuidos en 10 happy path, 3 error, 1 límite.
-    \item \textbf{13 casos pasados} (92.86\%) y \textbf{1 caso fallado} (7.14\%).
+    \item \textbf{17 casos de prueba} distribuidos en 13 flujos funcionales y 4 condiciones negativas o de seguridad.
+    \item \textbf{13 casos pasados} (76.47\%) y \textbf{4 casos fallados} (23.53\%); CP-09 se contabiliza como aprobado después de la re-prueba.
 \end{itemize}

@@ -16,6 +16,46 @@
 
 ---
 
+## Pruebas: ubicación y ejecución rápida
+
+| Suite | Ubicación | Comando |
+|------|-----------|---------|
+| Backend (pytest) | [`backend/tests/`](./backend/tests/) | `python -m pytest backend/tests -v --tb=short` |
+| Frontend unitarias (Jest) | [`web/tests/unit/`](./web/tests/unit/) | `npm run test:unit -- --coverage` |
+| Frontend E2E (Cypress) | [`web/tests/e2e/`](./web/tests/e2e/) | `npm run test:e2e` |
+| Frontend completa | Jest + Cypress | `npm run test:frontend` |
+
+### Backend (PowerShell, desde la raíz)
+
+La suite combina pruebas unitarias y de integración; para ejecutar todas, el backend debe estar disponible en el puerto `9443`.
+
+```powershell
+# Instalar dependencias de prueba
+python -m pip install -r backend/requirements-test.lock
+
+# Terminal 1: levantar el backend
+$env:PYTHONPATH = "backend"
+python -m uvicorn main:socket_app --port 9443
+
+# Terminal 2: ejecutar pytest
+$env:BACKEND_URL = "http://127.0.0.1:9443"
+$env:PYTHONPATH = "."
+python -m pytest backend/tests -v --tb=short
+```
+
+### Frontend (desde `web/`)
+
+```powershell
+cd web
+npm ci
+npm run test:unit -- --coverage  # Jest
+npm run test:e2e                 # Cypress; prepara DB y servidor automáticamente
+```
+
+Los reportes de cobertura, videos y capturas se generan en [`web/tests/evidence/`](./web/tests/evidence/). Estos mismos comandos se ejecutan en el pipeline de GitHub Actions.
+
+---
+
 ## ¿Qué hace SpeechNotes?
 
 Convierte audio en notas estructuradas usando un pipeline de cinco modelos NVIDIA NIM especializados:

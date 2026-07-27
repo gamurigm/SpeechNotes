@@ -1,0 +1,96 @@
+name: SpeechNotes - JMeter Performance Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      threads:
+        description: Concurrent virtual users
+        default: "10"
+        required: true
+      loops:
+        description: Iterations per user
+        default: "5"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jmeter-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jmeter-performance:
+    name: JMeter HTTP performance gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      JMETER_THREADS: ${{ inputs.threads || '10' }}
+      JMETER_LOOPS: ${{ inputs.loops || '5' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: python -m pip install --require-hashes -r backend/requirements-test.lock
+
+      - name: Start backend and wait for health
+        shell: bash
+        run: |
+          PYTHONPATH=backend python -m uvicorn main:socket_app --host 127.0.0.1 --port 9443 > backend-jmeter.log 2>&1 &
+          echo $! > backend-jmeter.pid
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:9443/health && exit 0
+            sleep 1
+          done
+          cat backend-jmeter.log
+          exit 1
+
+      - name: Run JMeter non-GUI load plan
+        run: |
+          mkdir -p artifacts/jmeter/html
+          docker run --rm --network host \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace \
+            justb4/jmeter:5.6.3 \
+            -n -t tests/performance/speechnotes-load-test.jmx \
+            -l artifacts/jmeter/results.jtl \
+            -e -o artifacts/jmeter/html \
+            -Jhost=127.0.0.1 -Jport=9443 -Jprotocol=http \
+            -Jthreads="${JMETER_THREADS}" -Jloops="${JMETER_LOOPS}" \
+            -Jramp_seconds=10 -Jthink_time_ms=100
+
+      - name: Enforce performance thresholds
+        run: >-
+          python scripts/evaluate_jmeter_results.py
+          artifacts/jmeter/results.jtl
+          --max-error-rate 1
+          --max-p95-ms 2000
+          --min-samples 100
+
+      - name: Upload JMeter evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: jmeter-performance-report
+          path: |
+            artifacts/jmeter/
+            backend-jmeter.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop backend
+        if: always()
+        shell: bash
+        run: |
+          if [ -f backend-jmeter.pid ]; then
+            kill "$(cat backend-jmeter.pid)" 2>/dev/null || true
+          fi

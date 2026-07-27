@@ -1,0 +1,92 @@
+\chapter{Pruebas de Rendimiento con Apache JMeter}
+\label{sec:jmeter-rendimiento}
+
+\section{Objetivo y alcance}
+
+Se incorporó una prueba de carga HTTP reproducible para cubrir la brecha de
+eficiencia de desempeño identificada en el Capítulo~\ref{sec:alineacion-iso-metricas}.
+El plan verifica los endpoints \path{/health} y \path{/} con usuarios virtuales,
+rampa e iteraciones parametrizables. Esta prueba aporta evidencia a ISO/IEC
+25010:2023 (eficiencia de desempeño y fiabilidad), ISO/IEC 25023:2016 (medición)
+e ISO/IEC 25040:2024 (evaluación y criterios de aceptación).
+
+\textbf{Estado al cierre de este documento: codificada y no ejecutada.} No se
+declara cumplimiento de rendimiento hasta disponer de un JTL generado por CI.
+
+\section{Diseño de la prueba}
+
+\begin{table}[H]
+\centering
+\caption{Configuración predeterminada del plan JMeter}
+\label{tab:jmeter-configuracion}
+\begin{tabular}{p{4.3cm}p{4cm}p{6cm}}
+\toprule
+\textbf{Parámetro} & \textbf{Valor por defecto} & \textbf{Propósito}\\
+\midrule
+Usuarios concurrentes & 10 & Simular concurrencia controlada.\\
+Rampa & 10 segundos & Evitar inicio instantáneo artificial.\\
+Iteraciones por usuario & 5 & Producir 100 muestras entre dos endpoints.\\
+Pausa entre solicitudes & 100 ms & Evitar un bucle sin tiempo de pensamiento.\\
+Timeout de conexión & 3000 ms & Limitar conexiones bloqueadas.\\
+Timeout de respuesta & 5000 ms & Limitar solicitudes sin respuesta.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El archivo \path{tests/performance/speechnotes-load-test.jmx} no contiene claves,
+tokens ni datos personales. Cada sampler exige código HTTP 200. El host, puerto,
+protocolo, hilos, rampa, iteraciones y timeouts se inyectan mediante propiedades
+\texttt{-J}, lo que permite mantener el mismo plan entre local y CI.
+
+\section{Métricas, definición y criterios de cumplimiento}
+
+\begin{longtable}{p{2cm}p{4.2cm}p{3.4cm}p{5.6cm}}
+\caption{Métricas del control de rendimiento}
+\label{tab:jmeter-metricas}\\
+\toprule
+\textbf{ID} & \textbf{Definición y fórmula} & \textbf{Meta} & \textbf{Justificación, cumplimiento y evidencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Definición y fórmula} & \textbf{Meta} & \textbf{Justificación, cumplimiento y evidencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+JM-01 & Cantidad de muestras válidas registradas en JTL. & $\geq 100$ & Evita aprobar una ejecución incompleta. \textbf{No medido}; evidencia futura: \path{results.jtl}.\\
+JM-02 & Tasa de error: $muestras\ fallidas / muestras\ totales \times 100$. & $\leq 1\%$ & Mide fiabilidad bajo carga. \textbf{No medido}; se evalúa automáticamente.\\
+JM-03 & Latencia p95: percentil 95 de \texttt{elapsed}. & $\leq 2000$ ms & Controla la experiencia de la mayoría de solicitudes sin ocultar la cola. \textbf{No medido}.\\
+JM-04 & Throughput: solicitudes completadas por segundo. & Línea base, sin gate inicial & Permite comparar tendencias entre commits. \textbf{No medido}; se reporta en HTML.\\
+\end{longtable}
+
+El script \path{scripts/evaluate_jmeter_results.py} procesa el JTL con la librería
+estándar de Python y devuelve código distinto de cero si JM-01, JM-02 o JM-03 no
+cumplen. Los umbrales son iniciales y deben revisarse después de obtener una línea
+base estable en un runner controlado.
+
+\section{Integración en CI/CD y evidencia}
+
+El workflow \path{.github/workflows/jmeter-performance.yml} se activa en push y
+pull request hacia \texttt{main}, además de ejecución manual. Sus pasos son:
+
+\begin{enumerate}
+    \item instalar dependencias reproducibles del backend con Python 3.11;
+    \item iniciar FastAPI y esperar el health check;
+    \item ejecutar JMeter 5.6.3 en modo no gráfico mediante contenedor;
+    \item evaluar automáticamente muestras, errores y p95;
+    \item publicar JTL, reporte HTML y log del backend durante 14 días;
+    \item detener el backend incluso cuando falle un paso.
+\end{enumerate}
+
+El job tiene límite de 15 minutos, permisos de solo lectura y cancelación de
+ejecuciones anteriores de la misma rama. El reporte se conserva como artefacto
+\texttt{jmeter-performance-report}. El gate complementa pytest, Jest, Cypress y
+SonarCloud; no reemplaza pruebas funcionales ni observabilidad de producción.
+
+\section{Cómo ejecutar en el futuro}
+
+La ejecución manual puede parametrizar usuarios e iteraciones desde
+\textit{workflow\_dispatch}. Para una prueba local equivalente se requiere iniciar
+el backend en el puerto 9443 y ejecutar JMeter 5.6.3 en modo no gráfico contra el
+JMX. Por instrucción del alcance actual, \textbf{la prueba no fue ejecutada durante
+esta actualización}; únicamente se codificó, integró y documentó.

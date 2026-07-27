@@ -39,18 +39,21 @@
 
 Requisitos funcionales totales & 10\\
 Requisitos cubiertos & 10 (100\%)\\
-Casos de prueba diseñados & 14\\
-Casos de prueba ejecutados & 14 (100\%)\\
-Casos pasados & 13 (92.86\%)\\
-Casos fallados & 1 (7.14\%)\\
+Casos de prueba diseñados & 17\\
+Casos de prueba ejecutados & 17 (100\%)\\
+Casos pasados & 13 (76.47\%)\\
+Casos fallados & 4 (23.53\%)\\
 Defectos encontrados & 8\\
 Defectos corregidos & 3 (37.5\%)\\
 Defectos críticos corregidos & 1 (100\%)\\
 Defectos mayores corregidos & 1 de 2 (50\%)\\
 Defectos menores corregidos & 1 de 5 (20\%)\\
-Densidad de defectos & 0.57 defectos/caso\\
+Densidad de defectos & 0.47 defectos/caso\\
 Reducción de deuda técnica (backend) & 1h 20min $\rightarrow$ 45min (44\%)\\
 Reducción de deuda técnica (frontend) & 2h 15min $\rightarrow$ 1h 30min (33\%)\\
+Cobertura final en SonarCloud & 90.4\%\\
+Issues abiertos en SonarCloud & 0\\
+Quality Gate final & Aprobado\\
 
 \bottomrule
 \end{longtable}
@@ -58,9 +61,9 @@ Reducción de deuda técnica (frontend) & 2h 15min $\rightarrow$ 1h 30min (33\%)
 \section{Resumen de Actividades}
 
 \begin{enumerate}
-    \item \textbf{Planificación (18 Jul):} Configuración de Jira, redacción de SQAP, diseño de 14 casos de prueba, elaboración de matriz de rastreabilidad.
-    \item \textbf{Ejecución (19 Jul):} Ejecución manual de 14 casos de prueba, reporte de 8 bugs en Jira, pipeline CI/CD configurado, suites de pytest y Cypress operativas.
-    \item \textbf{Re-testing (20 Jul):} Verificación de 3 bugs corregidos, análisis estático final con SonarCloud, extracción de evidencias (capturas, logs).
+    \item \textbf{Planificación (18 Jul):} Configuración de Jira, redacción de SQAP, diseño de 17 casos de prueba, elaboración de matriz de rastreabilidad.
+    \item \textbf{Ejecución (19 Jul):} Ejecución manual de 17 casos de prueba, reporte de 8 bugs en Jira, pipeline CI/CD configurado, suites de pytest y Cypress operativas.
+    \item \textbf{Re-testing (20 Jul):} Verificación de 3 bugs corregidos y de la incidencia de formateo IA asociada a CP-09, análisis estático final con SonarCloud y extracción de evidencias.
     \item \textbf{Cierre (21 Jul):} Consolidación del PDF final del SQAP, grabación del video demo, entrega del informe de cierre.
 \end{enumerate}
 
@@ -74,7 +77,7 @@ Reducción de deuda técnica (frontend) & 2h 15min $\rightarrow$ 1h 30min (33\%)
 
 \section{Conclusiones Finales}
 
-El sprint de calidad de SpeechNotes se completó exitosamente, alcanzando una cobertura del 100\% de los requisitos funcionales y una tasa de aprobación del 92.86\%. Se identificaron y corrigieron 3 defectos (incluyendo 1 crítico), y se redujo la deuda técnica en un 37\% mediante refactorización asistida por SonarCloud.
+El sprint de calidad de SpeechNotes cubrió el 100\% de los requisitos funcionales y cerró con una tasa de aprobación del 76.47\%. CP-09 fue corregido y aprobado en re-prueba, mientras CP-05 y CP-16 conservan evidencia de fallos pendientes. El análisis final de SonarCloud alcanzó 90.4\% de cobertura, 0 issues abiertos y \textit{Quality Gate} aprobado.
 
 Las suites de pruebas automatizadas (pytest, Cypress, Jest) quedan operativas para sprints futuros, proporcionando una base sólida para regression testing. Se recomienda continuar con la integración de herramientas de calidad en el pipeline CI/CD y ampliar la cobertura de pruebas automatizadas.
 
@@ -83,7 +86,7 @@ Las suites de pruebas automatizadas (pytest, Cypress, Jest) quedan operativas pa
 \begin{figure}[H]
 \centering
 \fbox{\parbox{0.8\textwidth}{\centering\small
-\textbf{Nota:} Las capturas de pantalla del sistema en funcionamiento (pantalla de login, grabación activa, transcripción en vivo, editor, formateo IA, chat contextual) y del tablero de Jira con los bugs registrados se adjuntan como material complementario al video demo.
+\textbf{Nota:} Las capturas de pantalla usadas como evidencia del sprint SQA quedan integradas en este informe junto con los casos de prueba, la matriz de rastreabilidad y el reporte de defectos.
 }}
 \caption{Evidencias visuales del sprint SQA}
 \label{fig:evidencias}

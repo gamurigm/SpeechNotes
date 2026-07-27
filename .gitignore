@@ -94,7 +94,9 @@ docs/internal/
 # I moved them to tests/ and scripts/.
 # If user says "no incluyas cosas de la raiz", they might mean files.
 # But "scripts, tests" are dirs. I will exclude them from git to be safe/clean as requested.
-tests/
+tests/*
+!/tests/performance/
+!/tests/performance/*.jmx
 !/web/tests/
 !/web/tests/**
 web/tests/evidence/coverage/

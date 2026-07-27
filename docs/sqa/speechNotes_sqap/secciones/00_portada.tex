@@ -1,34 +1,72 @@
 \begin{titlepage}
-\centering
-\vspace*{2cm}
+\definecolor{EspeColor}{HTML}{1A5276}
+\definecolor{AccentColor}{HTML}{2980B9}
+\definecolor{SoftBg}{HTML}{F4F6F7}
 
-{\Huge\bfseries Plan de Aseguramiento\\[0.3cm] de la Calidad de Software\\[0.3cm] (SQAP)}
+\begin{center}
+    \vspace*{0.5cm}
+    
+    % ── Logo Institucional ──
+    \includegraphics[width=0.45\textwidth]{imgs/espe-logo.png}\\[0.8cm]
+    
+    % ── Encabezado ──
+    {\LARGE \textcolor{EspeColor}{\bfseries UNIVERSIDAD DE LAS FUERZAS ARMADAS ESPE}}\\[0.3cm]
+    {\Large \textcolor{AccentColor}{\bfseries DEPARTAMENTO DE CIENCIAS DE LA COMPUTACIÓN}}\\[0.2cm]
+    {\large \textbf{Aseguramiento de la Calidad de Software}}
+    
+    \vspace{1cm}
+    
+    % ── Separador Superior ──
+    \textcolor{EspeColor}{\rule{\textwidth}{2.5pt}}
+    \vspace{0.8cm}
+    
+    % ── Título del Documento ──
+    {\Huge \textcolor{EspeColor}{\bfseries Plan de Aseguramiento de la Calidad}}\\[0.4cm]
+    {\Huge \textcolor{EspeColor}{\bfseries de Software (SQAP)}}
+    
+    \vspace{0.8cm}
+    % ── Separador Inferior ──
+    \textcolor{EspeColor}{\rule{\textwidth}{2.5pt}}
+    
+    \vspace{1.2cm}
+    
+    % ── Detalles del Proyecto (Caja de color) ──
+    \fcolorbox{EspeColor}{SoftBg}{
+        \begin{minipage}{0.85\textwidth}
+            \centering
+            \vspace{0.4cm}
+            {\Large \textcolor{AccentColor}{\bfseries PROYECTO}}\\[0.3cm]
+            {\LARGE \bfseries SpeechNotes}\\[0.2cm]
+            {\large Sistema de Transcripción Inteligente con IA}
+            \vspace{0.4cm}
+        \end{minipage}
+    }
+    
+    \vspace{1.5cm}
+    
+    % ── Integrantes ──
+    \fcolorbox{EspeColor}{white}{
+        \begin{minipage}{0.75\textwidth}
+            \centering
+            \vspace{0.4cm}
+            {\Large \textcolor{EspeColor}{\bfseries INTEGRANTES}}\\[0.5cm]
+            \begin{tabular}{>{\large}l @{\hspace{2cm}} >{\large}l}
+                $\bullet$ \textbf{Mesías Mariscal} & $\bullet$ \textbf{Julio Viche} \\[0.4cm]
+                $\bullet$ \textbf{Denise Rea}      & $\bullet$ \textbf{Gabriel Murillo} \\
+            \end{tabular}
+            \vspace{0.4cm}
+        \end{minipage}
+    }
+    
+    \vfill
+    
+    % ── Footer de Portada ──
+    \textcolor{AccentColor}{\rule{0.6\textwidth}{1pt}}\\[0.3cm]
+    {\large \textcolor{EspeColor}{\textbf{Fecha de Entrega:}} Julio 2026}\\[0.1cm]
+    {\small \textcolor{EspeColor}{\textit{Documento de Evaluación de Calidad SQA --- Versión 1.0}}}\\[0.1cm]
+    {\small \textcolor{EspeColor}{\textit{Estándar de Referencia: IEEE Std 730-1998 / IEEE Std 730.1-1995}}}
 
-\vspace{1.5cm}
-
-{\LARGE\bfseries SpeechNotes}\\[0.3cm]
-{\large Sistema de Transcripción Inteligente con IA}
-
-\vspace{2cm}
-
-{\large\textbf{Consultora de Calidad Externa}}\\[0.5cm]
-{\large Sprint de Calidad --- Julio 2026}
-
-\vspace{1.5cm}
-
-\begin{tabular}{rl}
-\textbf{Versión:} & 1.0\\
-\textbf{Fecha:} & Julio 2026\\
-\textbf{Cliente:} & SpeechNotes Development Team\\
-\textbf{Estándar:} & IEEE 730-1998 / IEEE 730.1-1995\\
-\end{tabular}
-
-\vfill
-
-\rule{0.6\textwidth}{0.4pt}\\[0.3cm]
-{\small \textit{Documento controlado por la Consultora de Calidad.}}\\
-{\small \textit{Distribución limitada al equipo del proyecto.}}
-
+\end{center}
 \end{titlepage}
 
 % ── Tabla de Revisiones ──

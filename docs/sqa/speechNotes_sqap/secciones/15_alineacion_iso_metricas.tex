@@ -1,0 +1,278 @@
+\chapter{Alineación con ISO/IEC 25000 y Métricas de Calidad}
+\label{sec:alineacion-iso-metricas}
+
+\section{Objetivo, alcance y criterio de interpretación}
+
+Este capítulo relaciona las prácticas y evidencias de SpeechNotes con la familia
+ISO/IEC 25000 (SQuaRE) y con otras normas aplicables. El análisis cubre backend
+Python/FastAPI, frontend Next.js/TypeScript, componentes de escritorio,
+transcripción y funciones asistidas por inteligencia artificial.
+
+La relación presentada constituye una evaluación de \textbf{alineación}; no es
+una auditoría independiente, una certificación ISO ni una declaración formal de
+conformidad. Los umbrales son criterios de aceptación definidos para SpeechNotes.
+ISO/IEC 25023 propone medidas, pero no establece valores universales de aprobación.
+
+\section{Resumen ejecutivo}
+
+SpeechNotes dispone de requisitos trazables, casos positivos, negativos y de
+límite, pruebas automatizadas, pruebas de extremo a extremo, análisis estático y
+un \textit{Quality Gate} integrado en CI/CD. Sus principales puntos a favor son:
+
+\begin{itemize}
+    \item \textbf{Adecuación funcional:} los 19 requisitos funcionales de la matriz
+    vigente tienen casos asociados. Se diseñaron 51 casos y cada requisito cuenta
+    con entre 2 y 4 casos.
+    \item \textbf{Mantenibilidad:} hay separación modular, pruebas unitarias y de
+    integración, linting, SonarCloud, cobertura y dependencias bloqueadas.
+    \item \textbf{Seguridad:} se evidencian autenticación, validación de rutas,
+    variables de entorno, análisis estático y control del \textit{Quality Gate}.
+    \item \textbf{Fiabilidad:} existen health checks y pruebas ante errores de
+    WebSocket, entradas inválidas y fallos de proveedores.
+    \item \textbf{Evaluación repetible:} GitHub Actions ejecuta pytest, Jest,
+    Cypress y SonarCloud y conserva artefactos de prueba.
+    \item \textbf{Base para evaluar IA:} los proveedores son sustituibles y se
+    utilizan dobles de prueba. Faltan WER, fidelidad RAG y desempeño por idioma.
+\end{itemize}
+
+El cierre histórico es favorable en cobertura y análisis estático, pero la
+verificación local del 22 de julio de 2026 encontró una falla en backend y otra
+en frontend por falta de aislamiento del entorno. Tampoco existen series actuales
+de latencia, disponibilidad, usabilidad o exactitud. La valoración global es de
+\textbf{alineación parcial-alta con brechas de medición operativa y aislamiento}.
+
+\section{Normas aplicables}
+
+\begin{longtable}{p{3.4cm}p{5cm}p{6.2cm}}
+\caption{Normas y relación con SpeechNotes}
+\label{tab:normas-iso-speechnotes}\\
+\toprule
+\textbf{Norma} & \textbf{Aporte} & \textbf{Aplicación o evidencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Norma} & \textbf{Aporte} & \textbf{Aplicación o evidencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+ISO/IEC 25000:2014 & Guía y vocabulario general de SQuaRE. & Ordena requisitos, modelos, medidas y evaluación.\\
+ISO/IEC 25010:2023 & Modelo vigente de calidad con nueve características. & Base de la Tabla~\ref{tab:iso25010-evidencia}.\\
+ISO/IEC 25023:2016 & Medición cuantitativa de calidad. & Base metodológica del catálogo; está en revisión a la fecha de corte.\\
+ISO/IEC 25030:2019 & Gobierno de requisitos de calidad. & Cada métrica incluye fórmula, fuente, meta y responsable.\\
+ISO/IEC 25040:2024 & Marco vigente de evaluación. & El SQAP conserva plan, criterios, resultados y evidencias.\\
+ISO/IEC 25012:2008 & Modelo de calidad de datos. & Aplica a transcripciones, metadatos, documentos y embeddings.\\
+ISO/IEC 25059:2023 & Modelo de calidad para IA. & Aplica a ASR, traducción, formateo y RAG.\\
+ISO/IEC/IEEE 29119-2:2021 & Procesos de prueba. & Casos, matriz RF--CP, criterios, automatización y defectos.\\
+ISO/IEC/IEEE 12207:2026 & Ciclo de vida del software. & Git, CI/CD, desarrollo, prueba y mantenimiento.\\
+ISO/IEC 27001:2022 & Riesgos sobre confidencialidad, integridad y disponibilidad. & Hay controles técnicos, no evidencia de un SGSI completo.\\
+ISO 9241-11:2018 & Usabilidad en contexto de uso. & Hay pruebas funcionales; faltan medidas con usuarios.\\
+IEEE 730 & Procesos SQA. & El SQAP cita IEEE 730-1998, edición superada que debe actualizarse.\\
+\end{longtable}
+
+Fuentes oficiales consultadas el 22 de julio de 2026:
+\url{https://www.iso.org/standard/64764.html},
+\url{https://www.iso.org/standard/78176.html},
+\url{https://www.iso.org/standard/35747.html},
+\url{https://www.iso.org/standard/72116.html},
+\url{https://www.iso.org/standard/83467.html},
+\url{https://www.iso.org/standard/35736.html},
+\url{https://www.iso.org/standard/80655.html},
+\url{https://www.iso.org/standard/79428.html},
+\url{https://www.iso.org/standard/90219.html},
+\url{https://www.iso.org/standard/27001},
+\url{https://www.iso.org/standard/63500.html} y
+\url{https://standards.ieee.org/ieee/730/5284/}.
+
+\section{Evaluación según ISO/IEC 25010:2023}
+
+\begin{longtable}{p{3.2cm}p{6.9cm}p{2.2cm}p{3.8cm}}
+\caption{Características ISO/IEC 25010:2023 y evidencia del proyecto}
+\label{tab:iso25010-evidencia}\\
+\toprule
+\textbf{Característica} & \textbf{Puntos a favor} & \textbf{Estado} & \textbf{Evidencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Característica} & \textbf{Puntos a favor} & \textbf{Estado} & \textbf{Evidencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Adecuación funcional & Matriz RF--CP y 51 casos con caminos exitosos, errores y límites. & Fuerte & \path{docs/test/matriz_rastreabilidad.md} y casos de prueba.\\
+Eficiencia de desempeño & Streaming, VAD y procesamiento por lotes. & No medida & Sin percentiles de latencia, capacidad o recursos.\\
+Compatibilidad & REST, WebSocket, web, Electron, Tauri y proveedores encapsulados. & Parcial & \path{desktop/}, \path{web/src-tauri/} y protocolos NIM.\\
+Capacidad de interacción & Login, dashboard, estados, visor, temas, zoom y mensajes. & Parcial & \path{web/app/}, E2E y capturas.\\
+Fiabilidad & Salud, pérdida de WebSocket, entradas corruptas y fallos externos. & Parcial-fuerte & Pruebas de health, WebSocket y riesgos.\\
+Seguridad & NextAuth, autenticación, rutas, SAST y \textit{Quality Gate}. & Parcial-fuerte & Auth, path security, SonarCloud y CI.\\
+Mantenibilidad & Modularidad, patrones, linters, pruebas, cobertura y duplicación. & Fuerte con reservas & Suites y \path{sonar-project.properties}; revisar exclusiones.\\
+Flexibilidad & Configuración por entorno, registro de proveedores y web/escritorio. & Parcial-fuerte & \path{.env.example}, NIM y factory de ambiente.\\
+Seguridad operacional & Límites y manejo de errores; el dominio no se declara crítico. & No demostrada & Sin análisis de peligros por transcripciones incorrectas.\\
+\end{longtable}
+
+La principal fortaleza es la cadena requisito $\rightarrow$ caso $\rightarrow$
+ejecución $\rightarrow$ defecto $\rightarrow$ corrección/reprueba $\rightarrow$
+control automatizado. Un caso diseñado no equivale a ejecución y una captura
+histórica no equivale al estado del commit actual.
+
+\section{Línea base histórica y verificación actual}
+
+\subsection{Evidencia histórica}
+
+El Apéndice~\ref{apendice:e} registra 10 de 10 requisitos del alcance original,
+17 de 17 casos manuales ejecutados, 13 aprobados y 4 fallidos. Reporta 8 defectos,
+3 corregidos, 90.4\% de cobertura SonarCloud, 0.5\% de duplicación, seguridad A,
+cero incidencias y \textit{Quality Gate} aprobado. Son cifras históricas, no una
+medición reproducida en esta revisión.
+
+La matriz vigente amplía el alcance documental a 19 requisitos y 51 casos: 34 de
+camino exitoso, 13 de error y 4 de límite. Los 19 requisitos tienen casos. Esto
+demuestra cobertura de \textbf{diseño}, no ejecución ni aprobación de los 51 casos.
+
+\subsection{Ejecución local del 22 de julio de 2026}
+
+\begin{table}[H]
+\centering
+\caption{Resultado de las suites ejecutadas durante la revisión}
+\label{tab:ejecucion-actual-iso}
+\begin{tabular}{lrrrrl}
+\toprule
+\textbf{Suite} & \textbf{Rec.} & \textbf{Aprob.} & \textbf{Fall.} & \textbf{Omit.} & \textbf{Tasa}\\
+\midrule
+Backend pytest & 362 & 251 & 1 & 110 & 99.60\%\\
+Frontend Jest & 42 & 41 & 1 & 0 & 97.62\%\\
+Consolidado & 404 & 292 & 2 & 110 & 99.32\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La tasa usa solo pruebas ejecutadas; las omitidas se informan aparte. Ambas suites
+incumplen el criterio de suite verde. Las fallas se relacionaron con variables
+sensibles heredadas: un test intentó contactar a un proveedor real y otro recibió
+secretos que esperaba vacíos. Los valores no se reproducen. Si eran credenciales
+reales, deben rotarse y los logs deben sanitizarse.
+
+El backend local utilizó Python 3.14.3, mientras CI define Python 3.11. El comando
+npm tampoco propagó la opción de cobertura al Jest interno; no se obtuvo una
+cobertura frontend nueva y verificable.
+
+\section{Catálogo documentado de métricas}
+
+Cada medición debe registrar ID, objetivo, definición, fórmula, unidad, fuente,
+commit, ambiente, responsable, fecha, umbral, resultado y decisión. Los estados
+son: \textbf{cumple}, \textbf{no cumple}, \textbf{histórico} y
+\textbf{no medido}.
+
+\begin{landscape}
+\small
+\begin{longtable}{p{1cm}p{4.2cm}p{3.6cm}p{4.5cm}p{7.5cm}}
+\caption{Definición, justificación, cumplimiento y evidencia de métricas}
+\label{tab:catalogo-metricas-iso}\\
+\toprule
+\textbf{ID} & \textbf{Definición} & \textbf{Fórmula} & \textbf{Justificación y meta} & \textbf{Resultado, cumplimiento y evidencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Definición} & \textbf{Fórmula} & \textbf{Justificación y meta} & \textbf{Resultado, cumplimiento y evidencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+M-01 & RF con al menos un CP asociado. & $RF_c/RF_t\times100$ & Adecuación y trazabilidad. Meta 100\%. & 19/19 = 100\%. \textbf{Cumple}. Matriz RF--CP; no prueba ejecución.\\
+M-02 & Menor cantidad de CP por RF. & $\min(CP\ por\ RF)$ & Evita cobertura nominal. Meta $\geq2$ y negativo/límite en funciones críticas. & Mínimo 2; 17/51 son error o límite. \textbf{Cumple parcialmente}; varios RF carecen de caso negativo.\\
+M-03 & Aprobación backend sobre pruebas ejecutadas. & $P/(P+F+E)\times100$ & Fiabilidad. Meta CI 100\%. & 251/252 = 99.60\%; 110 omitidas. \textbf{No cumple}. Pytest 22/07/2026.\\
+M-04 & Aprobación frontend sobre pruebas ejecutadas. & Igual a M-03. & Fiabilidad e interacción. Meta CI 100\%. & 41/42 = 97.62\%. \textbf{No cumple}. Jest 22/07/2026.\\
+M-05 & Pruebas no omitidas sobre recolectadas. & $(P+F+E)/R\times100$ & Separa inventario de ejecución. Meta backend CI $\geq90$\%. & 252/362 = 69.61\%. \textbf{No cumple localmente}; repetir en CI con servicios.\\
+M-06 & Cobertura de código instrumentado. & $cubiertos/medibles\times100$ & Mantenibilidad. Meta $\geq80$\% global y $\geq70$\% por componente crítico. & 90.4\% histórico. \textbf{Cumple históricamente; actual no verificado}. Apéndice~\ref{apendice:d}.\\
+M-07 & Líneas duplicadas respecto del total. & $duplicadas/analizadas\times100$ & Modificabilidad. Meta $\leq3$\%. & 0.5\% histórico. \textbf{Cumple históricamente}. Apéndice~\ref{apendice:d}.\\
+M-08 & Incidencias estáticas por severidad. & Conteo por severidad. & Seguridad y mantenibilidad. Meta: 0 críticas y 0 vulnerabilidades altas. & 0 incidencias y seguridad A históricas. \textbf{Cumple históricamente}; revisar exclusiones.\\
+M-09 & Decisión del \textit{Quality Gate}. & Aprobado/rechazado. & Aceptación objetiva según 25040. Meta: aprobado. & Aprobado históricamente y workflow configurado. \textbf{Histórico/configurado}; vincular commit actual.\\
+M-10 & Defectos cerrados y verificados. & $cerrados/encontrados\times100$ & Fiabilidad. Meta: 100\% críticos/mayores y $\geq80$\% total o riesgo aceptado. & 3/8 = 37.5\%; críticos 100\%, mayores 50\%. \textbf{No cumple global ni mayores; cumple críticos}.\\
+M-11 & Latencia p95 de audio a texto parcial. & $P_{95}(t_{texto}-t_{audio})$ ms & Desempeño. Meta inicial p95 $\leq2000$ ms y error $<1$\%. & \textbf{No medido}. Instrumentar timestamps y reportar por sesión.\\
+M-12 & Disponibilidad del servicio y flujo crítico. & $(T-indisponibilidad)/T\times100$ & Fiabilidad. Meta mensual $\geq99.5$\%. & \textbf{No medido}. Health check no demuestra disponibilidad mensual.\\
+M-13 & Reconexiones WebSocket sin pérdida indebida. & $exitosas/simuladas\times100$ & Recuperabilidad. Meta $\geq99$\%. & \textbf{No medido}. Hay CP-008, CP-033 y tests, sin tasa.\\
+M-14 & Exactitud ASR mediante WER. & $(S+D+I)/N\times100$ & Funcionalidad, IA y datos. Meta inicial audio limpio español $\leq15$\%. & \textbf{No medido}. Crear corpus versionado por ruido, acento e idioma.\\
+M-15 & Respuestas RAG respaldadas por el documento. & $respaldadas/evaluadas\times100$ & Calidad IA. Meta $\geq95$\% y cero invenciones fuera de contexto. & \textbf{No medido}. Hay prompt y tests, no evaluación de contenido.\\
+M-16 & Registros con metadatos obligatorios completos. & $completos/evaluados\times100$ & ISO 25012. Meta 100\%. & \textbf{No medido}. Usar repositorios, Prisma y pruebas de transcripción.\\
+M-17 & Usuarios que completan tareas críticas. & $completan/participantes\times100$; tiempo y SUS & ISO 9241-11. Meta $\geq90$\% y SUS $\geq80$. & \textbf{No medido}. Evaluar login, grabación, transcripción, búsqueda y exportación.\\
+M-18 & Tests aislados de secretos y red no simulada. & $aislados/tests\ de\ proveedor\times100$ & Seguridad y repetibilidad. Meta 100\%. & \textbf{No cumple cualitativamente}: dos fallas por entorno y una llamada externa. Falta inventariar denominador.\\
+\end{longtable}
+\normalsize
+\end{landscape}
+
+\section{Periodicidad y responsables}
+
+\begin{longtable}{p{3.1cm}p{4cm}p{3.2cm}p{5.6cm}}
+\caption{Programa de medición propuesto}
+\label{tab:programa-medicion-iso}\\
+\toprule
+\textbf{Momento} & \textbf{Métricas} & \textbf{Responsable} & \textbf{Evidencia}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Momento} & \textbf{Métricas} & \textbf{Responsable} & \textbf{Evidencia}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Cada push/PR & M-03 a M-09 y M-18 & Desarrollo y QA & JUnit, cobertura, Sonar, logs sanitizados y SHA.\\
+Cada sprint & M-01, M-02, M-10 y M-16 & QA Lead y Product Owner & Matriz RF--CP, defectos y reporte de datos.\\
+Antes de liberar & M-03, M-04, M-08, M-09, M-10, M-14 y M-15 & Comité de aceptación & Acta con cumplimiento, excepciones y riesgo residual.\\
+Operación mensual & M-11 a M-13 & Operaciones & Dashboard, incidentes y SLO.\\
+Cambio de modelo/corpus/prompt & M-14 y M-15 & Responsable IA y QA & Dataset versionado y comparación con línea base.\\
+\end{longtable}
+
+\section{Brechas y acciones prioritarias}
+
+\begin{enumerate}
+    \item \textbf{Aislar pruebas y secretos:} usar configuración exclusiva para
+    test, limpiar variables, bloquear red no simulada, sanitizar reportes y rotar
+    credenciales reales expuestas.
+    \item \textbf{Restablecer suites verdes:} corregir las dos fallas y ejecutar
+    Python 3.11, Jest con cobertura y Cypress sobre el mismo commit.
+    \item \textbf{Unificar alcance:} documentar el paso de 10 RF/17 CP históricos
+    a 19 RF/51 CP actuales y registrar estado, fecha y evidencia por CP.
+    \item \textbf{Medir el propósito central:} incorporar WER, latencia y fidelidad
+    RAG para demostrar la calidad de transcripción y asistencia IA.
+    \item \textbf{Definir SLO:} medir latencia p50/p95/p99, disponibilidad,
+    errores, reconexión y recursos.
+    \item \textbf{Evaluar usabilidad:} registrar éxito, tiempo, errores y
+    satisfacción con usuarios representativos.
+    \item \textbf{Revisar exclusiones Sonar:} asignar razón, responsable,
+    caducidad y riesgo a cada exclusión.
+    \item \textbf{Actualizar normas:} reemplazar IEEE 730-1998 por la referencia
+    vigente o justificar formalmente la edición anterior.
+\end{enumerate}
+
+\section{Resumen para conferencia corta}
+
+SpeechNotes combina captura de audio, detección de voz, transcripción en tiempo
+real, traducción, búsqueda semántica y chat sobre documentos. El trabajo de
+calidad construyó trazabilidad entre requisitos, casos, defectos y automatización.
+
+ISO/IEC 25010 se utilizó como mapa de características; ISO/IEC 25023 para medidas;
+ISO/IEC 25030 para requisitos cuantificables; e ISO/IEC 25040 para organizar la
+evaluación. También se consideraron ISO/IEC 25059 para IA, ISO/IEC 25012 para los
+datos, ISO/IEC/IEEE 29119 para pruebas e ISO/IEC 27001 para seguridad.
+
+La matriz vigente cubre 19 requisitos con 51 casos diseñados. El cierre histórico
+documenta 90.4\% de cobertura, 0.5\% de duplicación, seguridad A y \textit{Quality
+Gate} aprobado. En la revisión actual, backend aprobó 251 de 252 pruebas ejecutadas
+y frontend 41 de 42. Las fallas revelaron falta de aislamiento. También faltan
+latencia, disponibilidad, usabilidad, WER y fidelidad de IA.
+
+SpeechNotes no se presenta como producto certificado, sino como proyecto con
+alineación práctica y evidencia verificable. El siguiente nivel de madurez es
+mantener suites verdes, proteger secretos y actualizar métricas con fórmula,
+umbral, responsable y evidencia por versión.
+
+\section{Conclusión de cumplimiento}
+
+M-01 cumple; M-02 cumple parcialmente; M-03, M-04, M-05, M-10 y M-18 no cumplen
+al corte; M-06 a M-09 tienen cumplimiento histórico pendiente de reproducción; y
+M-11 a M-17 no disponen de medición suficiente. El proyecto está bien encaminado
+y respaldado por evidencia, pero no demuestra conformidad integral con ISO/IEC
+25010 ni certificación bajo las normas citadas.
+
+El catálogo debe mantenerse como parte viva del SQAP, actualizarse desde CI y
+vincular cada resultado con commit, ambiente y artefacto.
