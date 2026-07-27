@@ -197,13 +197,20 @@ jobs:
         run: python scripts/security_scan.py
 
       - name: Install backend test dependencies
-        run: python -m pip install --require-hashes -r backend/requirements-test.lock
+        run: |
+          python -m venv .venv-security
+          . .venv-security/bin/activate
+          python -m pip install --require-hashes -r backend/requirements-test.lock
 
       - name: Check Python dependency consistency
-        run: python -m pip check
+        run: |
+          . .venv-security/bin/activate
+          python -m pip check
 
       - name: Run backend security tests
-        run: PYTHONPATH=. pytest backend/tests/test_security_headers.py backend/tests/test_path_security.py -m security -v --tb=short --junitxml=security-test-results.xml
+        run: |
+          . .venv-security/bin/activate
+          PYTHONPATH=. pytest backend/tests/test_security_headers.py backend/tests/test_path_security.py -m security -v --tb=short -p no:cacheprovider --basetemp=tmp/pytest-security --junitxml=security-test-results.xml
 
       - name: Upload security test results
         if: always()
