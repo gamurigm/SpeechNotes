@@ -2,7 +2,7 @@ name: SpeechNotes - DevSecOps Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/security-ci-branch]
   pull_request:
     branches: [main]
   workflow_dispatch:

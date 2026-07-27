@@ -28,8 +28,9 @@ if _ffmpeg_path:
     from pydub import AudioSegment
     AudioSegment.converter = _ffmpeg_path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 import socketio
 
 # Initialize tracing as early as possible
@@ -54,15 +55,33 @@ from routers import audio_format
 from routers import settings
 from routers import translation as translation_router
 
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:3006",
+    "http://127.0.0.1:3006",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
+def get_allowed_origins() -> list[str]:
+    configured_origins = os.environ.get("BACKEND_CORS_ORIGINS", "")
+    if not configured_origins.strip():
+        return DEFAULT_ALLOWED_ORIGINS
+
+    origins = [
+        origin.strip()
+        for origin in configured_origins.split(",")
+        if origin.strip() and origin.strip() != "*"
+    ]
+    return origins or DEFAULT_ALLOWED_ORIGINS
+
+
+ALLOWED_ORIGINS = get_allowed_origins()
+
 # Create Socket.IO server
 sio = socketio.AsyncServer(
     async_mode='asgi',
-    cors_allowed_origins=[
-        'http://localhost:3006',
-        'http://127.0.0.1:3006',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000'
-    ]
+    cors_allowed_origins=ALLOWED_ORIGINS,
 )
 
 # Create FastAPI app
@@ -75,11 +94,29 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Accept", "Authorization", "Content-Type", "x-api-key"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), geolocation=(), microphone=(self)",
+    )
+    if request.url.scheme == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    return response
 
 from utils.auth import require_auth
 from fastapi import Depends
