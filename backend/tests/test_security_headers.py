@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 # Python 3.13+ removed audioop; these tests do not exercise audio processing.
 sys.modules.setdefault("audioop", types.ModuleType("audioop"))
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from backend.main import ALLOWED_ORIGINS, app
 
