@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // App info
     getVersion: () => ipcRenderer.invoke('get-version'),
     getPlatform: () => process.platform,
+    startGoogleAuth: () => ipcRenderer.invoke('google-auth:start'),
 
     // Safe storage (for encrypting API keys)
     encrypt: (text) => ipcRenderer.invoke('safe-encrypt', text),

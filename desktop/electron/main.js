@@ -2,7 +2,7 @@
  * SpeechNotes Desktop - Electron Main Process (CJS)
  */
 
-const { app, BrowserWindow, dialog, safeStorage, net: electronNet } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell, safeStorage, net: electronNet } = require('electron');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
@@ -27,6 +27,7 @@ const FRONTEND_PORT = 3006;
 let backendProcess = null;
 let frontendProcess = null;
 let mainWindow = null;
+let activeGoogleAuth = null;
 
 // ---------------------------------------------------------------------------
 // Utility: wait for a TCP port to be listening
@@ -56,6 +57,100 @@ function waitForPort(port, host = '127.0.0.1', timeout = 60000) {
         }
 
         tryConnect();
+    });
+}
+
+function finishGoogleAuth(auth, error, result) {
+    if (activeGoogleAuth !== auth) return;
+    activeGoogleAuth = null;
+    if (auth.timeout) clearTimeout(auth.timeout);
+    if (auth.server?.listening) auth.server.close();
+    if (error) auth.reject(error);
+    else auth.resolve(result);
+}
+
+function startGoogleAuth() {
+    if (activeGoogleAuth) {
+        finishGoogleAuth(activeGoogleAuth, new Error('Google sign-in restarted'));
+    }
+
+    return new Promise((resolve, reject) => {
+        const auth = { resolve, reject, server: null, state: null, callbackUrl: null, timeout: null };
+        activeGoogleAuth = auth;
+        auth.server = http.createServer((req, res) => {
+            let requestUrl;
+            try {
+                requestUrl = new URL(req.url || '/', auth.callbackUrl || 'http://127.0.0.1');
+            } catch {
+                res.writeHead(400, { 'Cache-Control': 'no-store' }).end('Invalid authentication response.');
+                return;
+            }
+
+            const callbackOrigin = auth.callbackUrl ? new URL(auth.callbackUrl).origin : null;
+            const codeValues = requestUrl.searchParams.getAll('code');
+            const stateValues = requestUrl.searchParams.getAll('state');
+            const code = codeValues[0];
+            const state = stateValues[0];
+            if (
+                req.method !== 'GET' ||
+                requestUrl.pathname !== '/callback' ||
+                requestUrl.origin !== callbackOrigin ||
+                req.headers.host !== new URL(auth.callbackUrl).host ||
+                codeValues.length !== 1 ||
+                stateValues.length !== 1 ||
+                !code ||
+                code.length > 128 ||
+                !auth.state ||
+                state !== auth.state
+            ) {
+                res.writeHead(400, { 'Cache-Control': 'no-store' }).end('Invalid authentication response.');
+                return;
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-store',
+            }).end('Google sign-in complete. You can return to SpeechNotes.');
+            finishGoogleAuth(auth, null, { code, state });
+        });
+
+        auth.server.on('error', error => finishGoogleAuth(auth, error));
+        auth.server.listen(0, '127.0.0.1', async () => {
+            const address = auth.server.address();
+            if (!address || typeof address === 'string') {
+                finishGoogleAuth(auth, new Error('Could not start the sign-in callback.'));
+                return;
+            }
+
+            auth.callbackUrl = `http://127.0.0.1:${address.port}/callback`;
+            try {
+                const origin = `http://localhost:${FRONTEND_PORT}`;
+                const response = await fetch(`${origin}/api/auth/desktop/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callbackUrl: auth.callbackUrl }),
+                    signal: AbortSignal.timeout(5000),
+                });
+                if (!response.ok) throw new Error('Could not register the sign-in callback.');
+
+                const payload = await response.json();
+                if (typeof payload.state !== 'string' || payload.state.length > 128) {
+                    throw new Error('Could not register the sign-in callback.');
+                }
+                auth.state = payload.state;
+                auth.timeout = setTimeout(
+                    () => finishGoogleAuth(auth, new Error('Google sign-in timed out.')),
+                    3 * 60 * 1000,
+                );
+                await shell.openExternal(`${origin}/login?desktop_state=${encodeURIComponent(auth.state)}`);
+            } catch (error) {
+                finishGoogleAuth(auth, new Error(
+                    error instanceof Error && error.message === 'Google sign-in timed out.'
+                        ? error.message
+                        : 'Could not open Google sign-in in your browser.',
+                ));
+            }
+        });
     });
 }
 
@@ -164,6 +259,7 @@ async function createWindow() {
 // ---------------------------------------------------------------------------
 
 app.whenReady().then(async () => {
+    ipcMain.handle('google-auth:start', startGoogleAuth);
     try {
         if (!isDev) {
             // 1. Start backend (in production only; in dev run_all.ps1 handles it)
@@ -198,6 +294,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+    if (activeGoogleAuth) {
+        finishGoogleAuth(activeGoogleAuth, new Error('SpeechNotes is closing.'));
+    }
     // Kill child processes
     if (backendProcess) {
         console.log('[Electron] Killing backend process');
