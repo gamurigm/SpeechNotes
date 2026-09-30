@@ -14,7 +14,7 @@ Let a user sign in to SpeechNotes Desktop with Google while keeping Google authe
 
 The loopback callback must accept only `127.0.0.1`, the expected path, the expected state, and one callback. The completion route must use the callback address registered at flow start and must not allow arbitrary redirects. Store no Google access or refresh token for this sign-in handoff. Normal browser Google sign-in remains unchanged.
 
-Keep pending requests and codes in a process-local map capped at 32 active entries, with a two-minute lifetime and opportunistic expiry cleanup. This desktop flow runs through one local Next.js server process; process restart invalidates outstanding attempts, which can be retried. `ponytail:` keep handoffs process-local; use shared storage only if this flow later needs to span Next.js processes or machines.
+Keep pending requests and codes in a process-local map capped at 32 active entries, with pending states expiring after three minutes and handoff codes after two minutes. Clean expired entries opportunistically. This desktop flow runs through one local Next.js server process; process restart invalidates outstanding attempts, which can be retried. `ponytail:` keep handoffs process-local; use shared storage only if this flow later needs to span Next.js processes or machines.
 
 ## Files and data
 

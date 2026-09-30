@@ -18,7 +18,7 @@
 - No provider secrets or reusable session tokens go in the callback URL.
 - Normal browser Google sign-in and credentials sign-in remain unchanged.
 - Always close the local listener after success, failure, timeout, or window shutdown.
-- The in-memory handoff map is capped at 32 active entries and is local to one Next.js process.
+- The in-memory handoff map is capped at 32 active entries and is local to one Next.js process; pending states expire after three minutes and handoff codes after two minutes.
 
 ## Review Focus
 
@@ -39,14 +39,14 @@
 - Modify: `web/lib/auth.ts`
 
 **Interfaces:**
-- `registerDesktopAuthRequest(callbackUrl: string): { state: string }` validates and stores the callback and a two-minute expiry in a process-local map; returns a random state while storing its hash.
+- `registerDesktopAuthRequest(callbackUrl: string): { state: string }` validates and stores the callback and a three-minute state expiry in a process-local map; returns a random state while storing its hash.
 - `completeDesktopAuthRequest(state: string, userId: string): { callbackUrl: string; code: string } | null` issues a random code only for a live, unused state and stores only its hash.
 - `consumeDesktopAuthCode(code: string, state: string): Promise<{ id: string; email: string | null; name: string | null } | null>` consumes a matching live code once and returns its user.
 - `POST /api/auth/desktop/start` accepts `{ callbackUrl }`, calls the register function, and responds `{ state }`.
 - `GET /desktop/auth/complete?state=...` requires an active NextAuth session and redirects only to the callback stored for that state.
 - NextAuth credentials provider id `desktop-google` accepts `code` and `state`, calls `consumeDesktopAuthCode`, and returns the existing user for the JWT session strategy.
 
-- [ ] Implement the bounded process-local map in `web/lib/desktop-auth-handoff.ts` on a `globalThis` singleton so App Router handlers share it; use SHA-256 hashes for state and code lookups, 32 active entries maximum, two-minute expiry, and opportunistic cleanup. Add the spec's `ponytail:` ceiling comment.
+- [ ] Implement the bounded process-local map in `web/lib/desktop-auth-handoff.ts` on a `globalThis` singleton so App Router handlers share it; use SHA-256 hashes for state and code lookups, 32 active entries maximum, three-minute state expiry, two-minute code expiry, and opportunistic cleanup. Add the spec's `ponytail:` ceiling comment.
 - [ ] Validate callback URLs at the trust boundary: allow only `http:`, host `127.0.0.1`, a valid nonzero port, path `/callback`, and no credentials, query, or fragment.
 - [ ] Implement `POST /api/auth/desktop/start` and the authenticated completion route. Reject invalid, expired, and duplicate states; never redirect to a callback supplied by the completion request.
 - [ ] Add the `desktop-google` credentials provider without changing existing Google or username/password provider behavior.

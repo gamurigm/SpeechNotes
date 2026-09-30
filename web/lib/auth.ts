@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { getConfig } from "@/config/ConfigManager";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { consumeDesktopAuthCode } from "@/lib/desktop-auth-handoff";
 
 // Obtener instancia única de configuración
 const config = getConfig();
@@ -33,9 +34,25 @@ export const authOptions: NextAuthOptions = {
           GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            authorization: { params: { prompt: "select_account" } },
           }),
         ]
       : []),
+
+    CredentialsProvider({
+      id: "desktop-google",
+      name: "Desktop Google",
+      credentials: {
+        code: { label: "Code", type: "text" },
+        state: { label: "State", type: "text" },
+      },
+      async authorize(credentials) {
+        const code = typeof credentials?.code === "string" ? credentials.code : "";
+        const state = typeof credentials?.state === "string" ? credentials.state : "";
+        if (code.length > 128 || state.length > 128) return null;
+        return consumeDesktopAuthCode(code, state);
+      },
+    }),
 
     CredentialsProvider({
       name: "Credentials",
