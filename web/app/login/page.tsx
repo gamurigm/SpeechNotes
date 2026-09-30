@@ -113,6 +113,43 @@ export default function LoginPage() {
         return true;
     };
 
+    const googleSignIn = async () => {
+        if (loading) return;
+        setLoading(true);
+        setError('');
+
+        try {
+            const desktopState = new URLSearchParams(window.location.search).get('desktop_state');
+            if (typeof window.electronAPI?.startGoogleAuth === 'function') {
+                const { code, state } = await window.electronAPI.startGoogleAuth();
+                const result = await signIn('desktop-google', {
+                    code,
+                    state,
+                    redirect: false,
+                    callbackUrl: '/',
+                });
+
+                if (!result?.ok) {
+                    setError('No se pudo completar el inicio de sesion con Google. Intentalo de nuevo.');
+                    return;
+                }
+
+                router.push('/');
+                router.refresh();
+                return;
+            }
+
+            const callbackUrl = desktopState
+                ? `/desktop/auth/complete?state=${encodeURIComponent(desktopState)}`
+                : '/';
+            await signIn('google', { callbackUrl });
+        } catch {
+            setError('No se pudo completar el acceso con Google. Intentalo de nuevo.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -351,8 +388,9 @@ export default function LoginPage() {
                             <div>
                                 <button
                                     type="button"
-                                    onClick={() => signIn('google', { callbackUrl: '/' })}
-                                    className="group relative flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-all hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                                    onClick={googleSignIn}
+                                    disabled={loading}
+                                    className="group relative flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-all hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 disabled:cursor-wait disabled:opacity-60"
                                 >
                                     <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                                         <path
@@ -372,7 +410,7 @@ export default function LoginPage() {
                                             fill="#EA4335"
                                         />
                                     </svg>
-                                    Iniciar con Google
+                                    {loading ? 'Continuando en el navegador...' : 'Iniciar con Google'}
                                 </button>
                             </div>
                         </>
