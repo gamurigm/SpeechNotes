@@ -187,12 +187,14 @@ function startFrontend() {
     const serverEntry = isDev
         ? path.join(__dirname, '..', 'web', '.next', 'standalone', 'server.js')
         : path.join(process.resourcesPath, 'frontend', 'server.js');
+    const nodeExecutable = isDev ? process.execPath.replace(/electron[^/\\]*$/i, 'node') : 'node';
 
     console.log(`[Electron] Starting frontend: ${serverEntry}`);
 
-    frontendProcess = spawn(process.execPath.replace(/electron[^/\\]*$/i, 'node'), [serverEntry], {
+    frontendProcess = spawn(nodeExecutable, [serverEntry], {
         env: {
             ...process.env,
+            ...(!isDev && { PATH: `${path.dirname(process.execPath)};${process.env.PATH || ''}` }),
             PORT: String(FRONTEND_PORT),
             HOSTNAME: '127.0.0.1',
         },
