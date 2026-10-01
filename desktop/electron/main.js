@@ -41,17 +41,14 @@ function waitForPort(port, host = '127.0.0.1', timeout = 60000) {
             if (Date.now() > deadline) {
                 return reject(new Error(`Timeout waiting for port ${port}`));
             }
-            const url = `http://${host}:${port}/`;
-            const req = http.get(url, (res) => {
-                console.log(`[Electron] Port ${port} on ${host} is ready! (status ${res.statusCode})`);
-                res.resume();          // drain the response
+            const socket = net.connect(port, host);
+            socket.once('connect', () => {
+                socket.destroy();
+                console.log(`[Electron] Port ${port} on ${host} is ready!`);
                 resolve();
             });
-            req.on('error', () => {
-                setTimeout(tryConnect, 1000);
-            });
-            req.setTimeout(2000, () => {
-                req.destroy();
+            socket.once('error', () => {
+                socket.destroy();
                 setTimeout(tryConnect, 1000);
             });
         }

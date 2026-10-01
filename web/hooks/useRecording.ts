@@ -31,6 +31,7 @@ interface TranscriptionStatusPayload {
     timestamp?: string;
     reason?: string;
     chars?: number;
+    duration?: number;
     max_segment_seconds?: number;
 }
 
@@ -42,6 +43,13 @@ export interface LiveTranscriptionStatus {
     queueSize?: number;
     segmentId?: number;
     updatedAt: number;
+}
+
+export interface QueuedAudioStatus {
+    segmentId?: number;
+    duration?: number;
+    queueSize?: number;
+    result?: 'queued' | 'processing' | 'discarded' | 'received';
 }
 
 type RecordingSocket = ReturnType<typeof getSocket>;
@@ -155,6 +163,7 @@ export function useRecording() {
     const [duration, setDuration] = useState(0);
     const [messages, setMessages] = useState<TranscriptionMessage[]>([]);
     const [liveStatus, setLiveStatus] = useState<LiveTranscriptionStatus | null>(null);
+    const [lastQueuedAudio, setLastQueuedAudio] = useState<QueuedAudioStatus | null>(null);
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
     const [gainValue, setGainValue] = useState(1.0);
     const [voiceThreshold, setVoiceThreshold] = useState(500);
@@ -227,10 +236,37 @@ export function useRecording() {
             setStatus('recording_stopped', 'Grabacion detenida; esperando cierre del ASR');
             stopRecordingInternal();
         };
+        const handleProcessingComplete = () => {
+            setStatus('processing_complete', 'Procesamiento de grabacion terminado');
+        };
+        const handleWarning = (data: unknown) => {
+            const message = typeof data === 'object' && data !== null && 'message' in data
+                ? String((data as { message?: unknown }).message)
+                : 'No se obtuvo texto para mostrar';
+            setStatus('warning', message);
+        };
         const handleAudioLevel = (data: AudioLevelPayload) => {
             setLiveStatus(statusFromAudioLevel(data));
         };
         const handleTranscriptionStatus = (data: TranscriptionStatusPayload) => {
+            if (data.event === 'segment_queued') {
+                setLastQueuedAudio({
+                    segmentId: toFiniteNumber(data.segment_id),
+                    duration: toFiniteNumber(data.duration),
+                    queueSize: toFiniteNumber(data.queue_size),
+                    result: 'queued',
+                });
+            } else if (data.event === 'asr_started' || data.event === 'segment_discarded' || data.event === 'transcription_received') {
+                setLastQueuedAudio(current => current && current.segmentId === data.segment_id
+                    ? {
+                        ...current,
+                        queueSize: toFiniteNumber(data.queue_size) ?? current.queueSize,
+                        result: data.event === 'asr_started'
+                            ? 'processing'
+                            : data.event === 'segment_discarded' ? 'discarded' : 'received',
+                    }
+                    : current);
+            }
             setLiveStatus(statusFromBackend(data));
         };
         const handleTranscription = (data: TranscriptionMessage) => {
@@ -252,6 +288,8 @@ export function useRecording() {
         socket.on('transcription_status', handleTranscriptionStatus);
         socket.on('transcription', handleTranscription);
         socket.on('recording_stopped', handleStopped);
+        socket.on('processing_complete', handleProcessingComplete);
+        socket.on('warning', handleWarning);
         socket.on('error', handleError);
         // Nota: no se desregistran en el cleanup porque el socket es un singleton
         // de módulo con la misma vida útil que la página. Registrarlos una sola
@@ -309,6 +347,7 @@ export function useRecording() {
             const socket = getSocket();
             setMessages([]);
             setDuration(0);
+            setLastQueuedAudio(null);
             setStatus('connecting', 'Conectando al backend');
             connectSocket();
             await waitForSocketConnection(socket);
@@ -367,6 +406,7 @@ export function useRecording() {
         duration,
         messages,
         liveStatus,
+        lastQueuedAudio,
         startRecording,
         stopRecording,
         analyser,

@@ -25,6 +25,7 @@ import asyncio
 import io
 import logging
 import wave
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Optional
 
 from backend.services.nim.protocols import (
@@ -34,6 +35,7 @@ from backend.services.nim.protocols import (
 )
 
 logger = logging.getLogger(__name__)
+RPC_TIMEOUT_SECONDS = 12
 
 
 class RivaWhisperASRClient(AudioTranscriptionPort):
@@ -154,13 +156,19 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
         pcm = self._wav_to_pcm(audio_bytes)
 
         if "parakeet" in self._cfg.model_id.lower():
+            from riva.client.asr import streaming_request_generator
+
             streaming_config = riva.client.StreamingRecognitionConfig(
                 config=config,
                 interim_results=False,
             )
-            responses = asr_service.streaming_response_generator(
-                audio_chunks=self._pcm_chunks(pcm, sample_rate),
-                streaming_config=streaming_config,
+            requests = streaming_request_generator(
+                self._pcm_chunks(pcm, sample_rate), streaming_config
+            )
+            responses = asr_service.stub.StreamingRecognize(
+                requests,
+                metadata=auth.get_auth_metadata(),
+                timeout=RPC_TIMEOUT_SECONDS,
             )
             texts = []
             for response in responses:
@@ -170,7 +178,12 @@ class RivaWhisperASRClient(AudioTranscriptionPort):
             return " ".join(texts).strip()
 
         # Extract best transcript from response
-        response = asr_service.offline_recognize(pcm, config)
+        response = asr_service.offline_recognize(pcm, config, future=True)
+        try:
+            response = response.result(timeout=RPC_TIMEOUT_SECONDS)
+        except FutureTimeoutError:
+            response.cancel()
+            raise
         texts = []
         for result in response.results:
             if result.alternatives:

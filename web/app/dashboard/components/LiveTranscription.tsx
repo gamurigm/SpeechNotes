@@ -7,6 +7,7 @@ import { useBackground } from '../../providers';
 
 type LiveMessage = ReturnType<typeof useRecording>['messages'][number];
 type LiveStatus = ReturnType<typeof useRecording>['liveStatus'];
+type QueuedAudio = ReturnType<typeof useRecording>['lastQueuedAudio'];
 
 const PARTICLES = Array.from({ length: 8 }, (_, index) => index);
 
@@ -46,6 +47,27 @@ function SegmentCounter({ count, animatedCount, isLight, showWave }: Readonly<{
     );
 }
 
+function QueuedAudioLabel({ audio, isLight }: Readonly<{ audio: QueuedAudio; isLight: boolean }>) {
+    if (!audio) return null;
+    const resultLabel = {
+        queued: 'en cola',
+        processing: 'ASR procesando',
+        discarded: 'ASR sin texto',
+        received: 'texto recibido',
+    }[audio.result || 'queued'];
+    const details = [
+        audio.segmentId !== undefined ? `#${audio.segmentId}` : null,
+        audio.duration !== undefined ? `${audio.duration.toFixed(1)} s` : null,
+        resultLabel,
+    ].filter(Boolean).join(' · ');
+
+    return (
+        <p className={`max-w-48 text-right text-[10px] font-semibold ${audio.result === 'discarded' ? 'text-amber-500' : isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
+            Audio encolado{details ? ` · ${details}` : ''}
+        </p>
+    );
+}
+
 function EmptyTranscription({ isRecording, liveStatus }: Readonly<{
     isRecording: boolean;
     liveStatus: LiveStatus;
@@ -64,7 +86,7 @@ function EmptyTranscription({ isRecording, liveStatus }: Readonly<{
                 </p>
                 <p className="text-theme-secondary text-sm max-w-xs">
                     {isRecording
-                        ? 'Si hay voz, el backend encola audio hasta cada 8 segundos. Revisa el estado abajo.'
+                        ? 'Si hay voz, el backend encola audio hasta cada 4 segundos. Revisa el estado abajo.'
                         : 'Presiona el boton de grabacion para comenzar a capturar audio en tiempo real'}
                 </p>
                 {isRecording && liveStatus && (
@@ -112,7 +134,7 @@ function TranscriptionMessages({ messages }: Readonly<{ messages: LiveMessage[] 
 }
 
 export function LiveTranscription() {
-    const { messages, isRecording, liveStatus } = useRecording();
+    const { messages, isRecording, liveStatus, lastQueuedAudio } = useRecording();
     const { themeType } = useBackground();
     const isLight = themeType === 'light';
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -199,8 +221,16 @@ export function LiveTranscription() {
                         </div>
                     </div>
 
-                    <SegmentCounter count={messages.length} animatedCount={animatedCount} isLight={isLight} showWave={showWave} />
+                    <div className="flex items-center gap-3">
+                        {isRecording && <QueuedAudioLabel audio={lastQueuedAudio} isLight={isLight} />}
+                        <SegmentCounter count={messages.length} animatedCount={animatedCount} isLight={isLight} showWave={showWave} />
+                    </div>
                 </div>
+                {liveStatus && ['recording_stopped', 'warning', 'error', 'processing_complete'].includes(liveStatus.event) && (
+                    <p role="status" className={`px-6 pb-3 text-xs ${liveStatus.event === 'warning' || liveStatus.event === 'error' ? 'text-amber-400' : 'text-theme-secondary'}`}>
+                        {liveStatus.label}
+                    </p>
+                )}
 
                 {/* Theme-Aware Neon Divider - Unified with Header Base */}
                 <div className="absolute bottom-0 inset-x-0 h-px">

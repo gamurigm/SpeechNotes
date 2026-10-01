@@ -9,6 +9,7 @@ export async function proxy(req: NextRequest) {
   // 1. Permitir siempre rutas de autenticación y estáticos
   if (
     pathname.startsWith("/api/auth") ||
+    pathname === "/desktop/auth/complete" ||
     pathname === "/api/register" ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
@@ -19,6 +20,12 @@ export async function proxy(req: NextRequest) {
   // 2. Si el usuario va al login y ya tiene sesión, mandar al dashboard
   if (pathname === "/login") {
     if (token) {
+      const desktopState = req.nextUrl.searchParams.get("desktop_state");
+      if (desktopState && desktopState.length <= 128) {
+        const url = new URL("/desktop/auth/complete", req.url);
+        url.searchParams.set("state", desktopState);
+        return NextResponse.redirect(url);
+      }
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return NextResponse.next();

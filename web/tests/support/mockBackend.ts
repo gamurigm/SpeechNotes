@@ -69,7 +69,7 @@ export async function startMockBackend(): Promise<MockBackend> {
         socket.emit('connected', { message: 'Backend Cypress conectado' });
 
         socket.on('start_recording', () => {
-            socket.emit('recording_started', { max_segment_seconds: 8 });
+            socket.emit('recording_started', { max_segment_seconds: 4 });
             setTimeout(() => {
                 socket.emit('transcription_status', {
                     event: 'transcription_received',
