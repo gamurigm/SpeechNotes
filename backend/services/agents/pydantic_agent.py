@@ -62,9 +62,14 @@ _cfg = ConfigService()
 
 DEPRECATED_MODELS = {
     "minimaxai/minimax-m2",
+    "minimaxai/minimax-m3",
+    "z-ai/glm-5.2",
+    "nvidia/nvidia-nemotron-nano-9b-v2",
+    "nvidia/nemotron-3-nano-30b-a3b",
+    "mistralai/mistral-large-3-675b-instruct-2512",
 }
-DEFAULT_THINKING_MODEL = "qwen/qwen3.5-397b-a17b"
-DEFAULT_FAST_MODEL = "nvidia/nvidia-nemotron-nano-9b-v2"
+DEFAULT_THINKING_MODEL = "nvidia/nemotron-3-super-120b-a12b"
+DEFAULT_FAST_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
 
 def _resolve_model(config_key: str, fallback: str) -> str:
@@ -86,7 +91,7 @@ NVIDIA_API_KEY_FAST = _cfg.get("NVIDIA_API_KEY_FAST")
 NVIDIA_API_KEY = _cfg.get("NVIDIA_API_KEY")  # Keep for compatibility
 NVIDIA_BASE_URL = _cfg.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 MODEL_NAME = _resolve_model("CHAT_MODEL_THINKING", DEFAULT_THINKING_MODEL)
-MODEL_NAME_FAST = _cfg.get("CHAT_MODEL_FAST", DEFAULT_FAST_MODEL)
+MODEL_NAME_FAST = _resolve_model("CHAT_MODEL_FAST", DEFAULT_FAST_MODEL)
 LOGFIRE_TOKEN = _cfg.get("LOGFIRE_TOKEN")
 
 # System prompt that enforces document-focused responses
@@ -256,19 +261,17 @@ async def chat_stream_direct(
     # then try known hosted alternatives before surfacing an error to the UI.
     fallback_models = (
         (
-            "z-ai/glm-5.2",
-            "minimaxai/minimax-m3",
-            "nvidia/nemotron-3-nano-30b-a3b",
-            "mistralai/mistral-large-3-675b-instruct-2512",
+            "z-ai/glm-5.3",
+            "nvidia/nemotron-3.5-lightning-30b-a3b",
+            "z-ai/glm-5.3-flash",
             DEFAULT_FAST_MODEL,
         )
         if thinking
         else (
             DEFAULT_FAST_MODEL,
-            "nvidia/nemotron-3-nano-30b-a3b",
-            "z-ai/glm-5.2",
-            "minimaxai/minimax-m3",
-            "mistralai/mistral-large-3-675b-instruct-2512",
+            "z-ai/glm-5.3-flash",
+            DEFAULT_THINKING_MODEL,
+            "z-ai/glm-5.3",
         )
     )
     model_candidates = list(dict.fromkeys((current_model, *fallback_models)))
@@ -287,8 +290,8 @@ CONTENIDO:
     try:
         # Default parameters
         if not thinking:
-            # Nemotron Nano 9B v2 (Fast Mode)
-            temp = 0.6
+            # Nemotron 3.5 Lightning (Fast Mode)
+            temp = 1.0
             top_p = 0.95
             max_tokens = 2048
             system_prefix = "" 
@@ -409,4 +412,3 @@ CONTENIDO:
         if _logfire_available and logfire:
             logfire.error("Chat stream error", error=str(e), doc_id=document.doc_id)
         yield f"\n\nError: {str(e)}"
-
