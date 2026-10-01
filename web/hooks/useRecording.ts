@@ -53,7 +53,6 @@ export interface QueuedAudioStatus {
 }
 
 type RecordingSocket = ReturnType<typeof getSocket> & {
-    __recordingListenersInstalled?: boolean;
     __recordingActive?: boolean;
 };
 
@@ -221,11 +220,6 @@ export function useRecording() {
     useEffect(() => {
         const socket = getSocket() as RecordingSocket;
 
-        if (socket.__recordingListenersInstalled) {
-            return;
-        }
-        socket.__recordingListenersInstalled = true;
-
         const handleConnected = (data: unknown) => {
             console.log('[Socket] Connected:', data);
             setStatus('connected', 'Socket conectado');
@@ -296,11 +290,18 @@ export function useRecording() {
         socket.on('processing_complete', handleProcessingComplete);
         socket.on('warning', handleWarning);
         socket.on('error', handleError);
-        // Nota: no se desregistran en el cleanup porque el socket es un singleton
-        // de módulo con la misma vida útil que la página. Registrarlos una sola
-        // vez evita la doble suscripción que React 18 Strict Mode produciría al
-        // desmontar/remontar el efecto, y que duplicaba los eventos entrantes
-        // (p. ej. warning "Encountered two children with the same key").
+
+        return () => {
+            socket.off('connected', handleConnected);
+            socket.off('recording_started', handleStarted);
+            socket.off('audio_level', handleAudioLevel);
+            socket.off('transcription_status', handleTranscriptionStatus);
+            socket.off('transcription', handleTranscription);
+            socket.off('recording_stopped', handleStopped);
+            socket.off('processing_complete', handleProcessingComplete);
+            socket.off('warning', handleWarning);
+            socket.off('error', handleError);
+        };
     }, [setStatus, stopRecordingInternal]);
 
     useEffect(() => {
@@ -353,17 +354,18 @@ export function useRecording() {
             setMessages([]);
             setDuration(0);
             setLastQueuedAudio(null);
-            setStatus('connecting', 'Conectando al backend');
-            connectSocket();
-            await waitForSocketConnection(socket);
+            setStatus('microphone', 'Activando microfono');
 
             graph = new AudioGraph((audioData) => {
                 socket.emit('audio_chunk_pcm', audioData);
             });
 
-            setStatus('microphone', 'Solicitando microfono');
             await graph.initialize(16000, selectedDeviceId || undefined);
             await refreshAudioDevices();
+
+            setStatus('connecting', 'Conectando al backend');
+            connectSocket();
+            await waitForSocketConnection(socket);
 
             setStatus('starting_backend', 'Iniciando ASR en backend');
             const recordingStarted = waitForRecordingStarted(socket);

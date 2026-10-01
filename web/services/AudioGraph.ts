@@ -54,11 +54,15 @@ export class AudioGraph {
             audioConstraints.deviceId = { exact: deviceId };
         }
 
+        this.context = new AudioContext();
+        if (this.context.state === 'suspended') {
+            await this.context.resume();
+        }
+
         this.stream = await navigator.mediaDevices.getUserMedia({
             audio: audioConstraints,
         });
 
-        this.context = new AudioContext();
         this.inputSampleRate = this.context.sampleRate;
         await this.context.audioWorklet.addModule(PCM_PROCESSOR_URL);
     }
@@ -93,10 +97,6 @@ export class AudioGraph {
         this.gainNode.connect(this.analyser);
         this.analyser.connect(this.workletNode);
         this.workletNode.connect(this.context.destination);
-
-        if (this.context.state === 'suspended') {
-            void this.context.resume();
-        }
 
         console.info('[AudioGraph] capture sampleRate', {
             inputSampleRate: this.inputSampleRate,
