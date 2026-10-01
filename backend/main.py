@@ -53,6 +53,7 @@ from routers import vad_config
 from routers import documents
 from routers import audio_format
 from routers import settings
+from routers import opencode
 from routers import translation as translation_router
 
 DEFAULT_ALLOWED_ORIGINS = [
@@ -134,6 +135,12 @@ app.include_router(vad_config.router, prefix="/api/config/vad", tags=["vad-confi
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"], dependencies=[Depends(require_auth)])
 app.include_router(audio_format.router, prefix="/api/audio-format", tags=["audio-format"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(opencode.router, prefix="/api/opencode", tags=["opencode"])
+
+
+@app.on_event("shutdown")
+def close_terminal_sessions():
+    opencode.close_all_sessions()
 # The former transcribe and audio_processing routers referenced missing
 # audio factory/ASR/pipeline modules. Re-enable them only after those
 # implementations are restored and tested.

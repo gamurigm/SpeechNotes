@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardBody, Spinner, Slider, Button, Divider } from "@heroui/react";
 import { RecordingPanel } from './components/RecordingPanel';
 import { LiveTranscription } from './components/LiveTranscription';
 import { MarkdownViewer } from './components/MarkdownViewer';
 import { MicTest } from './components/MicTest';
-import { ChatSidebar } from './components/ChatSidebar';
+import { OpenCodeTerminal } from './components/OpenCodeTerminal';
 import { RecordingProvider, useRecording } from './providers/RecordingProvider';
-import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves, MessageCircle } from 'lucide-react';
+import { ZoomIn, Wand2, FileAudio2, SlidersHorizontal, Sparkles, Check, X, ChevronLeft, Loader2, FileText, Search, Mic, Palette, AudioLines, Music4, Waves, TerminalSquare } from 'lucide-react';
 import { useBackground } from '../providers';
 import { ThemeSettings } from "./components/BackgroundPicker";
 import { Toast, ToastType } from './components/Toast';
@@ -45,11 +45,6 @@ function getProcessingLabel(id: string): string {
     if (id.startsWith('upload-')) return 'Sincronizando Audio...';
     if (id.startsWith('temp-')) return 'Finalizando grabación...';
     return 'Formateo Inteligente...';
-}
-
-function getChatPanelClass(showChat: boolean, expanded: boolean): string {
-    if (!showChat) return 'w-0 opacity-0 pointer-events-none';
-    return expanded ? 'w-[850px] opacity-100' : 'w-[480px] opacity-100';
 }
 
 const ToolbarIcon = ({ icon, tooltip, onClick, isActive, className = '' }: ToolbarIconProps) => {
@@ -98,8 +93,8 @@ function DashboardContent() {
 
     const [mdZoom, setMdZoom] = useState(100);
     const [appZoom, setAppZoom] = useState(100);
-    const [showChat, setShowChat] = useState(false);
-    const [isChatExpanded, setIsChatExpanded] = useState(false);
+    const [showTerminal, setShowTerminal] = useState(false);
+    const terminalToggle = useRef<HTMLButtonElement>(null);
     const [showSidebar, setShowSidebar] = useState(true);
     const [showMicTest, setShowMicTest] = useState(true);
     const [notification, setNotification] = useState<{ message: string, type: ToastType } | null>(null);
@@ -128,6 +123,7 @@ function DashboardContent() {
 
     useEffect(() => {
         const handleKeyPress = (e: KeyboardEvent) => {
+            if (e.target instanceof Element && e.target.closest('.opencode-terminal')) return;
             if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
                 e.preventDefault(); handleMdZoomIn();
             } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
@@ -190,11 +186,11 @@ function DashboardContent() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/[0.03] rounded-full blur-[120px]" />
             </div>
 
-            <main className={`flex h-screen relative z-10 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showChat ? 'p-4 gap-4' : 'p-0'}`}>
-                <div className={`flex-1 flex flex-col transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-x-hidden ${showChat ? 'rounded-[2.5rem] shadow-2xl' : 'w-full'}`}>
+            <main className={`flex h-screen min-w-0 relative z-10 ${showTerminal ? 'xl:p-3 xl:gap-3' : 'p-0'}`}>
+                <div className={`min-w-0 flex-1 flex flex-col overflow-x-hidden ${showTerminal ? 'xl:rounded-2xl' : 'w-full'}`}>
                     <div className="h-full w-full flex flex-col" style={{ transform: `scale(${appZoom / 100})`, transformOrigin: 'top left', width: `${100 * (100 / appZoom)}%`, height: `${100 * (100 / appZoom)}%` }}>
                         <div className="px-6 pt-6 pb-2 flex justify-center">
-                            <div className="max-w-7xl w-full flex items-center justify-center gap-6 relative">
+                            <div className="max-w-7xl w-full flex flex-wrap items-center justify-center gap-6">
                                 <div className="flex flex-col gap-2 items-start">
                                     <div className="flex items-center gap-2">
                                         <ToolbarIcon
@@ -257,7 +253,8 @@ function DashboardContent() {
                                     {/* Componentes de Herramientas Dinámicas movidos a la barra lateral */}
                                 </div>
                                 <RecordingPanel />
-                                <div className="absolute right-0 top-0">
+                                <div className="ml-auto flex shrink-0">
+                                    <button ref={terminalToggle} type="button" aria-label={showTerminal ? 'Ocultar terminal OpenCode' : 'Abrir terminal OpenCode'} aria-expanded={showTerminal} title="OpenCode" onClick={() => setShowTerminal(value => !value)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-theme-secondary transition hover:bg-emerald-400/10 hover:text-emerald-500 focus-visible:outline-2 focus-visible:outline-emerald-500"><TerminalSquare size={19} /></button>
                                     <LogoutButton />
                                 </div>
                             </div>
@@ -730,43 +727,14 @@ function DashboardContent() {
                     </div>
                 </div>
 
-                {/* Sidebar Chat */}
-                <div className={`h-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex-shrink-0 relative ${getChatPanelClass(showChat, isChatExpanded)}`}>
-                    <ChatSidebar
-                        activeDocId={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.id || undefined}
-                        activeDocName={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.filename || undefined}
-                        activeDocContent={transcriptionService.latestContent || undefined}
-                        isFormatted={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.is_formatted}
-                        isExpanded={isChatExpanded}
-                        onToggleExpand={() => setIsChatExpanded(!isChatExpanded)}
-                        onClose={() => setShowChat(false)}
-                    />
-                </div>
+                <OpenCodeTerminal
+                    isOpen={showTerminal}
+                    activeDocId={transcriptionService.transcriptionId || undefined}
+                    activeDocName={transcriptionService.transcriptions[transcriptionService.selectedIndex]?.filename || undefined}
+                    onDocument={(id, content) => { if (id === transcriptionService.transcriptionId) transcriptionService.setLatestContent(content); }}
+                    onClose={() => { setShowTerminal(false); terminalToggle.current?.focus(); }}
+                />
             </main>
-
-            {/* Floating Chat Toggle */}
-            <button type="button"
-                onClick={() => setShowChat(!showChat)}
-                className={`fixed top-10 right-10 z-[100] transition-all duration-500 hover:rotate-12 active:scale-90 group ${showChat ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 rotate-0 scale-100'}`}
-            >
-                <div className="relative">
-                    <div className="absolute -inset-4 bg-violet-500/20 rounded-full blur-2xl group-hover:bg-violet-500/30 transition-all" />
-                    <div
-                        className="relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 backdrop-blur-md"
-                        style={{
-                            background: 'var(--theme-glass-bg)',
-                            border: '1px solid var(--theme-glass-border)',
-                            boxShadow: isLight ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' : '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-                        }}
-                    >
-                        <MessageCircle size={32} className={isLight ? "text-indigo-600" : "text-white drop-shadow-md"} />
-                        <div
-                            className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-[3px]"
-                            style={{ borderColor: 'var(--background)' }}
-                        />
-                    </div>
-                </div>
-            </button>
 
             {/* Global Styles */}
             <style jsx global>{`

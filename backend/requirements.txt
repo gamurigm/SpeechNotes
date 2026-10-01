@@ -9,6 +9,7 @@ python-dotenv==1.2.2
 PyJWT==2.13.0
 httpx==0.28.1
 aiofiles==25.1.0
+pywinpty==3.0.5; sys_platform == 'win32'
 
 # Current persistence layer plus legacy admin/formatter compatibility
 pymongo==4.17.0

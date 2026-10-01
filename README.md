@@ -141,7 +141,7 @@ NVIDIA_API_KEY_DETECTOR=nvapi-...     # Detección de idioma (Gemma)
 NVIDIA_API_KEY_TRANSLATOR=nvapi-...   # Traducción (Mistral Large)
 NVIDIA_API_KEY_THINKING=nvapi-...     # Chat y formateo (Qwen 3.5)
 
-CHAT_MODEL_THINKING=qwen/qwen3.5-397b-a17b
+CHAT_MODEL_THINKING=nvidia/nemotron-3-super-120b-a12b
 ASR_MODEL=nvidia/parakeet-tdt-0.6b-v2
 DETECTOR_MODEL=google/gemma-3n-e4b-it
 TRANSLATOR_MODEL=mistralai/mistral-large-3-675b-instruct-2512
@@ -173,6 +173,12 @@ GET  /api/chat                      Chat con el agente (streaming)
 ---
 
 ## Documentación
+
+### Terminal OpenCode (Windows)
+
+El dashboard incluye una terminal OpenCode en lugar del chat. Requiere `opencode` en PATH y las dependencias del backend (`pywinpty`). Selecciona una nota, abre el icono de terminal e inicia OpenCode. Pídele que edite `@document.md`: sus cambios se guardan en la nota y aparecen en el visor.
+
+Puedes ajustar el ancho, ampliar y ocultar el panel sin detener la sesión. El botón detener cierra OpenCode. «Carpeta» copia la ruta del borrador y de `original.md`, su respaldo. Si la nota cambia desde el visor, el borrador se conserva sin sobrescribir esa edición. OpenCode utiliza su propia configuración de modelos y credenciales; la terminal requiere una sesión de SpeechNotes y conexión local.
 
 - [Patrones de diseño aplicados](./docs/patrones_diseno.md)
 - [Servicios NIM — arquitectura y referencia](./docs/internal/nim_services.md)

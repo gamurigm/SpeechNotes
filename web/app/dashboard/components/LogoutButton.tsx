@@ -9,12 +9,14 @@ export function LogoutButton() {
     <Button
       type="button"
       onPress={() => signOut({ callbackUrl: '/login' })}
-      size="md"
-      className="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold shadow-lg hover:shadow-xl hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105 duration-200"
-      startContent={<LogOut size={20} />}
+      isIconOnly
+      size="sm"
+      variant="light"
+      aria-label="Cerrar sesión"
+      className="h-10 w-10 min-w-10 rounded-xl border border-white/10 text-[var(--foreground)]/60 transition-colors hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400"
       title="Cerrar sesión"
     >
-      Salir
+      <LogOut size={16} />
     </Button>
   );
 }

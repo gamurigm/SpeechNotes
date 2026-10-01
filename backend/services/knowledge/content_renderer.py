@@ -48,6 +48,9 @@ class ContentRenderer:
         self.raw_strategy = RawContentStrategy()
 
     def render_transcription(self, doc: Dict, segments: List[Dict]) -> str:
+        # Manual and OpenCode edits must win over previously formatted content.
+        if doc.get("edited_content") is not None:
+            return doc["edited_content"]
         # 0. Check if document is still being processed
         if not doc.get("processed", True):
             raw = doc.get("raw_content") or ""
@@ -67,4 +70,3 @@ class ContentRenderer:
         # 3. Fallback to any remaining text content
         content = self.raw_strategy.render(doc, segments)
         return content or "# Sin contenido disponible"
-
