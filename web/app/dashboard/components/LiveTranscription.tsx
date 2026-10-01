@@ -86,7 +86,7 @@ function EmptyTranscription({ isRecording, liveStatus }: Readonly<{
                 </p>
                 <p className="text-theme-secondary text-sm max-w-xs">
                     {isRecording
-                        ? 'Si hay voz, el backend encola audio hasta cada 4 segundos. Revisa el estado abajo.'
+                        ? 'Si hay voz, el backend encola audio hasta cada 7 segundos. Revisa el estado abajo.'
                         : 'Presiona el boton de grabacion para comenzar a capturar audio en tiempo real'}
                 </p>
                 {isRecording && liveStatus && (

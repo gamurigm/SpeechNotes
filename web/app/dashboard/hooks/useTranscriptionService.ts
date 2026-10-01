@@ -42,7 +42,7 @@ export function useTranscriptionService() {
         }
     }, []);
 
-    const loadTranscriptionsList = useCallback(async () => {
+    const loadTranscriptionsList = useCallback(async (preferredId?: string) => {
         setIsLoading(true);
         try {
             const res = await ApiClient.getInstance().listTranscriptions() as TranscriptionsResponse;
@@ -51,9 +51,11 @@ export function useTranscriptionService() {
 
             const savedId = localStorage.getItem('sn-last-doc-id');
             let targetId: string | null = null;
-            if (savedId && items.some((item) => item.id === savedId)) {
+            if (preferredId && items.some((item) => item.id === preferredId)) {
+                targetId = preferredId;
+            } else if (!preferredId && savedId && items.some((item) => item.id === savedId)) {
                 targetId = savedId;
-            } else if (items.length > 0) {
+            } else if (!preferredId && items.length > 0) {
                 targetId = items[0].id;
             }
 
@@ -112,7 +114,21 @@ export function useTranscriptionService() {
 
         const handleProcessingComplete = async (data: unknown) => {
             console.log('[Socket.IO] Processing complete:', data);
-            await loadTranscriptionsList();
+            const result = typeof data === 'object' && data !== null
+                ? data as { content?: unknown; transcription_id?: unknown }
+                : {};
+            if (typeof result.content === 'string') {
+                setLatestContent(result.content);
+            }
+            if (typeof result.transcription_id === 'string') {
+                setTranscriptionId(result.transcription_id);
+                await loadTranscriptionsList(result.transcription_id);
+            } else if (typeof result.content === 'string') {
+                setTranscriptionId(null);
+                localStorage.removeItem('sn-last-doc-id');
+            } else {
+                await loadTranscriptionsList();
+            }
             const pendingId = pendingRecordingJobIdRef.current;
             if (pendingId) {
                 setProcessingIds(prev => {

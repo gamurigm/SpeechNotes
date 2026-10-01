@@ -76,7 +76,7 @@ _pcm_adapter: AudioProcessorPort = PCMPassthroughAdapter()
 SAMPLE_RATE = 16000
 SAMPLE_WIDTH_BYTES = 2
 BYTES_PER_SECOND = SAMPLE_RATE * SAMPLE_WIDTH_BYTES
-MAX_SEGMENT_SECONDS = 4.0
+MAX_SEGMENT_SECONDS = 7.0
 MIN_SEGMENT_SECONDS = 1.0
 OVERLAP_SECONDS = 1.0
 ASR_QUEUE_MAXSIZE = 6
@@ -758,13 +758,14 @@ def register_socket_events(sio):
                     chars=len(text),
                 )
 
-                try:
-                    await sio_inst.emit('transcription', {
-                        "timestamp": segment.timestamp,
-                        "text": text,
-                    }, room=sid)
-                except Exception as e_emit:
-                    print(f"[Socket.IO] emit error: {e_emit}")
+                if not session.get("stopping"):
+                    try:
+                        await sio_inst.emit('transcription', {
+                            "timestamp": segment.timestamp,
+                            "text": text,
+                        }, room=sid)
+                    except Exception as e_emit:
+                        print(f"[Socket.IO] emit error: {e_emit}")
 
                 print(f"[Socket.IO] Segment {segment.segment_id} for {sid}: {text[:100]}...")
 
@@ -956,10 +957,10 @@ def register_socket_events(sio):
             md_filename = f"transcripcion_{timestamp}.md"
 
             # Insert directly into database (no file I/O)
+            transcription_id = None
+            db = None
             try:
                 from src.database.mongo_manager import MongoManager
-                from src.agent.transcription_analyzer import TranscriptionAnalyzer
-                from src.agent.document_generator import DocumentGenerator
 
                 db = MongoManager()
                 doc = {
@@ -974,6 +975,7 @@ def register_socket_events(sio):
                     "source_filename": audio_filename or "N/A",
                 }
                 result = db.transcriptions.insert_one(doc)
+                transcription_id = str(result.inserted_id)
                 print(f"[Socket.IO] Inserted transcription {result.inserted_id} into DB")
 
                 for sequence, item in enumerate(ordered_segments):
@@ -984,27 +986,31 @@ def register_socket_events(sio):
                         "sequence": sequence,
                     })
 
-                # Post-processing: analyze and generate
-                try:
-                    analyzer = TranscriptionAnalyzer()
-                    analyzer.analyze_pending()
-                    generator = DocumentGenerator()
-                    generator.generate_all()
-                    print(f"[Socket.IO] Post-processing completed for {sid}")
-                except Exception as e:
-                    print(f"[Socket.IO] Warning: Post-processing error: {e}")
             except Exception as e:
                 print(f"[Socket.IO] Error during DB insert: {e}")
 
             try:
                 await sio.emit('processing_complete', {
-                    'message': 'Processing finished',
+                    'message': 'Transcription ready',
                     'filename': md_filename,
                     'audio_file': audio_filename,
                     'segments': len(session["transcription_buffer"]),
+                    'content': raw_content,
+                    'transcription_id': transcription_id,
                 }, room=sid)
             except Exception as e_emit:
                 print(f"[Socket.IO] emit processing_complete error: {e_emit}")
+
+            if transcription_id is not None and db is not None:
+                try:
+                    from src.agent.transcription_analyzer import TranscriptionAnalyzer
+                    from src.agent.document_generator import DocumentGenerator
+
+                    TranscriptionAnalyzer().analyze_pending()
+                    DocumentGenerator().generate_all()
+                    print(f"[Socket.IO] Post-processing completed for {sid}")
+                except Exception as e:
+                    print(f"[Socket.IO] Warning: Post-processing error: {e}")
 
             print(f"[Socket.IO] Completed session for {sid}")
 

@@ -29,7 +29,7 @@ Resolver estos problemas observados en grabaciones largas o sesiones en vivo:
 | Nivel | Duracion | Archivo / constante |
 | --- | ---: | --- |
 | Paquete PCM frontend | 0.5 s | `web/services/AudioGraph.ts` (`CHUNK_SECONDS`) |
-| Ventana ASR en vivo | 4 s | `backend/services/realtime/socket_handler.py` (`MAX_SEGMENT_SECONDS`) |
+| Ventana ASR en vivo | 7 s | `backend/services/realtime/socket_handler.py` (`MAX_SEGMENT_SECONDS`) |
 | Overlap ASR | 1 s | `backend/services/realtime/socket_handler.py` (`OVERLAP_SECONDS`) |
 | Frecuencia de audio | 16 kHz | frontend y backend |
 | Formato de audio | PCM mono Int16 | frontend y backend |
@@ -143,7 +143,7 @@ Pruebas funcionales realizadas:
 
 - Health backend: `GET http://127.0.0.1:9443/health` -> `200`.
 - Dashboard: `GET http://127.0.0.1:3006/dashboard` -> `200`.
-- Socket.IO `start_recording` confirma `max_segment_seconds=4`.
+- Socket.IO `start_recording` confirma `max_segment_seconds=7`.
 - Parakeet y Whisper responden con la clave ASR actual, sin `PERMISSION_DENIED`.
 - Replay de WAVs reales demostro que el backend recibe audio y que el filtro descarta basura de baja informacion en vez de guardarla como transcripcion final.
 

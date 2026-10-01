@@ -52,7 +52,10 @@ export interface QueuedAudioStatus {
     result?: 'queued' | 'processing' | 'discarded' | 'received';
 }
 
-type RecordingSocket = ReturnType<typeof getSocket>;
+type RecordingSocket = ReturnType<typeof getSocket> & {
+    __recordingListenersInstalled?: boolean;
+    __recordingActive?: boolean;
+};
 
 function toFiniteNumber(value: unknown): number | undefined {
     return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -216,7 +219,7 @@ export function useRecording() {
     }, []);
 
     useEffect(() => {
-        const socket = getSocket() as typeof getSocket extends () => infer R ? R & { __recordingListenersInstalled?: boolean } : never;
+        const socket = getSocket() as RecordingSocket;
 
         if (socket.__recordingListenersInstalled) {
             return;
@@ -233,6 +236,7 @@ export function useRecording() {
         };
         const handleStopped = (data: unknown) => {
             console.log('[Socket] Stopped:', data);
+            socket.__recordingActive = false;
             setStatus('recording_stopped', 'Grabacion detenida; esperando cierre del ASR');
             stopRecordingInternal();
         };
@@ -270,6 +274,7 @@ export function useRecording() {
             setLiveStatus(statusFromBackend(data));
         };
         const handleTranscription = (data: TranscriptionMessage) => {
+            if (!socket.__recordingActive) return;
             console.log('[Socket] Transcription:', data);
             setMessages(prev => [...prev, data]);
             setStatus('transcription_received', 'Texto recibido');
@@ -344,7 +349,7 @@ export function useRecording() {
         let graph: AudioGraph | null = null;
 
         try {
-            const socket = getSocket();
+            const socket = getSocket() as RecordingSocket;
             setMessages([]);
             setDuration(0);
             setLastQueuedAudio(null);
@@ -378,6 +383,7 @@ export function useRecording() {
 
             audioGraphRef.current = graph;
             setAnalyser(analyserNode);
+            socket.__recordingActive = true;
             setIsRecording(true);
             setStatus('recording', 'Grabando; esperando audio');
 
@@ -395,7 +401,8 @@ export function useRecording() {
     }, [diarization, gainValue, language, refreshAudioDevices, selectedDeviceId, setStatus, silenceThreshold, voiceThreshold]);
 
     const stopRecording = useCallback(() => {
-        const socket = getSocket();
+        const socket = getSocket() as RecordingSocket;
+        socket.__recordingActive = false;
         setStatus('stopping', 'Enviando ultimo audio al backend');
         stopRecordingInternal();
         socket.emit('stop_recording');
